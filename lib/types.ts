@@ -14,6 +14,12 @@ export interface Admin {
   createdAt: string;
 }
 
+export interface Place {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface TicketMessage {
   id: string;
   content: string;
@@ -29,6 +35,7 @@ export interface Ticket {
   type: TicketType;
   cpf: string;
   subject: string;
+  place: Place | null;
   status: TicketStatus;
   messages: TicketMessage[];
   createdAt: string;
@@ -46,8 +53,10 @@ export interface ComplaintResponse {
 export interface Complaint {
   id: string;
   code: string;
+  subject: string;
   content: string;
   photoPath?: string;
+  place: Place | null;
   status: ComplaintStatus;
   responses: ComplaintResponse[];
   createdAt: string;
@@ -56,6 +65,7 @@ export interface Complaint {
 
 export interface DB {
   admins: Admin[];
+  places: Place[];
   tickets: Ticket[];
   complaints: Complaint[];
 }
