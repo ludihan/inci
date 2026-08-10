@@ -38,7 +38,7 @@ export function ComplaintStatusForm({
   })();
 
   return (
-    <form action={action} className="space-y-4" encType="multipart/form-data">
+    <form action={action} className="space-y-4">
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="code" value={code} />
       <input type="hidden" name="status" value={nextStatus} />
