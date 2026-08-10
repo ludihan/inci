@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDict, getLocale } from "@/lib/i18n";
+import { features } from "@/lib/features";
 
 export default async function TrackPage() {
   const dict = await getDict();
@@ -17,16 +18,20 @@ export default async function TrackPage() {
         </svg>
       ),
     },
-    {
-      href: `/${locale}/track/complaint`,
-      title: dict.home.trackComplaintTitle,
-      desc: dict.home.trackComplaintDesc,
-      icon: (
-        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.8" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-        </svg>
-      ),
-    },
+    ...(features.complaintsEnabled
+      ? [
+          {
+            href: `/${locale}/track/complaint`,
+            title: dict.home.trackComplaintTitle,
+            desc: dict.home.trackComplaintDesc,
+            icon: (
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.8" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+              </svg>
+            ),
+          },
+        ]
+      : []),
   ];
 
   return (

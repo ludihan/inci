@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getDict, getLocale } from "@/lib/i18n";
 import { getCurrentAdmin, hasPermission } from "@/lib/auth";
+import { features } from "@/lib/features";
 import { getDB } from "@/lib/store";
 import { TicketCard } from "@/components/ticket-card";
 
@@ -17,8 +18,9 @@ export default async function AdminTicketsPage({
     redirect(`/${locale}/admin/login`);
   }
 
-  const canIT = hasPermission(admin, "it");
-  const canMaintenance = hasPermission(admin, "maintenance");
+  const canIT = hasPermission(admin, "it") && features.itTicketsEnabled;
+  const canMaintenance =
+    hasPermission(admin, "maintenance") && features.maintenanceTicketsEnabled;
   if (!canIT && !canMaintenance) {
     redirect(`/${locale}/admin`);
   }

@@ -1,11 +1,18 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getDict, getLocale } from "@/lib/i18n";
 import { listPlaces } from "@/lib/store";
+import { ticketsEnabled } from "@/lib/features";
 import { TicketForm } from "@/components/ticket-form";
 
 export default async function NewTicketPage() {
   const dict = await getDict();
   const locale = await getLocale();
+
+  if (!ticketsEnabled) {
+    redirect(`/${locale}`);
+  }
+
   const places = await listPlaces();
 
   return (

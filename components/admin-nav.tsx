@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { logout } from "@/lib/actions";
 import { hasPermission, isSuperAdmin } from "@/lib/auth";
+import { features } from "@/lib/features";
 import type { Admin } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
 
@@ -19,12 +20,14 @@ export function AdminNav({
       href: `/${lang}/admin/tickets`,
       label: dict.admin.tickets.title,
       show:
-        hasPermission(admin, "it") || hasPermission(admin, "maintenance"),
+        (hasPermission(admin, "it") && features.itTicketsEnabled) ||
+        (hasPermission(admin, "maintenance") &&
+          features.maintenanceTicketsEnabled),
     },
     {
       href: `/${lang}/admin/complaints`,
       label: dict.admin.complaints.title,
-      show: hasPermission(admin, "complaints"),
+      show: hasPermission(admin, "complaints") && features.complaintsEnabled,
     },
     {
       href: `/${lang}/admin/places`,

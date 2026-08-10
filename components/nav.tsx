@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Dict, Locale } from "@/lib/i18n";
+import { features, ticketsEnabled } from "@/lib/features";
 
 export function Nav({
   dict,
@@ -23,8 +24,12 @@ export function Nav({
 
   const links = [
     { href: `/${lang}`, label: dict.nav.home },
-    { href: `/${lang}/new/ticket`, label: dict.nav.openTicket },
-    { href: `/${lang}/new/complaint`, label: dict.nav.sendComplaint },
+    ...(ticketsEnabled
+      ? [{ href: `/${lang}/new/ticket`, label: dict.nav.openTicket }]
+      : []),
+    ...(features.complaintsEnabled
+      ? [{ href: `/${lang}/new/complaint`, label: dict.nav.sendComplaint }]
+      : []),
     { href: `/${lang}/track`, label: dict.nav.track },
     { href: `/${lang}/admin`, label: dict.nav.admin },
   ];

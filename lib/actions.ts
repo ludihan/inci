@@ -25,6 +25,7 @@ import {
 import { saveImage, deleteImage } from "./uploads";
 import { isValidCpf, onlyDigits, generateComplaintCode } from "./utils";
 import { verifyPassword } from "./password";
+import { features, ticketsEnabled } from "./features";
 import {
   createSession,
   deleteSession,
@@ -77,6 +78,13 @@ export async function createTicket(
   if (!subject) return { error: "subjectRequired" };
   if (!message) return { error: "messageRequired" };
   if (type !== "it" && type !== "maintenance") return { error: "generic" };
+  if (!ticketsEnabled) return { error: "generic" };
+  if (
+    (type === "it" && !features.itTicketsEnabled) ||
+    (type === "maintenance" && !features.maintenanceTicketsEnabled)
+  ) {
+    return { error: "generic" };
+  }
   if (!placeId) return { error: "placeRequired" };
   const place = await getPlaceById(placeId);
   if (!place) return { error: "placeInvalid" };
@@ -167,6 +175,7 @@ export async function createComplaint(
   const content = str(formData, "content");
   const placeId = str(formData, "placeId");
 
+  if (!features.complaintsEnabled) return { error: "generic" };
   if (!subject) return { error: "subjectRequired" };
   if (!content) return { error: "messageRequired" };
   if (!placeId) return { error: "placeRequired" };

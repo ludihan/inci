@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getDict, getLocale, type Dict } from "@/lib/i18n";
 import { getCurrentAdmin, hasPermission } from "@/lib/auth";
 import { getDB } from "@/lib/store";
+import { features } from "@/lib/features";
 import type { Admin } from "@/lib/types";
 import { StatusBadge, TicketTypeBadge } from "@/components/badges";
 
@@ -38,8 +39,9 @@ function StatCard({
 }
 
 function visibleTicketsFor(admin: Admin, db: Awaited<ReturnType<typeof getDB>>) {
-  const canIT = hasPermission(admin, "it");
-  const canMaintenance = hasPermission(admin, "maintenance");
+  const canIT = hasPermission(admin, "it") && features.itTicketsEnabled;
+  const canMaintenance =
+    hasPermission(admin, "maintenance") && features.maintenanceTicketsEnabled;
   return db.tickets.filter((t) =>
     t.type === "it" ? canIT : canMaintenance
   );
@@ -58,7 +60,7 @@ export default async function AdminDashboardPage() {
   const tickets = visibleTicketsFor(admin, db);
   const openTickets = tickets.filter((t) => t.status === "open");
   const closedTickets = tickets.filter((t) => t.status === "closed");
-  const canComplaints = hasPermission(admin, "complaints");
+  const canComplaints = hasPermission(admin, "complaints") && features.complaintsEnabled;
   const complaints = canComplaints ? db.complaints : [];
   const openComplaints = complaints.filter((c) => c.status === "open");
 
@@ -70,8 +72,8 @@ export default async function AdminDashboardPage() {
     .slice(0, 5);
 
   const hasAnyModule =
-    hasPermission(admin, "it") ||
-    hasPermission(admin, "maintenance") ||
+    (hasPermission(admin, "it") && features.itTicketsEnabled) ||
+    (hasPermission(admin, "maintenance") && features.maintenanceTicketsEnabled) ||
     canComplaints;
 
   return (

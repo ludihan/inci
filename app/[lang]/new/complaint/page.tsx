@@ -1,11 +1,18 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getDict, getLocale } from "@/lib/i18n";
 import { listPlaces } from "@/lib/store";
+import { features } from "@/lib/features";
 import { ComplaintForm } from "@/components/complaint-form";
 
 export default async function NewComplaintPage() {
   const dict = await getDict();
   const locale = await getLocale();
+
+  if (!features.complaintsEnabled) {
+    redirect(`/${locale}`);
+  }
+
   const places = await listPlaces();
 
   return (

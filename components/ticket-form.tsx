@@ -5,6 +5,7 @@ import { createTicket, type ActionState } from "@/lib/actions";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { Place } from "@/lib/types";
 import { isValidCpf, onlyDigits } from "@/lib/utils";
+import { features } from "@/lib/features";
 import { SubmitButton } from "./submit-button";
 import { FileInput } from "./file-input";
 import { CpfInput } from "./cpf-input";
@@ -50,6 +51,12 @@ export function TicketForm({
     setClientError(null);
   };
 
+  const types = (["it", "maintenance"] as const).filter((type) =>
+    type === "it"
+      ? features.itTicketsEnabled
+      : features.maintenanceTicketsEnabled
+  );
+
   return (
     <form ref={formRef} action={action} onSubmit={handleSubmit} className="space-y-5">
       <input type="hidden" name="lang" value={lang} />
@@ -59,7 +66,7 @@ export function TicketForm({
           {dict.ticket.fields.type}
         </label>
         <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {(["it", "maintenance"] as const).map((type) => (
+          {types.map((type) => (
             <label
               key={type}
               className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition-colors ${
@@ -72,7 +79,7 @@ export function TicketForm({
                 type="radio"
                 name="type"
                 value={type}
-                defaultChecked={type === "it"}
+                defaultChecked={type === types[0]}
                 className="h-4 w-4 accent-zinc-900 dark:accent-zinc-50"
               />
               <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">

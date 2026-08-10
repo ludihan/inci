@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getDict, getLocale } from "@/lib/i18n";
 import { getCurrentAdmin, hasPermission } from "@/lib/auth";
+import { features } from "@/lib/features";
 import { getDB } from "@/lib/store";
 import { ComplaintCard } from "@/components/complaint-card";
 
@@ -15,6 +16,10 @@ export default async function AdminComplaintsPage({
 
   if (!admin) {
     redirect(`/${locale}/admin/login`);
+  }
+
+  if (!features.complaintsEnabled) {
+    redirect(`/${locale}/admin`);
   }
 
   if (!hasPermission(admin, "complaints")) {
