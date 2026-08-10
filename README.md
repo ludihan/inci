@@ -1,37 +1,77 @@
-# inci
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Inci
 
-## Getting Started
+Sistema web de **chamados de suporte** (TI e manutenção) e **denúncias anônimas**, com painel administrativo, rastreamento por CPF/código e interface bilíngue (português/inglês).
 
-First, run the development server:
+Construído com [Next.js 16](https://nextjs.org) (App Router) + React 19 + TypeScript + Tailwind CSS 4.
+
+## Funcionalidades
+
+### Público
+- **Novo chamado** — abertura com CPF, tipo (TI/manutenção), assunto, descrição e foto obrigatória (máx. 5 MB).
+- **Nova denúncia** — totalmente anônima, foto opcional; gera um código de rastreio (`DEN-XXXXXXXX-XXXX`).
+- **Acompanhar chamado** — busca por CPF e timeline com respostas, abertura/fechamento e envio de respostas.
+- **Acompanhar denúncia** — busca pelo código, com status, fotos, respostas e complemento anônimo (bloqueado após encerramento).
+
+### Administrativo (`/admin`)
+- Login com sessão assinada via HMAC (cookie `httpOnly`).
+- Dashboard com estatísticas de chamados e denúncias por permissão.
+- Chamados: listagem com filtros, detalhe, resposta e abertura/fechamento.
+- Denúncias: listagem, resposta e encerramento/reabertura.
+- Usuários: criação/edição/exclusão de administradores (somente superadmin), com perfil e permissões (TI, manutenção, denúncias).
+
+## Começando
+
+```bash
+npm install
+npm run dev
+```
+
+Abra [http://localhost:3000](http://localhost:3000). A raiz redireciona para o idioma detectado (`/pt` ou `/en`).
+
+### Credenciais administrativas
+
+Usuário: `admin` / Senha: `admin123`
+
+> O banco de dados é criado automaticamente na primeira execução com esse usuário superadmin. **Altere a senha padrão antes de usar em produção.**
+
+## Variáveis de ambiente
+
+| Variável         | Obrigatória | Descrição                                                          |
+|------------------|-------------|--------------------------------------------------------------------|
+| `SESSION_SECRET` | sim (prod)  | Segredo para assinar o cookie de sessão. Sem valor, usa um fallback de desenvolvimento. |
+
+## Persistência e uploads
+
+Os dados ficam em um arquivo JSON local (`data/db.json`, criado automaticamente) e as fotos enviadas em `data/uploads/`. O diretório `data/` é ignorado pelo git.
+
+Para resetar tudo, basta excluir a pasta `data/` — ela é recriada e re-seedada na próxima execução.
+
+> Em produção, considere substituir a persistência em arquivo por um banco de dados real. A camada de dados está isolada em `lib/store.ts` para facilitar essa troca.
+
+## Testes
+
+Os fluxos ponta a ponta usam Playwright e rodam contra o servidor local:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+node /tmp/opencode/e2e.mjs   # exemplo: fluxos públicos + administrativos
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Estrutura
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+app/[lang]/            páginas por idioma (público + admin)
+app/uploads/[file]     serve imagens enviadas (com validação)
+components/            componentes da UI
+dictionaries/          pt.json / en.json (traduções)
+lib/                   actions (server actions), auth, i18n, store, types, uploads
+proxy.ts               proxy de locale (redirecionamento de idioma)
+data/                  db.json + uploads (ignorado pelo git)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run dev` — servidor de desenvolvimento (Turbopack)
+- `npm run build` — build de produção
+- `npm run start` — serve o build de produção
+- `npm run lint` — ESLint

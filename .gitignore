@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# application data (local persistence + uploads)
+/data
+
 # debug
 npm-debug.log*
 yarn-debug.log*
