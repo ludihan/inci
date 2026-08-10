@@ -22,6 +22,11 @@ function createDb(): DatabaseSync {
 
 function initSchema(db: DatabaseSync): void {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS settings (
+      id TEXT PRIMARY KEY,
+      logo_path TEXT
+    );
+
     CREATE TABLE IF NOT EXISTS admins (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -86,6 +91,14 @@ function initSchema(db: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS idx_complaints_code ON complaints(code);
     CREATE INDEX IF NOT EXISTS idx_complaint_responses_complaint ON complaint_responses(complaint_id);
   `);
+
+  const settingsCount = db.prepare("SELECT COUNT(*) AS n FROM settings").get() as { n: number };
+  if (settingsCount.n === 0) {
+    db.prepare("INSERT INTO settings (id, logo_path) VALUES (?, ?)").run(
+      "main",
+      null
+    );
+  }
 
   const count = db.prepare("SELECT COUNT(*) AS n FROM admins").get() as { n: number };
   if (count.n === 0) {

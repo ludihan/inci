@@ -14,12 +14,14 @@ import {
   getPlaceByName,
   createPlace as storeCreatePlace,
   deletePlace as storeDeletePlace,
+  getSettings,
+  setLogoPath,
   getAdminByUsername,
   createAdmin as storeCreateAdmin,
   updateAdmin as storeUpdateAdmin,
   deleteAdmin as storeDeleteAdmin,
 } from "./store";
-import { saveImage } from "./uploads";
+import { saveImage, deleteImage } from "./uploads";
 import { isValidCpf, onlyDigits, generateComplaintCode } from "./utils";
 import { verifyPassword } from "./password";
 import {
@@ -391,6 +393,50 @@ export async function deletePlace(formData: FormData): Promise<void> {
   const id = str(formData, "id");
   await storeDeletePlace(id);
   redirect(`/${l}/admin/places`);
+}
+
+// ---- Admin: settings ----
+
+export async function updateLogo(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) {
+    redirect(`/${l}/admin`);
+  }
+
+  const file = formData.get("logo");
+  if (!file || typeof file === "string" || file.size === 0) {
+    return { error: "logoRequired" };
+  }
+  const result = await saveImage(file as File);
+  if (!result.ok) {
+    if (result.error === "invalid-type") return { error: "invalidPhotoType" };
+    if (result.error === "too-large") return { error: "photoTooLarge" };
+    return { error: "generic" };
+  }
+
+  const settings = await getSettings();
+  await setLogoPath(result.path);
+  await deleteImage(settings.logoPath ?? undefined);
+
+  redirect(`/${l}/admin/settings`);
+}
+
+export async function removeLogo(formData: FormData): Promise<void> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) {
+    redirect(`/${l}/admin`);
+  }
+
+  const settings = await getSettings();
+  await setLogoPath(null);
+  await deleteImage(settings.logoPath ?? undefined);
+
+  redirect(`/${l}/admin/settings`);
 }
 
 // ---- Admin: user management ----

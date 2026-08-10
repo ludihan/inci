@@ -1,11 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Dict, Locale } from "@/lib/i18n";
 
-export function Nav({ dict, lang }: { dict: Dict; lang: Locale }) {
+export function Nav({
+  dict,
+  lang,
+  logo,
+}: {
+  dict: Dict;
+  lang: Locale;
+  logo: string | null;
+}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -49,9 +58,21 @@ export function Nav({ dict, lang }: { dict: Dict; lang: Locale }) {
           href={`/${lang}`}
           className="flex items-center gap-2 text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-sm text-white dark:bg-zinc-50 dark:text-zinc-900">
-            {dict.appName.charAt(0)}
-          </span>
+          {logo ? (
+            <span className="relative block h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-800">
+              <Image
+                src={logo}
+                alt={dict.appName}
+                fill
+                sizes="32px"
+                className="object-contain"
+              />
+            </span>
+          ) : (
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-sm text-white dark:bg-zinc-50 dark:text-zinc-900">
+              {dict.appName.charAt(0)}
+            </span>
+          )}
           {dict.appName}
         </Link>
 

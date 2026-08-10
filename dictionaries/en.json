@@ -12,7 +12,8 @@
     "dashboard": "Dashboard",
     "login": "Sign in",
     "logout": "Sign out",
-    "language": "Language"
+    "language": "Language",
+    "settings": "Settings"
   },
 
   "home": {
@@ -272,6 +273,17 @@
       "updated": "Administrator updated.",
       "deleted": "Administrator deleted.",
       "active": "Active"
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Customize the system's visual identity.",
+      "logoTitle": "Logo",
+      "logoHelp": "The logo is shown at the top of the site. Max 5MB.",
+      "current": "Current logo",
+      "none": "No logo set.",
+      "upload": "Upload logo",
+      "remove": "Remove logo",
+      "logoRequired": "Select an image file to upload."
     },
     "denied": "Access denied. You do not have permission to access this resource.",
     "logout": "Sign out"

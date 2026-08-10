@@ -12,7 +12,8 @@
     "dashboard": "Painel",
     "login": "Entrar",
     "logout": "Sair",
-    "language": "Idioma"
+    "language": "Idioma",
+    "settings": "Configurações"
   },
 
   "home": {
@@ -272,6 +273,17 @@
       "updated": "Administrador atualizado.",
       "deleted": "Administrador excluído.",
       "active": "Ativo"
+    },
+    "settings": {
+      "title": "Configurações",
+      "subtitle": "Personalize a identidade visual do sistema.",
+      "logoTitle": "Logotipo",
+      "logoHelp": "O logotipo aparece no topo do site. Máx. 5MB.",
+      "current": "Logotipo atual",
+      "none": "Nenhum logotipo definido.",
+      "upload": "Enviar logotipo",
+      "remove": "Remover logotipo",
+      "logoRequired": "Selecione um arquivo de imagem para enviar."
     },
     "denied": "Acesso negado. Você não tem permissão para acessar este recurso.",
     "logout": "Sair"

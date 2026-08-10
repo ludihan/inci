@@ -36,6 +36,11 @@ export function AdminNav({
       label: dict.admin.users.title,
       show: isSuperAdmin(admin),
     },
+    {
+      href: `/${lang}/admin/settings`,
+      label: dict.admin.settings.title,
+      show: isSuperAdmin(admin),
+    },
   ];
 
   return (

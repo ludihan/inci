@@ -20,6 +20,10 @@ export interface Place {
   createdAt: string;
 }
 
+export interface Settings {
+  logoPath: string | null;
+}
+
 export interface TicketMessage {
   id: string;
   content: string;

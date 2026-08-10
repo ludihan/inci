@@ -7,6 +7,7 @@ import type {
   ComplaintResponse,
   DB,
   Place,
+  Settings,
   Ticket,
   TicketMessage,
   TicketType,
@@ -370,6 +371,25 @@ export async function deletePlace(id: string): Promise<boolean> {
     const result = db.prepare("DELETE FROM places WHERE id = ?").run(id);
     return result.changes > 0;
   });
+}
+
+// ---- Settings ----
+
+export async function getSettings(): Promise<Settings> {
+  const db = getDb();
+  const row = db.prepare("SELECT * FROM settings WHERE id = 'main'").get() as
+    | Row
+    | undefined;
+  return {
+    logoPath: row?.logo_path ? String(row.logo_path) : null,
+  };
+}
+
+export async function setLogoPath(logoPath: string | null): Promise<void> {
+  const db = getDb();
+  db.prepare("UPDATE settings SET logo_path = ? WHERE id = 'main'").run(
+    logoPath
+  );
 }
 
 // ---- Admins ----
