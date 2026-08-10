@@ -1,11 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState, type FormEvent } from "react";
 import { createTicket, type ActionState } from "@/lib/actions";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { Place } from "@/lib/types";
+import { isValidCpf, onlyDigits } from "@/lib/utils";
 import { SubmitButton } from "./submit-button";
 import { FileInput } from "./file-input";
+import { CpfInput } from "./cpf-input";
 
 export function TicketForm({
   dict,
@@ -20,8 +22,11 @@ export function TicketForm({
     createTicket,
     undefined
   );
+  const formRef = useRef<HTMLFormElement>(null);
+  const [clientError, setClientError] = useState<string | null>(null);
 
   const errorText = (() => {
+    if (clientError) return clientError;
     if (!state?.error) return null;
     const key = state.error as keyof typeof dict.ticket;
     if (key in dict.ticket) return String(dict.ticket[key]);
@@ -34,8 +39,19 @@ export function TicketForm({
   const inputClass =
     "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400";
 
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    const form = e.currentTarget;
+    const cpf = onlyDigits(String(new FormData(form).get("cpf") ?? ""));
+    if (!isValidCpf(cpf)) {
+      e.preventDefault();
+      setClientError(dict.ticket.cpfInvalid);
+      return;
+    }
+    setClientError(null);
+  };
+
   return (
-    <form action={action} className="space-y-5">
+    <form ref={formRef} action={action} onSubmit={handleSubmit} className="space-y-5">
       <input type="hidden" name="lang" value={lang} />
 
       <div>
@@ -73,13 +89,11 @@ export function TicketForm({
         <label htmlFor="cpf" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
           {dict.ticket.fields.cpf} <span className="text-zinc-400">*</span>
         </label>
-        <input
+        <CpfInput
           id="cpf"
-          name="cpf"
-          inputMode="numeric"
           required
           placeholder={dict.ticket.fields.cpfPlaceholder}
-          className={inputClass}
+          errorMessage={dict.ticket.cpfInvalid}
         />
         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
           {dict.ticket.trackSubtitle}

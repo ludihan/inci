@@ -1,10 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import type { Dict, Locale } from "@/lib/i18n";
 import { isValidCpf, onlyDigits } from "@/lib/utils";
 import { SubmitButton } from "./submit-button";
+import { CpfInput } from "./cpf-input";
 
 export function NeedCpf({
   dict,
@@ -18,7 +18,6 @@ export function NeedCpf({
   initialError?: string;
 }) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(initialError ?? null);
 
   return (
     <div className="mx-auto max-w-md rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
@@ -32,12 +31,10 @@ export function NeedCpf({
         className="mt-4 space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
-          const cpf = onlyDigits(String(new FormData(e.currentTarget).get("cpf") ?? ""));
-          if (!isValidCpf(cpf)) {
-            setError(dict.ticket.cpfInvalid);
-            return;
-          }
-          setError(null);
+          const cpf = onlyDigits(
+            String(new FormData(e.currentTarget).get("cpf") ?? "")
+          );
+          if (!isValidCpf(cpf)) return;
           router.push(`/${lang}/track/ticket/${ticketId}?cpf=${encodeURIComponent(cpf)}`);
         }}
       >
@@ -45,22 +42,20 @@ export function NeedCpf({
           <label htmlFor="cpf" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
             {dict.ticket.fields.cpf}
           </label>
-          <input
+          <CpfInput
             id="cpf"
-            name="cpf"
-            inputMode="numeric"
             required
             placeholder={dict.ticket.fields.cpfPlaceholder}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400"
+            errorMessage={dict.ticket.cpfInvalid}
           />
         </div>
 
-        {error && (
+        {initialError && (
           <p
             role="alert"
             className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700 dark:bg-red-950/50 dark:text-red-300"
           >
-            {error}
+            {initialError}
           </p>
         )}
 
