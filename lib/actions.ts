@@ -332,14 +332,16 @@ export async function adminSetComplaintStatus(
   const l = lang(formData);
   const code = str(formData, "code");
   const status = str(formData, "status") as ComplaintStatus;
+  const content = str(formData, "content");
 
   const complaint = await getComplaintByCode(code);
   if (!complaint) return { error: "notFound" };
 
-  await requireAdminForModule("complaints");
+  const admin = await requireAdminForModule("complaints");
   if (status !== "open" && status !== "closed") return { error: "generic" };
+  if (!content) return { error: "statusContentRequired" };
 
-  await storeSetComplaintStatus(code, status);
+  await storeSetComplaintStatus(code, status, content, admin.name);
 
   redirect(`/${l}/admin/complaints/${code}`);
 }

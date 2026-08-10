@@ -38,10 +38,31 @@ export function ComplaintStatusForm({
   })();
 
   return (
-    <form action={action} className="space-y-3">
+    <form action={action} className="space-y-4">
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="code" value={code} />
       <input type="hidden" name="status" value={nextStatus} />
+
+      <div>
+        <label
+          htmlFor={`complaint-status-${code}`}
+          className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        >
+          {dict.complaint.transitionPrompt} <span className="text-zinc-400">*</span>
+        </label>
+        <textarea
+          id={`complaint-status-${code}`}
+          name="content"
+          required
+          rows={3}
+          placeholder={
+            isClosing
+              ? dict.complaint.closePlaceholder
+              : dict.complaint.reopenPlaceholder
+          }
+          className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400"
+        />
+      </div>
 
       {errorText && (
         <p

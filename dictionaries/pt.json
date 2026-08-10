@@ -186,7 +186,16 @@
     "replyButton": "Complementar denúncia",
     "replyTitle": "Complementar denúncia",
     "replyClosed": "Esta denúncia já foi encerrada. Não é possível adicionar novas informações.",
-    "closed": "Encerrada"
+    "closed": "Encerrada",
+    "transitionPrompt": "Descreva a resolução ou a justificativa",
+    "closePlaceholder": "Ex.: Denúncia apurada, medidas adotadas...",
+    "reopenPlaceholder": "Ex.: Novos fatos foram apresentados...",
+    "statusContentRequired": "A descrição da resolução ou justificativa é obrigatória.",
+    "messages": {
+      "created": "Denúncia registrada",
+      "closed": "Denúncia encerrada",
+      "reopened": "Denúncia reaberta"
+    }
   },
 
   "admin": {

@@ -51,6 +51,7 @@ export interface ComplaintResponse {
   content: string;
   sender: "user" | "admin";
   senderName?: string;
+  action: "open" | "close" | "message";
   createdAt: string;
 }
 

@@ -110,6 +110,7 @@ function rowToComplaintResponse(row: Row): ComplaintResponse {
     content: String(row.content),
     sender: row.sender === "admin" ? "admin" : "user",
     senderName: row.sender_name ? String(row.sender_name) : undefined,
+    action: row.action === "open" || row.action === "close" ? row.action : "message",
     createdAt: String(row.created_at),
   };
 }
@@ -241,20 +242,34 @@ export async function createComplaint(input: {
   const db = getDb();
   const now = new Date().toISOString();
   const complaintId = randomUUID();
-  db.prepare(
-    `INSERT INTO complaints (id, code, subject, content, photo_path, place_id, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    complaintId,
-    input.code,
-    input.subject,
-    input.content,
-    input.photoPath ?? null,
-    input.placeId,
-    "open",
-    now,
-    now
-  );
+  inTransaction(() => {
+    db.prepare(
+      `INSERT INTO complaints (id, code, subject, content, photo_path, place_id, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      complaintId,
+      input.code,
+      input.subject,
+      input.content,
+      input.photoPath ?? null,
+      input.placeId,
+      "open",
+      now,
+      now
+    );
+    db.prepare(
+      `INSERT INTO complaint_responses (id, complaint_id, content, sender, sender_name, action, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      randomUUID(),
+      complaintId,
+      input.content,
+      "user",
+      null,
+      "open",
+      now
+    );
+  });
   const row = db.prepare("SELECT * FROM complaints WHERE id = ?").get(complaintId) as Row;
   return rowToComplaint(row);
 }
@@ -285,14 +300,15 @@ export async function addComplaintResponse(
   const now = new Date().toISOString();
   inTransaction(() => {
     db.prepare(
-      `INSERT INTO complaint_responses (id, complaint_id, content, sender, sender_name, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO complaint_responses (id, complaint_id, content, sender, sender_name, action, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     ).run(
       randomUUID(),
       String(complaint.id),
       input.content,
       input.sender,
       input.senderName ?? null,
+      "message",
       now
     );
     db.prepare("UPDATE complaints SET updated_at = ? WHERE id = ?").run(
@@ -308,18 +324,35 @@ export async function addComplaintResponse(
 
 export async function setComplaintStatus(
   code: string,
-  status: "open" | "closed"
+  status: "open" | "closed",
+  content: string,
+  senderName?: string
 ): Promise<Complaint | null> {
   const db = getDb();
   const complaint = db
     .prepare("SELECT * FROM complaints WHERE LOWER(code) = LOWER(?)")
     .get(code) as Row | undefined;
   if (!complaint) return null;
-  db.prepare("UPDATE complaints SET status = ?, updated_at = ? WHERE id = ?").run(
-    status,
-    new Date().toISOString(),
-    String(complaint.id)
-  );
+  const now = new Date().toISOString();
+  inTransaction(() => {
+    db.prepare(
+      `INSERT INTO complaint_responses (id, complaint_id, content, sender, sender_name, action, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      randomUUID(),
+      String(complaint.id),
+      content,
+      "admin",
+      senderName ?? null,
+      status === "closed" ? "close" : "open",
+      now
+    );
+    db.prepare("UPDATE complaints SET status = ?, updated_at = ? WHERE id = ?").run(
+      status,
+      now,
+      String(complaint.id)
+    );
+  });
   const updated = db
     .prepare("SELECT * FROM complaints WHERE LOWER(code) = LOWER(?)")
     .get(code) as Row;

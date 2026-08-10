@@ -5,6 +5,7 @@ import { getDict, getLocale, type Dict } from "@/lib/i18n";
 import { getComplaintByCode } from "@/lib/store";
 import type { Complaint } from "@/lib/types";
 import { StatusBadge } from "@/components/badges";
+import { ComplaintResponses } from "@/components/complaint-responses";
 import { CodeCopy } from "@/components/code-copy";
 
 export default async function TrackComplaintDetailPage({
@@ -42,27 +43,7 @@ export default async function TrackComplaintDetailPage({
           <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
             {dict.complaint.responses}
           </h2>
-          {complaint.responses.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-              {dict.complaint.noResponses}
-            </p>
-          ) : (
-            <ol className="space-y-4">
-              {complaint.responses.map((r) => (
-                <li
-                  key={r.id}
-                  className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
-                >
-                  <p className="text-xs font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
-                    {dict.common.admin} · {r.createdAt.slice(0, 10)}
-                  </p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-800 dark:text-zinc-200">
-                    {r.content}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          )}
+          <ComplaintResponses complaint={complaint} dict={dict} locale={locale} />
         </div>
 
         {complaint.status === "open" && (
@@ -115,9 +96,6 @@ function ComplaintContent({
           {dict.complaint.fields.place}: {complaint.place.name}
         </p>
       )}
-      <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-zinc-800 dark:text-zinc-200">
-        {complaint.content}
-      </p>
       {complaint.photoPath && (
         <a href={complaint.photoPath} target="_blank" rel="noopener noreferrer" className="mt-4 inline-block">
           <span className="relative block h-72 w-full overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-800">

@@ -186,7 +186,16 @@
     "replyButton": "Add details",
     "replyTitle": "Add details to complaint",
     "replyClosed": "This complaint has been closed. It is no longer possible to add information.",
-    "closed": "Closed"
+    "closed": "Closed",
+    "transitionPrompt": "Describe the resolution or the reason",
+    "closePlaceholder": "e.g. Complaint investigated, measures taken...",
+    "reopenPlaceholder": "e.g. New facts have been presented...",
+    "statusContentRequired": "A description of the resolution or reason is required.",
+    "messages": {
+      "created": "Complaint registered",
+      "closed": "Complaint closed",
+      "reopened": "Complaint reopened"
+    }
   },
 
   "admin": {

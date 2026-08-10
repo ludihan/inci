@@ -83,6 +83,7 @@ function initSchema(db: DatabaseSync): void {
       content TEXT NOT NULL,
       sender TEXT NOT NULL,
       sender_name TEXT,
+      action TEXT NOT NULL DEFAULT 'message',
       created_at TEXT NOT NULL
     );
 
@@ -91,6 +92,8 @@ function initSchema(db: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS idx_complaints_code ON complaints(code);
     CREATE INDEX IF NOT EXISTS idx_complaint_responses_complaint ON complaint_responses(complaint_id);
   `);
+
+  ensureColumn(db, "complaint_responses", "action", "TEXT NOT NULL DEFAULT 'message'");
 
   const settingsCount = db.prepare("SELECT COUNT(*) AS n FROM settings").get() as { n: number };
   if (settingsCount.n === 0) {
@@ -122,6 +125,20 @@ export function getDb(): DatabaseSync {
     globalThis.__inciDb = createDb();
   }
   return globalThis.__inciDb;
+}
+
+function ensureColumn(
+  db: DatabaseSync,
+  table: string,
+  column: string,
+  definition: string
+): void {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as {
+    name: string;
+  }[];
+  if (!cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
 }
 
 export function inTransaction<T>(fn: () => T): T {
