@@ -73,14 +73,19 @@ export function formatDate(
   const diffDays = Math.round(
     (startOfDay(now) - startOfDay(date)) / (1000 * 60 * 60 * 24)
   );
-  if (diffDays === 0) return locale === "pt" ? "hoje" : "today";
-  if (diffDays === 1) return locale === "pt" ? "ontem" : "yesterday";
-
   const pad = (n: number) => String(n).padStart(2, "0");
-  if (locale === "pt") {
-    return `${pad(date.getDate())} ${MONTHS_PT[date.getMonth()]} ${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  const time = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  if (diffDays === 0) {
+    return locale === "pt" ? `hoje, ${time}` : `today, ${time}`;
   }
-  return `${MONTHS_EN[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}, ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  if (diffDays === 1) {
+    return locale === "pt" ? `ontem, ${time}` : `yesterday, ${time}`;
+  }
+
+  if (locale === "pt") {
+    return `${pad(date.getDate())} ${MONTHS_PT[date.getMonth()]} ${date.getFullYear()} ${time}`;
+  }
+  return `${MONTHS_EN[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}, ${time}`;
 }
 
 export function formatDateTime(value: string): string {

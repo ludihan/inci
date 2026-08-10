@@ -139,7 +139,10 @@
     "messages": {
       "created": "Ticket opened",
       "closed": "Ticket closed",
-      "reopened": "Ticket reopened"
+      "reopened": "Ticket reopened",
+      "assumed": "Claimed the ticket",
+      "forwardedTo": "Forwarded to",
+      "released": "Released the ticket"
     }
   },
 
@@ -194,7 +197,10 @@
     "messages": {
       "created": "Complaint registered",
       "closed": "Complaint closed",
-      "reopened": "Complaint reopened"
+      "reopened": "Complaint reopened",
+      "assumed": "Claimed the complaint",
+      "forwardedTo": "Forwarded to",
+      "released": "Released the complaint"
     }
   },
 

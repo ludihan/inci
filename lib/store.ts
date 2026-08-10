@@ -126,12 +126,20 @@ function rowToComplaint(row: Row): Complaint {
 }
 
 function rowToComplaintResponse(row: Row): ComplaintResponse {
+  const action = String(row.action);
   return {
     id: String(row.id),
     content: String(row.content),
     sender: row.sender === "admin" ? "admin" : "user",
     senderName: row.sender_name ? String(row.sender_name) : undefined,
-    action: row.action === "open" || row.action === "close" ? row.action : "message",
+    action:
+      action === "open" ||
+      action === "close" ||
+      action === "assume" ||
+      action === "forward" ||
+      action === "release"
+        ? (action as ComplaintResponse["action"])
+        : "message",
     createdAt: String(row.created_at),
   };
 }
@@ -251,6 +259,34 @@ export async function addTicketMessage(
   return rowToTicket(updated);
 }
 
+export async function addTicketAssignment(
+  id: string,
+  input: { action: "assume" | "forward" | "release"; actorName: string; targetName?: string }
+): Promise<Ticket | null> {
+  const db = getDb();
+  const ticket = db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row | undefined;
+  if (!ticket) return null;
+  const now = new Date().toISOString();
+  inTransaction(() => {
+    db.prepare(
+      `INSERT INTO ticket_messages (id, ticket_id, content, photo_path, sender, sender_name, action, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      randomUUID(),
+      id,
+      input.action === "forward" ? (input.targetName ?? "") : "",
+      null,
+      "admin",
+      input.actorName,
+      input.action,
+      now
+    );
+    db.prepare("UPDATE tickets SET updated_at = ? WHERE id = ?").run(now, id);
+  });
+  const updated = db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row;
+  return rowToTicket(updated);
+}
+
 // ---- Complaints ----
 
 export async function createComplaint(input: {
@@ -330,6 +366,40 @@ export async function addComplaintResponse(
       input.sender,
       input.senderName ?? null,
       "message",
+      now
+    );
+    db.prepare("UPDATE complaints SET updated_at = ? WHERE id = ?").run(
+      now,
+      String(complaint.id)
+    );
+  });
+  const updated = db
+    .prepare("SELECT * FROM complaints WHERE LOWER(code) = LOWER(?)")
+    .get(code) as Row;
+  return rowToComplaint(updated);
+}
+
+export async function addComplaintAssignment(
+  code: string,
+  input: { action: "assume" | "forward" | "release"; actorName: string; targetName?: string }
+): Promise<Complaint | null> {
+  const db = getDb();
+  const complaint = db
+    .prepare("SELECT * FROM complaints WHERE LOWER(code) = LOWER(?)")
+    .get(code) as Row | undefined;
+  if (!complaint) return null;
+  const now = new Date().toISOString();
+  inTransaction(() => {
+    db.prepare(
+      `INSERT INTO complaint_responses (id, complaint_id, content, sender, sender_name, action, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      randomUUID(),
+      String(complaint.id),
+      input.action === "forward" ? (input.targetName ?? "") : "",
+      "admin",
+      input.actorName,
+      input.action,
       now
     );
     db.prepare("UPDATE complaints SET updated_at = ? WHERE id = ?").run(

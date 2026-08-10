@@ -24,13 +24,21 @@ export interface Settings {
   logoPath: string | null;
 }
 
+export type TicketMessageAction =
+  | "open"
+  | "close"
+  | "message"
+  | "assume"
+  | "forward"
+  | "release";
+
 export interface TicketMessage {
   id: string;
   content: string;
   photoPath?: string;
   sender: "user" | "admin";
   senderName?: string;
-  action: "open" | "close" | "message";
+  action: TicketMessageAction;
   createdAt: string;
 }
 
@@ -48,12 +56,20 @@ export interface Ticket {
   updatedAt: string;
 }
 
+export type ComplaintResponseAction =
+  | "open"
+  | "close"
+  | "message"
+  | "assume"
+  | "forward"
+  | "release";
+
 export interface ComplaintResponse {
   id: string;
   content: string;
   sender: "user" | "admin";
   senderName?: string;
-  action: "open" | "close" | "message";
+  action: ComplaintResponseAction;
   createdAt: string;
 }
 

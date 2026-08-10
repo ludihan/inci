@@ -139,7 +139,10 @@
     "messages": {
       "created": "Chamado aberto",
       "closed": "Chamado fechado",
-      "reopened": "Chamado reaberto"
+      "reopened": "Chamado reaberto",
+      "assumed": "Assumiu o chamado",
+      "forwardedTo": "Encaminhado para",
+      "released": "Liberou o chamado"
     }
   },
 
@@ -194,7 +197,10 @@
     "messages": {
       "created": "Denúncia registrada",
       "closed": "Denúncia encerrada",
-      "reopened": "Denúncia reaberta"
+      "reopened": "Denúncia reaberta",
+      "assumed": "Assumiu a denúncia",
+      "forwardedTo": "Encaminhada para",
+      "released": "Liberou a denúncia"
     }
   },
 

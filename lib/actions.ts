@@ -14,6 +14,8 @@ import {
   releaseTicket as storeReleaseTicket,
   assignComplaint as storeAssignComplaint,
   releaseComplaint as storeReleaseComplaint,
+  addTicketAssignment as storeAddTicketAssignment,
+  addComplaintAssignment as storeAddComplaintAssignment,
   getPlaceById,
   getPlaceByName,
   createPlace as storeCreatePlace,
@@ -378,6 +380,7 @@ export async function assumeTicket(formData: FormData): Promise<void> {
   if (!ticket) return;
   const admin = await requireAdminForModule(moduleForTicketType(ticket.type));
   await storeAssignTicket(id, admin.id);
+  await storeAddTicketAssignment(id, { action: "assume", actorName: admin.name });
   redirect(`/${l}/admin/tickets/${id}`);
 }
 
@@ -386,8 +389,9 @@ export async function releaseTicket(formData: FormData): Promise<void> {
   const id = str(formData, "id");
   const ticket = await getTicketById(id);
   if (!ticket) return;
-  await requireAdminForModule(moduleForTicketType(ticket.type));
+  const admin = await requireAdminForModule(moduleForTicketType(ticket.type));
   await storeReleaseTicket(id);
+  await storeAddTicketAssignment(id, { action: "release", actorName: admin.name });
   redirect(`/${l}/admin/tickets/${id}`);
 }
 
@@ -397,6 +401,7 @@ export async function assumeComplaint(formData: FormData): Promise<void> {
   const admin = await requireComplaintAdmin(l, code);
   if (!admin) redirect(`/${l}/admin/complaints`);
   await storeAssignComplaint(code, admin.id);
+  await storeAddComplaintAssignment(code, { action: "assume", actorName: admin.name });
   redirect(`/${l}/admin/complaints/${code}`);
 }
 
@@ -412,6 +417,11 @@ export async function forwardComplaint(formData: FormData): Promise<void> {
   if (!target) redirect(`/${l}/admin/complaints/${code}`);
 
   await storeAssignComplaint(code, target.id);
+  await storeAddComplaintAssignment(code, {
+    action: "forward",
+    actorName: current.name,
+    targetName: target.name,
+  });
   redirect(`/${l}/admin/complaints/${code}`);
 }
 
@@ -421,6 +431,7 @@ export async function releaseComplaint(formData: FormData): Promise<void> {
   const admin = await requireComplaintAdmin(l, code);
   if (!admin) redirect(`/${l}/admin/complaints`);
   await storeReleaseComplaint(code);
+  await storeAddComplaintAssignment(code, { action: "release", actorName: admin.name });
   redirect(`/${l}/admin/complaints/${code}`);
 }
 

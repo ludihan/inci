@@ -16,14 +16,24 @@ export function TicketMessages({
     <ol className="relative space-y-6 border-l-2 border-zinc-200 pl-6 dark:border-zinc-700">
       {ticket.messages.map((msg, i) => {
         const isUser = msg.sender === "user";
+        const isAssignment =
+          msg.action === "assume" ||
+          msg.action === "forward" ||
+          msg.action === "release";
         const actionLabel =
           msg.action === "open"
             ? dict.ticket.messages.created
             : msg.action === "close"
               ? dict.ticket.messages.closed
-              : msg.action === "message"
-                ? null
-                : dict.ticket.messages.reopened;
+              : msg.action === "assume"
+                ? dict.ticket.messages.assumed
+                : msg.action === "forward"
+                  ? `${dict.ticket.messages.forwardedTo} ${msg.content}`.trim()
+                  : msg.action === "release"
+                    ? dict.ticket.messages.released
+                    : msg.action === "message"
+                      ? null
+                      : dict.ticket.messages.reopened;
         return (
           <li key={i} className="relative">
             <span
@@ -46,9 +56,11 @@ export function TicketMessages({
                 {actionLabel}
               </p>
             )}
-            <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-zinc-800 dark:text-zinc-200">
-              {msg.content}
-            </p>
+            {!isAssignment && (
+              <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-zinc-800 dark:text-zinc-200">
+                {msg.content}
+              </p>
+            )}
             {msg.photoPath && (
               <a
                 href={msg.photoPath}

@@ -15,14 +15,24 @@ export function ComplaintResponses({
     <ol className="relative space-y-6 border-l-2 border-zinc-200 pl-6 dark:border-zinc-700">
       {complaint.responses.map((r, i) => {
         const isUser = r.sender === "user";
+        const isAssignment =
+          r.action === "assume" ||
+          r.action === "forward" ||
+          r.action === "release";
         const actionLabel =
           r.action === "open"
             ? dict.complaint.messages.created
             : r.action === "close"
               ? dict.complaint.messages.closed
-              : r.action === "message"
-                ? null
-                : dict.complaint.messages.reopened;
+              : r.action === "assume"
+                ? dict.complaint.messages.assumed
+                : r.action === "forward"
+                  ? `${dict.complaint.messages.forwardedTo} ${r.content}`.trim()
+                  : r.action === "release"
+                    ? dict.complaint.messages.released
+                    : r.action === "message"
+                      ? null
+                      : dict.complaint.messages.reopened;
         return (
           <li key={i} className="relative">
             <span
@@ -45,9 +55,11 @@ export function ComplaintResponses({
                 {actionLabel}
               </p>
             )}
-            <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-zinc-800 dark:text-zinc-200">
-              {r.content}
-            </p>
+            {!isAssignment && (
+              <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-zinc-800 dark:text-zinc-200">
+                {r.content}
+              </p>
+            )}
           </li>
         );
       })}
