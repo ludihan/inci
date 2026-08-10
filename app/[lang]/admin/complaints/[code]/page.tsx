@@ -11,6 +11,7 @@ import {
 } from "@/lib/actions";
 import { StatusBadge } from "@/components/badges";
 import { ComplaintResponses } from "@/components/complaint-responses";
+import { CopyButton } from "@/components/copy-button";
 import { AdminComplaintReplyForm } from "@/components/admin-complaint-reply-form";
 import { ComplaintStatusForm } from "@/components/complaint-status-form";
 
@@ -61,9 +62,12 @@ export default async function AdminComplaintDetailPage({
         <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h1 className="font-mono text-2xl font-bold tracking-wider text-zinc-900 dark:text-zinc-50">
-                {complaint.code}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-mono text-2xl font-bold tracking-wider text-zinc-900 dark:text-zinc-50">
+                  {complaint.code}
+                </h1>
+                <CopyButton value={complaint.code} dict={dict} />
+              </div>
               <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                 {dict.common.anonymous} · {complaint.createdAt.slice(0, 10)}
               </p>

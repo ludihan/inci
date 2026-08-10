@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Complaint } from "@/lib/types";
 import type { Dict } from "@/lib/i18n";
 import { StatusBadge } from "./badges";
+import { CopyButton } from "./copy-button";
 
 export function ComplaintCard({
   complaint,
@@ -25,9 +26,17 @@ export function ComplaintCard({
           </span>
           <StatusBadge status={complaint.status} dict={dict} />
         </div>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">
-          {complaint.updatedAt.slice(0, 10)}
-        </span>
+        <div className="flex items-center gap-2">
+          <CopyButton
+            value={complaint.code}
+            dict={dict}
+            stopPropagation
+            className="text-xs"
+          />
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            {complaint.updatedAt.slice(0, 10)}
+          </span>
+        </div>
       </div>
       <h3 className="mt-3 font-semibold text-zinc-900 group-hover:underline dark:text-zinc-50">
         {complaint.subject}

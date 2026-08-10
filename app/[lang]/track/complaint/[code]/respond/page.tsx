@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getDict, getLocale } from "@/lib/i18n";
 import { getComplaintByCode } from "@/lib/store";
 import { ComplaintReplyForm } from "@/components/complaint-reply-form";
+import { CopyButton } from "@/components/copy-button";
 
 export default async function TrackComplaintReplyPage({
   params,
@@ -56,9 +57,12 @@ export default async function TrackComplaintReplyPage({
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">
           {dict.complaint.replyTitle}
         </h1>
-        <p className="mt-2 font-mono text-sm text-zinc-500 dark:text-zinc-400">
-          {complaint.code}
-        </p>
+        <div className="mt-2 flex items-center gap-2">
+          <p className="font-mono text-sm text-zinc-500 dark:text-zinc-400">
+            {complaint.code}
+          </p>
+          <CopyButton value={complaint.code} dict={dict} />
+        </div>
       </div>
 
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8 dark:border-zinc-800 dark:bg-zinc-900">
