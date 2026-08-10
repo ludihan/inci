@@ -1,5 +1,6 @@
 import { getDict, getLocale } from "@/lib/i18n";
-import { getCurrentAdmin } from "@/lib/auth";
+import { getCurrentAdmin, isSuperAdmin } from "@/lib/auth";
+import { hasAssignedComplaints } from "@/lib/store";
 import { AdminNav } from "@/components/admin-nav";
 
 export default async function AdminLayout({
@@ -11,9 +12,20 @@ export default async function AdminLayout({
   const locale = await getLocale();
   const admin = await getCurrentAdmin();
 
+  const canViewComplaints = admin
+    ? isSuperAdmin(admin) || (await hasAssignedComplaints(admin.id))
+    : false;
+
   return (
     <div className="mx-auto max-w-5xl">
-      {admin && <AdminNav dict={dict} lang={locale} admin={admin} />}
+      {admin && (
+        <AdminNav
+          dict={dict}
+          lang={locale}
+          admin={admin}
+          canViewComplaints={canViewComplaints}
+        />
+      )}
       <main className="py-8">{children}</main>
     </div>
   );

@@ -1,7 +1,7 @@
 export type TicketType = "it" | "maintenance";
 export type TicketStatus = "open" | "closed";
 export type ComplaintStatus = "open" | "closed";
-export type Module = "it" | "maintenance" | "complaints";
+export type Module = "it" | "maintenance";
 export type AdminRole = "admin" | "superadmin";
 
 export interface Admin {
@@ -41,6 +41,8 @@ export interface Ticket {
   subject: string;
   place: Place | null;
   status: TicketStatus;
+  assignedToId?: string;
+  assignedToName?: string;
   messages: TicketMessage[];
   createdAt: string;
   updatedAt: string;
@@ -63,6 +65,8 @@ export interface Complaint {
   photoPath?: string;
   place: Place | null;
   status: ComplaintStatus;
+  assignedToId?: string;
+  assignedToName?: string;
   responses: ComplaintResponse[];
   createdAt: string;
   updatedAt: string;

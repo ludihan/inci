@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth";
 import { getTicketById } from "@/lib/store";
 import { formatCpf } from "@/lib/utils";
+import { assumeTicket, releaseTicket } from "@/lib/actions";
 import { StatusBadge, TicketTypeBadge } from "@/components/badges";
 import { TicketMessages } from "@/components/ticket-messages";
 import { TicketReplyForm } from "@/components/ticket-reply-form";
@@ -79,6 +80,37 @@ export default async function AdminTicketDetailPage({
             <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
               {dict.ticket.fields.place}: {ticket.place.name}
             </p>
+          )}
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            {dict.admin.assignedTo}: {ticket.assignedToName ?? dict.admin.unassigned}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          {ticket.assignedToId === admin.id ? (
+            <form action={releaseTicket}>
+              <input type="hidden" name="lang" value={locale} />
+              <input type="hidden" name="id" value={ticket.id} />
+              <button
+                type="submit"
+                className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
+              >
+                {dict.admin.release}
+              </button>
+            </form>
+          ) : (
+            <form action={assumeTicket}>
+              <input type="hidden" name="lang" value={locale} />
+              <input type="hidden" name="id" value={ticket.id} />
+              <button
+                type="submit"
+                className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                {ticket.assignedToId
+                  ? dict.admin.reassign
+                  : dict.admin.assume}
+              </button>
+            </form>
           )}
         </div>
 

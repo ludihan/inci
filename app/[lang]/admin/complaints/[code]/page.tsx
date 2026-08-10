@@ -2,8 +2,13 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { getDict, getLocale } from "@/lib/i18n";
-import { getCurrentAdmin, hasPermission } from "@/lib/auth";
-import { getComplaintByCode } from "@/lib/store";
+import { getCurrentAdmin, isSuperAdmin } from "@/lib/auth";
+import { getComplaintByCode, listAdmins } from "@/lib/store";
+import {
+  assumeComplaint,
+  forwardComplaint,
+  releaseComplaint,
+} from "@/lib/actions";
 import { StatusBadge } from "@/components/badges";
 import { ComplaintResponses } from "@/components/complaint-responses";
 import { AdminComplaintReplyForm } from "@/components/admin-complaint-reply-form";
@@ -22,10 +27,6 @@ export default async function AdminComplaintDetailPage({
     redirect(`/${locale}/admin/login`);
   }
 
-  if (!hasPermission(admin, "complaints")) {
-    redirect(`/${locale}/admin`);
-  }
-
   const { code } = await params;
   const complaint = await getComplaintByCode(code);
 
@@ -36,6 +37,13 @@ export default async function AdminComplaintDetailPage({
       </p>
     );
   }
+
+  if (!isSuperAdmin(admin) && complaint.assignedToId !== admin.id) {
+    redirect(`/${locale}/admin`);
+  }
+
+  const isSuper = isSuperAdmin(admin);
+  const admins = isSuper ? await listAdmins() : [];
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -91,6 +99,78 @@ export default async function AdminComplaintDetailPage({
                 />
               </span>
             </a>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            {dict.admin.assignedTo}
+          </h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {complaint.assignedToName ?? dict.admin.unassigned}
+          </p>
+
+          {isSuper && (
+            <div className="mt-4 space-y-4">
+              {complaint.assignedToId !== admin.id && (
+                <form action={assumeComplaint}>
+                  <input type="hidden" name="lang" value={locale} />
+                  <input type="hidden" name="code" value={complaint.code} />
+                  <button
+                    type="submit"
+                    className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 bg-zinc-900"
+                  >
+                    {dict.admin.assume}
+                  </button>
+                </form>
+              )}
+
+              <form action={forwardComplaint} className="flex flex-wrap items-end gap-3">
+                <input type="hidden" name="lang" value={locale} />
+                <input type="hidden" name="code" value={complaint.code} />
+                <div className="min-w-0 flex-1">
+                  <label
+                    htmlFor={`forward-${complaint.code}`}
+                    className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                  >
+                    {dict.admin.forwardTo}
+                  </label>
+                  <select
+                    id={`forward-${complaint.code}`}
+                    name="adminId"
+                    required
+                    className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                  >
+                    {admins
+                      .filter((a) => a.id !== admin.id)
+                      .map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <button
+                  type="submit"
+                  className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                >
+                  {dict.admin.forward}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {complaint.assignedToId === admin.id && (
+            <form action={releaseComplaint} className="mt-4">
+              <input type="hidden" name="lang" value={locale} />
+              <input type="hidden" name="code" value={complaint.code} />
+              <button
+                type="submit"
+                className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
+              >
+                {dict.admin.release}
+              </button>
+            </form>
           )}
         </div>
 

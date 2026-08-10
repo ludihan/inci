@@ -50,6 +50,7 @@ function initSchema(db: DatabaseSync): void {
       subject TEXT NOT NULL,
       place_id TEXT,
       status TEXT NOT NULL,
+      assigned_to TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -73,6 +74,7 @@ function initSchema(db: DatabaseSync): void {
       photo_path TEXT,
       place_id TEXT,
       status TEXT NOT NULL,
+      assigned_to TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -94,6 +96,8 @@ function initSchema(db: DatabaseSync): void {
   `);
 
   ensureColumn(db, "complaint_responses", "action", "TEXT NOT NULL DEFAULT 'message'");
+  ensureColumn(db, "tickets", "assigned_to", "TEXT");
+  ensureColumn(db, "complaints", "assigned_to", "TEXT");
 
   const settingsCount = db.prepare("SELECT COUNT(*) AS n FROM settings").get() as { n: number };
   if (settingsCount.n === 0) {
@@ -114,7 +118,7 @@ function initSchema(db: DatabaseSync): void {
       "admin",
       hashPassword("admin123"),
       "superadmin",
-      JSON.stringify(["it", "maintenance", "complaints"]),
+      JSON.stringify(["it", "maintenance"]),
       new Date().toISOString()
     );
   }

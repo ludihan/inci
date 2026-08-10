@@ -9,10 +9,12 @@ export function AdminNav({
   dict,
   lang,
   admin,
+  canViewComplaints,
 }: {
   dict: Dict;
   lang: Locale;
   admin: Admin;
+  canViewComplaints: boolean;
 }) {
   const links: { href: string; label: string; show: boolean }[] = [
     { href: `/${lang}/admin`, label: dict.nav.dashboard, show: true },
@@ -27,7 +29,7 @@ export function AdminNav({
     {
       href: `/${lang}/admin/complaints`,
       label: dict.admin.complaints.title,
-      show: hasPermission(admin, "complaints") && features.complaintsEnabled,
+      show: canViewComplaints && features.complaintsEnabled,
     },
     {
       href: `/${lang}/admin/places`,

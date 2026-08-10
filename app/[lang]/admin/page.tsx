@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getDict, getLocale, type Dict } from "@/lib/i18n";
-import { getCurrentAdmin, hasPermission } from "@/lib/auth";
+import { getCurrentAdmin, hasPermission, isSuperAdmin } from "@/lib/auth";
 import { getDB } from "@/lib/store";
 import { features } from "@/lib/features";
 import type { Admin } from "@/lib/types";
@@ -60,8 +60,13 @@ export default async function AdminDashboardPage() {
   const tickets = visibleTicketsFor(admin, db);
   const openTickets = tickets.filter((t) => t.status === "open");
   const closedTickets = tickets.filter((t) => t.status === "closed");
-  const canComplaints = hasPermission(admin, "complaints") && features.complaintsEnabled;
-  const complaints = canComplaints ? db.complaints : [];
+  const canComplaints =
+    isSuperAdmin(admin) && features.complaintsEnabled;
+  const complaints = canComplaints
+    ? db.complaints.filter(
+        (c) => isSuperAdmin(admin) || c.assignedToId === admin.id
+      )
+    : [];
   const openComplaints = complaints.filter((c) => c.status === "open");
 
   const recentTickets = [...tickets]

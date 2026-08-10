@@ -53,6 +53,15 @@ function findPlace(id: string): Place | null {
   return row ? rowToPlace(row) : null;
 }
 
+function findAdminName(id: unknown): string | undefined {
+  if (id === null || id === undefined) return undefined;
+  const db = getDb();
+  const row = db
+    .prepare("SELECT name FROM admins WHERE id = ?")
+    .get(String(id)) as Row | undefined;
+  return row ? String(row.name) : undefined;
+}
+
 function rowToTicket(row: Row): Ticket {
   const db = getDb();
   const messages = db
@@ -65,6 +74,10 @@ function rowToTicket(row: Row): Ticket {
     row.place_id !== null && row.place_id !== undefined
       ? findPlace(String(row.place_id))
       : null;
+  const assignedToId =
+    row.assigned_to !== null && row.assigned_to !== undefined
+      ? String(row.assigned_to)
+      : undefined;
   return {
     id: String(row.id),
     type: row.type === "it" ? "it" : "maintenance",
@@ -72,6 +85,8 @@ function rowToTicket(row: Row): Ticket {
     subject: String(row.subject),
     place,
     status: row.status === "closed" ? "closed" : "open",
+    assignedToId,
+    assignedToName: assignedToId ? findAdminName(assignedToId) : undefined,
     messages,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
@@ -90,6 +105,10 @@ function rowToComplaint(row: Row): Complaint {
     row.place_id !== null && row.place_id !== undefined
       ? findPlace(String(row.place_id))
       : null;
+  const assignedToId =
+    row.assigned_to !== null && row.assigned_to !== undefined
+      ? String(row.assigned_to)
+      : undefined;
   return {
     id: String(row.id),
     code: String(row.code),
@@ -98,6 +117,8 @@ function rowToComplaint(row: Row): Complaint {
     photoPath: row.photo_path ? String(row.photo_path) : undefined,
     place,
     status: row.status === "closed" ? "closed" : "open",
+    assignedToId,
+    assignedToName: assignedToId ? findAdminName(assignedToId) : undefined,
     responses,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
@@ -353,6 +374,70 @@ export async function setComplaintStatus(
       String(complaint.id)
     );
   });
+  const updated = db
+    .prepare("SELECT * FROM complaints WHERE LOWER(code) = LOWER(?)")
+    .get(code) as Row;
+  return rowToComplaint(updated);
+}
+
+export async function hasAssignedComplaints(adminId: string): Promise<boolean> {
+  const db = getDb();
+  const row = db
+    .prepare("SELECT COUNT(*) AS n FROM complaints WHERE assigned_to = ?")
+    .get(adminId) as { n: number };
+  return row.n > 0;
+}
+
+export async function assignTicket(
+  id: string,
+  adminId: string
+): Promise<Ticket | null> {
+  const db = getDb();
+  const ticket = db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row | undefined;
+  if (!ticket) return null;
+  db.prepare(
+    "UPDATE tickets SET assigned_to = ?, updated_at = ? WHERE id = ?"
+  ).run(adminId, new Date().toISOString(), id);
+  return rowToTicket(db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row);
+}
+
+export async function releaseTicket(id: string): Promise<Ticket | null> {
+  const db = getDb();
+  const ticket = db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row | undefined;
+  if (!ticket) return null;
+  db.prepare(
+    "UPDATE tickets SET assigned_to = NULL, updated_at = ? WHERE id = ?"
+  ).run(new Date().toISOString(), id);
+  return rowToTicket(db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row);
+}
+
+export async function assignComplaint(
+  code: string,
+  adminId: string
+): Promise<Complaint | null> {
+  const db = getDb();
+  const complaint = db
+    .prepare("SELECT * FROM complaints WHERE LOWER(code) = LOWER(?)")
+    .get(code) as Row | undefined;
+  if (!complaint) return null;
+  db.prepare(
+    "UPDATE complaints SET assigned_to = ?, updated_at = ? WHERE id = ?"
+  ).run(adminId, new Date().toISOString(), String(complaint.id));
+  const updated = db
+    .prepare("SELECT * FROM complaints WHERE LOWER(code) = LOWER(?)")
+    .get(code) as Row;
+  return rowToComplaint(updated);
+}
+
+export async function releaseComplaint(code: string): Promise<Complaint | null> {
+  const db = getDb();
+  const complaint = db
+    .prepare("SELECT * FROM complaints WHERE LOWER(code) = LOWER(?)")
+    .get(code) as Row | undefined;
+  if (!complaint) return null;
+  db.prepare(
+    "UPDATE complaints SET assigned_to = NULL, updated_at = ? WHERE id = ?"
+  ).run(new Date().toISOString(), String(complaint.id));
   const updated = db
     .prepare("SELECT * FROM complaints WHERE LOWER(code) = LOWER(?)")
     .get(code) as Row;

@@ -11,7 +11,7 @@ import type { Admin, AdminRole, Module } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
 import { SubmitButton } from "./submit-button";
 
-const MODULES: Module[] = ["it", "maintenance", "complaints"];
+const MODULES: Module[] = ["it", "maintenance"];
 
 function moduleLabel(dict: Dict, module: Module): string {
   switch (module) {
@@ -19,8 +19,6 @@ function moduleLabel(dict: Dict, module: Module): string {
       return dict.admin.users.permIT;
     case "maintenance":
       return dict.admin.users.permMaintenance;
-    case "complaints":
-      return dict.admin.users.permComplaints;
   }
 }
 

@@ -10,6 +10,10 @@ import {
   addComplaintResponse as storeAddComplaintResponse,
   setComplaintStatus as storeSetComplaintStatus,
   getComplaintByCode,
+  assignTicket as storeAssignTicket,
+  releaseTicket as storeReleaseTicket,
+  assignComplaint as storeAssignComplaint,
+  releaseComplaint as storeReleaseComplaint,
   getPlaceById,
   getPlaceByName,
   createPlace as storeCreatePlace,
@@ -18,6 +22,7 @@ import {
   getSettings,
   setLogoPath,
   getAdminByUsername,
+  getAdminById,
   createAdmin as storeCreateAdmin,
   updateAdmin as storeUpdateAdmin,
   deleteAdmin as storeDeleteAdmin,
@@ -34,7 +39,7 @@ import {
   isSuperAdmin,
   moduleForTicketType,
 } from "./auth";
-import type { ComplaintStatus, Module } from "./types";
+import type { Admin, ComplaintStatus, Module } from "./types";
 
 export type ActionState = { error?: string } | undefined;
 
@@ -240,6 +245,22 @@ async function requireAdminForModule(module: Module) {
   return admin;
 }
 
+async function requireComplaintAdmin(
+  l: string,
+  code: string
+): Promise<Admin | null> {
+  const admin = await getCurrentAdmin();
+  if (!admin) {
+    redirect(`/${l}/admin/login`);
+  }
+  const complaint = await getComplaintByCode(code);
+  if (!complaint) return null;
+  if (!isSuperAdmin(admin) && complaint.assignedToId !== admin.id) {
+    redirect(`/${l}/admin`);
+  }
+  return admin;
+}
+
 export async function adminAddTicketMessage(
   _prev: ActionState,
   formData: FormData
@@ -313,7 +334,8 @@ export async function adminAddComplaintResponse(
   const complaint = await getComplaintByCode(code);
   if (!complaint) return { error: "notFound" };
 
-  const admin = await requireAdminForModule("complaints");
+  const admin = await requireComplaintAdmin(l, code);
+  if (!admin) return { error: "notFound" };
   if (!content) return { error: "messageRequired" };
 
   await storeAddComplaintResponse(code, {
@@ -337,12 +359,68 @@ export async function adminSetComplaintStatus(
   const complaint = await getComplaintByCode(code);
   if (!complaint) return { error: "notFound" };
 
-  const admin = await requireAdminForModule("complaints");
+  const admin = await requireComplaintAdmin(l, code);
+  if (!admin) return { error: "notFound" };
   if (status !== "open" && status !== "closed") return { error: "generic" };
   if (!content) return { error: "statusContentRequired" };
 
   await storeSetComplaintStatus(code, status, content, admin.name);
 
+  redirect(`/${l}/admin/complaints/${code}`);
+}
+
+// ---- Admin: assume ----
+
+export async function assumeTicket(formData: FormData): Promise<void> {
+  const l = lang(formData);
+  const id = str(formData, "id");
+  const ticket = await getTicketById(id);
+  if (!ticket) return;
+  const admin = await requireAdminForModule(moduleForTicketType(ticket.type));
+  await storeAssignTicket(id, admin.id);
+  redirect(`/${l}/admin/tickets/${id}`);
+}
+
+export async function releaseTicket(formData: FormData): Promise<void> {
+  const l = lang(formData);
+  const id = str(formData, "id");
+  const ticket = await getTicketById(id);
+  if (!ticket) return;
+  await requireAdminForModule(moduleForTicketType(ticket.type));
+  await storeReleaseTicket(id);
+  redirect(`/${l}/admin/tickets/${id}`);
+}
+
+export async function assumeComplaint(formData: FormData): Promise<void> {
+  const l = lang(formData);
+  const code = str(formData, "code");
+  const admin = await requireComplaintAdmin(l, code);
+  if (!admin) redirect(`/${l}/admin/complaints`);
+  await storeAssignComplaint(code, admin.id);
+  redirect(`/${l}/admin/complaints/${code}`);
+}
+
+export async function forwardComplaint(formData: FormData): Promise<void> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current) redirect(`/${l}/admin/login`);
+  if (!isSuperAdmin(current)) redirect(`/${l}/admin`);
+
+  const code = str(formData, "code");
+  const adminId = str(formData, "adminId");
+  const target = await getAdminById(adminId);
+  if (!target) redirect(`/${l}/admin/complaints/${code}`);
+
+  await storeAssignComplaint(code, target.id);
+  redirect(`/${l}/admin/complaints/${code}`);
+}
+
+export async function releaseComplaint(formData: FormData): Promise<void> {
+  const l = lang(formData);
+  const code = str(formData, "code");
+  const admin = await requireComplaintAdmin(l, code);
+  if (!admin) redirect(`/${l}/admin/complaints`);
+  await storeReleaseComplaint(code);
   redirect(`/${l}/admin/complaints/${code}`);
 }
 
@@ -491,7 +569,7 @@ export async function createAdmin(
   const password = str(formData, "password");
   const role = str(formData, "role") === "superadmin" ? "superadmin" : "admin";
   const permissions = (formData.getAll("permissions") as string[]).filter(
-    (p): p is Module => p === "it" || p === "maintenance" || p === "complaints"
+    (p): p is Module => p === "it" || p === "maintenance" 
   );
 
   if (!name || !username || !password) return { error: "missingFields" };
@@ -525,7 +603,7 @@ export async function updateAdmin(
   const password = str(formData, "password");
   const role = str(formData, "role") === "superadmin" ? "superadmin" : "admin";
   const permissions = (formData.getAll("permissions") as string[]).filter(
-    (p): p is Module => p === "it" || p === "maintenance" || p === "complaints"
+    (p): p is Module => p === "it" || p === "maintenance" 
   );
 
   if (!name || !username) return { error: "missingFields" };

@@ -295,6 +295,13 @@
       "remove": "Remover logotipo",
       "logoRequired": "Selecione um arquivo de imagem para enviar."
     },
+    "assignedTo": "Responsável",
+    "unassigned": "Não atribuído",
+    "assume": "Assumir",
+    "forward": "Encaminhar",
+    "forwardTo": "Encaminhar para",
+    "release": "Liberar",
+    "reassign": "Reatribuir",
     "denied": "Acesso negado. Você não tem permissão para acessar este recurso.",
     "logout": "Sair"
   }

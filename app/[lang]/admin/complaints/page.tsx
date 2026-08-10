@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { getDict, getLocale } from "@/lib/i18n";
-import { getCurrentAdmin, hasPermission } from "@/lib/auth";
+import { getCurrentAdmin, isSuperAdmin } from "@/lib/auth";
 import { features } from "@/lib/features";
-import { getDB } from "@/lib/store";
+import { getDB, hasAssignedComplaints } from "@/lib/store";
 import { ComplaintCard } from "@/components/complaint-card";
 
 export default async function AdminComplaintsPage({
@@ -22,7 +22,8 @@ export default async function AdminComplaintsPage({
     redirect(`/${locale}/admin`);
   }
 
-  if (!hasPermission(admin, "complaints")) {
+  const isSuper = isSuperAdmin(admin);
+  if (!isSuper && !(await hasAssignedComplaints(admin.id))) {
     redirect(`/${locale}/admin`);
   }
 
@@ -31,6 +32,7 @@ export default async function AdminComplaintsPage({
 
   const db = await getDB();
   const complaints = db.complaints
+    .filter((c) => (isSuper || c.assignedToId === admin.id))
     .filter((c) => (statusFilter ? c.status === statusFilter : true))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 

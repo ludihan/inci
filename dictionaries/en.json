@@ -295,6 +295,13 @@
       "remove": "Remove logo",
       "logoRequired": "Select an image file to upload."
     },
+    "assignedTo": "Assigned to",
+    "unassigned": "Unassigned",
+    "assume": "Claim",
+    "forward": "Forward",
+    "forwardTo": "Forward to",
+    "release": "Release",
+    "reassign": "Reassign",
     "denied": "Access denied. You do not have permission to access this resource.",
     "logout": "Sign out"
   }
