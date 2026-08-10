@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getDict, getLocale, type Dict } from "@/lib/i18n";
 import { getComplaintByCode } from "@/lib/store";
@@ -119,12 +120,15 @@ function ComplaintContent({
       </p>
       {complaint.photoPath && (
         <a href={complaint.photoPath} target="_blank" rel="noopener noreferrer" className="mt-4 inline-block">
-          <img
-            src={complaint.photoPath}
-            alt={dict.complaint.fields.photo}
-            loading="lazy"
-            className="max-h-72 rounded-xl object-cover ring-1 ring-zinc-200 dark:ring-zinc-800"
-          />
+          <span className="relative block h-72 w-full overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-800">
+            <Image
+              src={complaint.photoPath}
+              alt={dict.complaint.fields.photo}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-contain"
+            />
+          </span>
         </a>
       )}
       <p className="mt-4 text-xs text-zinc-500 dark:text-zinc-400">

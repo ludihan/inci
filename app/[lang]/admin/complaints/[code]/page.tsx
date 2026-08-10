@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { getDict, getLocale } from "@/lib/i18n";
 import { getCurrentAdmin, hasPermission } from "@/lib/auth";
 import { getComplaintByCode } from "@/lib/store";
@@ -82,12 +83,15 @@ export default async function AdminComplaintDetailPage({
               rel="noopener noreferrer"
               className="mt-4 inline-block"
             >
-              <img
-                src={complaint.photoPath}
-                alt={dict.complaint.fields.photo}
-                loading="lazy"
-                className="max-h-72 rounded-xl object-cover ring-1 ring-zinc-200 dark:ring-zinc-800"
-              />
+              <span className="relative block h-72 w-full overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-800">
+                <Image
+                  src={complaint.photoPath}
+                  alt={dict.complaint.fields.photo}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-contain"
+                />
+              </span>
             </a>
           )}
         </div>

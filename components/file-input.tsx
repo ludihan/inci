@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRef, useState } from "react";
 
 export function FileInput({
@@ -41,11 +42,16 @@ export function FileInput({
       />
       <div className="mt-2 flex flex-wrap items-center gap-3">
         {preview && (
-          <img
-            src={preview}
-            alt="Pré-visualização"
-            className="h-24 w-24 rounded-lg object-cover ring-1 ring-zinc-200 dark:ring-zinc-800"
-          />
+          <span className="relative block h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-800">
+            <Image
+              src={preview}
+              alt="Pré-visualização"
+              fill
+              unoptimized
+              sizes="96px"
+              className="object-cover"
+            />
+          </span>
         )}
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           {required ? requiredLabel : optionalLabel}
