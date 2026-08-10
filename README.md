@@ -48,15 +48,6 @@ Para resetar tudo, basta excluir a pasta `data/` — ela é recriada e re-seedad
 
 > Em produção, considere substituir a persistência em arquivo por um banco de dados real. A camada de dados está isolada em `lib/store.ts` para facilitar essa troca.
 
-## Testes
-
-Os fluxos ponta a ponta usam Playwright e rodam contra o servidor local:
-
-```bash
-npm run dev
-node /tmp/opencode/e2e.mjs   # exemplo: fluxos públicos + administrativos
-```
-
 ## Estrutura
 
 ```
