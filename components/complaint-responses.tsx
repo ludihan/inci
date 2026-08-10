@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { Complaint } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
 import { formatDate } from "@/lib/utils";
@@ -59,6 +60,24 @@ export function ComplaintResponses({
               <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-zinc-800 dark:text-zinc-200">
                 {r.content}
               </p>
+            )}
+            {r.photoPath && (
+              <a
+                href={r.photoPath}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-block"
+              >
+                <span className="relative block h-56 w-full overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-800">
+                  <Image
+                    src={r.photoPath}
+                    alt={dict.common.photo}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 50vw"
+                    className="object-contain"
+                  />
+                </span>
+              </a>
             )}
           </li>
         );

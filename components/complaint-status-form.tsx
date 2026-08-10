@@ -38,7 +38,7 @@ export function ComplaintStatusForm({
   })();
 
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} className="space-y-4" encType="multipart/form-data">
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="code" value={code} />
       <input type="hidden" name="status" value={nextStatus} />
@@ -61,6 +61,22 @@ export function ComplaintStatusForm({
               : dict.complaint.reopenPlaceholder
           }
           className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400"
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor={`photo-${code}`}
+          className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        >
+          {dict.common.photo} <span className="text-zinc-400">{dict.common.optional}</span>
+        </label>
+        <input
+          id={`photo-${code}`}
+          name="photo"
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          className="mt-1 block w-full text-sm text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-zinc-700 hover:file:bg-zinc-200 dark:text-zinc-400 dark:file:bg-zinc-800 dark:file:text-zinc-200 dark:hover:file:bg-zinc-700"
         />
       </div>
 

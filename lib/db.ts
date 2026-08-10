@@ -83,6 +83,7 @@ function initSchema(db: DatabaseSync): void {
       id TEXT PRIMARY KEY,
       complaint_id TEXT NOT NULL REFERENCES complaints(id) ON DELETE CASCADE,
       content TEXT NOT NULL,
+      photo_path TEXT,
       sender TEXT NOT NULL,
       sender_name TEXT,
       action TEXT NOT NULL DEFAULT 'message',
@@ -98,6 +99,7 @@ function initSchema(db: DatabaseSync): void {
   ensureColumn(db, "complaint_responses", "action", "TEXT NOT NULL DEFAULT 'message'");
   ensureColumn(db, "tickets", "assigned_to", "TEXT");
   ensureColumn(db, "complaints", "assigned_to", "TEXT");
+  ensureColumn(db, "complaint_responses", "photo_path", "TEXT");
 
   const settingsCount = db.prepare("SELECT COUNT(*) AS n FROM settings").get() as { n: number };
   if (settingsCount.n === 0) {

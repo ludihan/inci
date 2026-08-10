@@ -130,6 +130,7 @@ function rowToComplaintResponse(row: Row): ComplaintResponse {
   return {
     id: String(row.id),
     content: String(row.content),
+    photoPath: row.photo_path ? String(row.photo_path) : undefined,
     sender: row.sender === "admin" ? "admin" : "user",
     senderName: row.sender_name ? String(row.sender_name) : undefined,
     action:
@@ -315,12 +316,13 @@ export async function createComplaint(input: {
       now
     );
     db.prepare(
-      `INSERT INTO complaint_responses (id, complaint_id, content, sender, sender_name, action, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO complaint_responses (id, complaint_id, content, photo_path, sender, sender_name, action, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       randomUUID(),
       complaintId,
       input.content,
+      null,
       "user",
       null,
       "open",
@@ -347,7 +349,7 @@ export async function getComplaintById(id: string): Promise<Complaint | null> {
 
 export async function addComplaintResponse(
   code: string,
-  input: { content: string; sender: "user" | "admin"; senderName?: string }
+  input: { content: string; sender: "user" | "admin"; senderName?: string; photoPath?: string }
 ): Promise<Complaint | null> {
   const db = getDb();
   const complaint = db
@@ -357,12 +359,13 @@ export async function addComplaintResponse(
   const now = new Date().toISOString();
   inTransaction(() => {
     db.prepare(
-      `INSERT INTO complaint_responses (id, complaint_id, content, sender, sender_name, action, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO complaint_responses (id, complaint_id, content, photo_path, sender, sender_name, action, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       randomUUID(),
       String(complaint.id),
       input.content,
+      input.photoPath ?? null,
       input.sender,
       input.senderName ?? null,
       "message",
@@ -391,12 +394,13 @@ export async function addComplaintAssignment(
   const now = new Date().toISOString();
   inTransaction(() => {
     db.prepare(
-      `INSERT INTO complaint_responses (id, complaint_id, content, sender, sender_name, action, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO complaint_responses (id, complaint_id, content, photo_path, sender, sender_name, action, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       randomUUID(),
       String(complaint.id),
       input.action === "forward" ? (input.targetName ?? "") : "",
+      null,
       "admin",
       input.actorName,
       input.action,
@@ -417,7 +421,8 @@ export async function setComplaintStatus(
   code: string,
   status: "open" | "closed",
   content: string,
-  senderName?: string
+  senderName?: string,
+  photoPath?: string
 ): Promise<Complaint | null> {
   const db = getDb();
   const complaint = db
@@ -427,12 +432,13 @@ export async function setComplaintStatus(
   const now = new Date().toISOString();
   inTransaction(() => {
     db.prepare(
-      `INSERT INTO complaint_responses (id, complaint_id, content, sender, sender_name, action, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO complaint_responses (id, complaint_id, content, photo_path, sender, sender_name, action, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       randomUUID(),
       String(complaint.id),
       content,
+      photoPath ?? null,
       "admin",
       senderName ?? null,
       status === "closed" ? "close" : "open",

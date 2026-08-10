@@ -67,6 +67,7 @@ export type ComplaintResponseAction =
 export interface ComplaintResponse {
   id: string;
   content: string;
+  photoPath?: string;
   sender: "user" | "admin";
   senderName?: string;
   action: ComplaintResponseAction;

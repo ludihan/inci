@@ -366,7 +366,11 @@ export async function adminSetComplaintStatus(
   if (status !== "open" && status !== "closed") return { error: "generic" };
   if (!content) return { error: "statusContentRequired" };
 
-  await storeSetComplaintStatus(code, status, content, admin.name);
+  const photo = await photoFromForm(formData);
+  if (photo.error === "invalid-type") return { error: "invalidPhotoType" };
+  if (photo.error === "too-large") return { error: "photoTooLarge" };
+
+  await storeSetComplaintStatus(code, status, content, admin.name, photo.path);
 
   redirect(`/${l}/admin/complaints/${code}`);
 }
