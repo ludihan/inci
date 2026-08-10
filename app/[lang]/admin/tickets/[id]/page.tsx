@@ -75,6 +75,11 @@ export default async function AdminTicketDetailPage({
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             {dict.ticket.fields.cpf}: {formatCpf(ticket.cpf)}
           </p>
+          {ticket.place && (
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              {dict.ticket.fields.place}: {ticket.place.name}
+            </p>
+          )}
         </div>
 
         <div>

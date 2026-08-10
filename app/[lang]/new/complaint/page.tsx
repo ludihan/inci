@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { getDict, getLocale } from "@/lib/i18n";
+import { listPlaces } from "@/lib/store";
 import { ComplaintForm } from "@/components/complaint-form";
 
 export default async function NewComplaintPage() {
   const dict = await getDict();
   const locale = await getLocale();
+  const places = await listPlaces();
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -28,7 +30,7 @@ export default async function NewComplaintPage() {
       </div>
 
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8 dark:border-zinc-800 dark:bg-zinc-900">
-        <ComplaintForm dict={dict} lang={locale} />
+        <ComplaintForm dict={dict} lang={locale} places={places} />
       </div>
     </div>
   );

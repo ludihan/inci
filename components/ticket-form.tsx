@@ -3,10 +3,19 @@
 import { useActionState } from "react";
 import { createTicket, type ActionState } from "@/lib/actions";
 import type { Dict, Locale } from "@/lib/i18n";
+import type { Place } from "@/lib/types";
 import { SubmitButton } from "./submit-button";
 import { FileInput } from "./file-input";
 
-export function TicketForm({ dict, lang }: { dict: Dict; lang: Locale }) {
+export function TicketForm({
+  dict,
+  lang,
+  places,
+}: {
+  dict: Dict;
+  lang: Locale;
+  places: Place[];
+}) {
   const [state, action, pending] = useActionState<ActionState, FormData>(
     createTicket,
     undefined
@@ -88,6 +97,34 @@ export function TicketForm({ dict, lang }: { dict: Dict; lang: Locale }) {
           placeholder={dict.ticket.fields.subjectPlaceholder}
           className={inputClass}
         />
+      </div>
+
+      <div>
+        <label htmlFor="place" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          {dict.ticket.fields.place} <span className="text-zinc-400">*</span>
+        </label>
+        {places.length === 0 ? (
+          <p className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+            {dict.ticket.noPlaces}
+          </p>
+        ) : (
+          <select
+            id="place"
+            name="placeId"
+            required
+            defaultValue=""
+            className={inputClass}
+          >
+            <option value="" disabled>
+              {dict.ticket.fields.placePlaceholder}
+            </option>
+            {places.map((place) => (
+              <option key={place.id} value={place.id}>
+                {place.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       <div>

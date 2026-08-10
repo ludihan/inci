@@ -27,6 +27,11 @@ export function AdminNav({
       show: hasPermission(admin, "complaints"),
     },
     {
+      href: `/${lang}/admin/places`,
+      label: dict.admin.places.title,
+      show: isSuperAdmin(admin),
+    },
+    {
       href: `/${lang}/admin/users`,
       label: dict.admin.users.title,
       show: isSuperAdmin(admin),

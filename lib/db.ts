@@ -63,7 +63,7 @@ function initSchema(db: DatabaseSync): void {
     CREATE TABLE IF NOT EXISTS complaints (
       id TEXT PRIMARY KEY,
       code TEXT NOT NULL UNIQUE,
-      subject TEXT,
+      subject TEXT NOT NULL,
       content TEXT NOT NULL,
       photo_path TEXT,
       place_id TEXT,

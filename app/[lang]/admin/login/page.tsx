@@ -36,9 +36,6 @@ export default async function AdminLoginPage() {
 
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8 dark:border-zinc-800 dark:bg-zinc-900">
         <LoginForm dict={dict} lang={locale} />
-        <p className="mt-6 text-center text-xs text-zinc-400 dark:text-zinc-500">
-          {dict.admin.defaultCredentials}
-        </p>
       </div>
     </div>
   );

@@ -135,7 +135,7 @@ export async function createTicket(input: {
   type: TicketType;
   cpf: string;
   subject: string;
-  placeId?: string;
+  placeId: string;
   message: string;
   photoPath: string;
 }): Promise<Ticket> {
@@ -152,7 +152,7 @@ export async function createTicket(input: {
       input.type,
       input.cpf,
       input.subject,
-      input.placeId ?? null,
+      input.placeId,
       "open",
       now,
       now
@@ -231,9 +231,11 @@ export async function addTicketMessage(
 // ---- Complaints ----
 
 export async function createComplaint(input: {
+  subject: string;
   content: string;
   photoPath?: string;
   code: string;
+  placeId: string;
 }): Promise<Complaint> {
   const db = getDb();
   const now = new Date().toISOString();
@@ -244,10 +246,10 @@ export async function createComplaint(input: {
   ).run(
     complaintId,
     input.code,
-    null,
+    input.subject,
     input.content,
     input.photoPath ?? null,
-    null,
+    input.placeId,
     "open",
     now,
     now

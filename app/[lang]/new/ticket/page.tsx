@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { getDict, getLocale } from "@/lib/i18n";
+import { listPlaces } from "@/lib/store";
 import { TicketForm } from "@/components/ticket-form";
 
 export default async function NewTicketPage() {
   const dict = await getDict();
   const locale = await getLocale();
+  const places = await listPlaces();
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -28,7 +30,7 @@ export default async function NewTicketPage() {
       </div>
 
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8 dark:border-zinc-800 dark:bg-zinc-900">
-        <TicketForm dict={dict} lang={locale} />
+        <TicketForm dict={dict} lang={locale} places={places} />
       </div>
     </div>
   );

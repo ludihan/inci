@@ -10,6 +10,10 @@ import {
   addComplaintResponse as storeAddComplaintResponse,
   setComplaintStatus as storeSetComplaintStatus,
   getComplaintByCode,
+  getPlaceById,
+  getPlaceByName,
+  createPlace as storeCreatePlace,
+  deletePlace as storeDeletePlace,
   getAdminByUsername,
   createAdmin as storeCreateAdmin,
   updateAdmin as storeUpdateAdmin,
@@ -63,12 +67,16 @@ export async function createTicket(
   const cpf = onlyDigits(str(formData, "cpf"));
   const subject = str(formData, "subject");
   const message = str(formData, "message");
+  const placeId = str(formData, "placeId");
 
   if (cpf.length === 0) return { error: "cpfRequired" };
   if (!isValidCpf(cpf)) return { error: "cpfInvalid" };
   if (!subject) return { error: "subjectRequired" };
   if (!message) return { error: "messageRequired" };
   if (type !== "it" && type !== "maintenance") return { error: "generic" };
+  if (!placeId) return { error: "placeRequired" };
+  const place = await getPlaceById(placeId);
+  if (!place) return { error: "placeInvalid" };
 
   const photo = await photoFromForm(formData);
   if (photo.error === "invalid-type") return { error: "invalidPhotoType" };
@@ -80,6 +88,7 @@ export async function createTicket(
     cpf,
     subject,
     message,
+    placeId,
     photoPath: photo.path,
   });
 
@@ -151,8 +160,15 @@ export async function createComplaint(
   formData: FormData
 ): Promise<ActionState> {
   const l = lang(formData);
+  const subject = str(formData, "subject");
   const content = str(formData, "content");
+  const placeId = str(formData, "placeId");
+
+  if (!subject) return { error: "subjectRequired" };
   if (!content) return { error: "messageRequired" };
+  if (!placeId) return { error: "placeRequired" };
+  const place = await getPlaceById(placeId);
+  if (!place) return { error: "placeInvalid" };
 
   const photo = await photoFromForm(formData);
   if (photo.error === "invalid-type") return { error: "invalidPhotoType" };
@@ -164,9 +180,11 @@ export async function createComplaint(
   }
 
   const complaint = await storeCreateComplaint({
+    subject,
     content,
     photoPath: photo.path,
     code,
+    placeId,
   });
 
   redirect(`/${l}/track/complaint/${complaint.code}`);
@@ -340,6 +358,39 @@ export async function logout(formData: FormData): Promise<void> {
   const l = lang(formData);
   await deleteSession();
   redirect(`/${l}`);
+}
+
+// ---- Admin: places ----
+
+export async function createPlace(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) {
+    redirect(`/${l}/admin`);
+  }
+
+  const name = str(formData, "name");
+  if (!name) return { error: "nameRequired" };
+
+  const existing = await getPlaceByName(name);
+  if (existing) return { error: "duplicate-place" };
+
+  await storeCreatePlace(name);
+  redirect(`/${l}/admin/places`);
+}
+
+export async function deletePlace(formData: FormData): Promise<void> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) {
+    redirect(`/${l}/admin`);
+  }
+  const id = str(formData, "id");
+  await storeDeletePlace(id);
+  redirect(`/${l}/admin/places`);
 }
 
 // ---- Admin: user management ----

@@ -247,6 +247,9 @@ function RecentComplaints({
                   {c.code}
                 </Link>
                 <p className="truncate text-sm text-zinc-600 dark:text-zinc-400">
+                  {c.subject}
+                </p>
+                <p className="truncate text-xs text-zinc-400 dark:text-zinc-500">
                   {c.content}
                 </p>
               </div>
