@@ -14,6 +14,7 @@ import {
   getPlaceByName,
   createPlace as storeCreatePlace,
   deletePlace as storeDeletePlace,
+  renamePlace as storeRenamePlace,
   getSettings,
   setLogoPath,
   getAdminByUsername,
@@ -392,6 +393,29 @@ export async function deletePlace(formData: FormData): Promise<void> {
   }
   const id = str(formData, "id");
   await storeDeletePlace(id);
+  redirect(`/${l}/admin/places`);
+}
+
+export async function renamePlace(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) {
+    redirect(`/${l}/admin`);
+  }
+
+  const id = str(formData, "id");
+  const name = str(formData, "name");
+  if (!name) return { error: "nameRequired" };
+
+  const result = await storeRenamePlace(id, name);
+  if (!result.ok) {
+    if (result.error === "not-found") return { error: "notFound" };
+    return { error: "duplicate-place" };
+  }
+
   redirect(`/${l}/admin/places`);
 }
 

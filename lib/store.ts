@@ -373,6 +373,21 @@ export async function deletePlace(id: string): Promise<boolean> {
   });
 }
 
+export async function renamePlace(
+  id: string,
+  name: string
+): Promise<{ ok: boolean; error?: string }> {
+  const db = getDb();
+  const place = db.prepare("SELECT * FROM places WHERE id = ?").get(id) as Row | undefined;
+  if (!place) return { ok: false, error: "not-found" };
+  const existing = db
+    .prepare("SELECT * FROM places WHERE LOWER(name) = LOWER(?) AND id != ?")
+    .get(name, id) as Row | undefined;
+  if (existing) return { ok: false, error: "duplicate-place" };
+  db.prepare("UPDATE places SET name = ? WHERE id = ?").run(name, id);
+  return { ok: true };
+}
+
 // ---- Settings ----
 
 export async function getSettings(): Promise<Settings> {

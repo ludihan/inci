@@ -206,6 +206,7 @@
       "namePlaceholder": "Ex.: Bloco A, Almoxarifado, Setor 2...",
       "create": "Adicionar local",
       "delete": "Excluir",
+      "rename": "Renomear",
       "empty": "Nenhum local cadastrado.",
       "nameRequired": "Informe o nome do local.",
       "duplicate": "Já existe um local com este nome."

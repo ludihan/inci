@@ -1,7 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
-import { createPlace, deletePlace, type ActionState } from "@/lib/actions";
+import { useActionState, useState } from "react";
+import {
+  createPlace,
+  deletePlace,
+  renamePlace,
+  type ActionState,
+} from "@/lib/actions";
 import type { Place } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
 import { SubmitButton } from "./submit-button";
@@ -13,6 +18,7 @@ function errorText(state: ActionState, dict: Dict): string | null {
   if (!state?.error) return null;
   if (state.error === "nameRequired") return dict.admin.places.nameRequired;
   if (state.error === "duplicate-place") return dict.admin.places.duplicate;
+  if (state.error === "notFound") return dict.common.notFound;
   return dict.common.generic;
 }
 
@@ -60,6 +66,105 @@ function PlaceForm({ dict, lang }: { dict: Dict; lang: Locale }) {
   );
 }
 
+function RenameForm({
+  place,
+  dict,
+  lang,
+}: {
+  place: Place;
+  dict: Dict;
+  lang: Locale;
+}) {
+  const [state, action] = useActionState<ActionState, FormData>(
+    renamePlace,
+    undefined
+  );
+
+  return (
+    <form action={action} className="flex items-start gap-3">
+      <input type="hidden" name="lang" value={lang} />
+      <input type="hidden" name="id" value={place.id} />
+      <div className="min-w-0 flex-1">
+        <input
+          name="name"
+          required
+          defaultValue={place.name}
+          aria-label={dict.admin.places.name}
+          className={`${inputClass} mt-0`}
+        />
+        {errorText(state, dict) && (
+          <p
+            role="alert"
+            className="mt-1 text-xs font-medium text-red-600 dark:text-red-400"
+          >
+            {errorText(state, dict)}
+          </p>
+        )}
+      </div>
+      <SubmitButton
+        pendingLabel={dict.common.loading}
+        className="shrink-0 px-3 py-2"
+      >
+        {dict.common.save}
+      </SubmitButton>
+    </form>
+  );
+}
+
+function PlaceRow({
+  place,
+  dict,
+  lang,
+}: {
+  place: Place;
+  dict: Dict;
+  lang: Locale;
+}) {
+  const [editing, setEditing] = useState(false);
+
+  return (
+    <li
+      className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
+    >
+      {editing ? (
+        <div className="min-w-0 flex-1">
+          <RenameForm place={place} dict={dict} lang={lang} />
+        </div>
+      ) : (
+        <div className="min-w-0">
+          <p className="font-semibold text-zinc-900 dark:text-zinc-50">
+            {place.name}
+          </p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            {dict.common.createdAt}: {place.createdAt.slice(0, 10)}
+          </p>
+        </div>
+      )}
+      <div className="flex shrink-0 items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setEditing((v) => !v)}
+          className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        >
+          {editing ? dict.common.cancel : dict.admin.places.rename}
+        </button>
+        {!editing && (
+          <form action={deletePlace}>
+            <input type="hidden" name="lang" value={lang} />
+            <input type="hidden" name="id" value={place.id} />
+            <button
+              type="submit"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+            >
+              {dict.admin.places.delete}
+            </button>
+          </form>
+        )}
+      </div>
+    </li>
+  );
+}
+
 export function AdminPlacesManager({
   places,
   dict,
@@ -80,29 +185,7 @@ export function AdminPlacesManager({
       ) : (
         <ul className="space-y-3">
           {places.map((place) => (
-            <li
-              key={place.id}
-              className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
-            >
-              <div className="min-w-0">
-                <p className="font-semibold text-zinc-900 dark:text-zinc-50">
-                  {place.name}
-                </p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {dict.common.createdAt}: {place.createdAt.slice(0, 10)}
-                </p>
-              </div>
-              <form action={deletePlace}>
-                <input type="hidden" name="lang" value={lang} />
-                <input type="hidden" name="id" value={place.id} />
-                <button
-                  type="submit"
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
-                >
-                  {dict.admin.places.delete}
-                </button>
-              </form>
-            </li>
+            <PlaceRow key={place.id} place={place} dict={dict} lang={lang} />
           ))}
         </ul>
       )}

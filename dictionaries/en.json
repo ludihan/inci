@@ -206,6 +206,7 @@
       "namePlaceholder": "e.g. Building A, Warehouse, Sector 2...",
       "create": "Add place",
       "delete": "Delete",
+      "rename": "Rename",
       "empty": "No places registered.",
       "nameRequired": "Place name is required.",
       "duplicate": "A place with this name already exists."
