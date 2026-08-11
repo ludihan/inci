@@ -69,6 +69,16 @@ export default async function AdminTicketDetailPage({
             <span className="text-xs text-zinc-500 dark:text-zinc-400">
               {dict.common.createdAt}: {ticket.createdAt.slice(0, 10)}
             </span>
+            <a
+              href={`/api/reports?module=tickets&ids=${encodeURIComponent(ticket.id)}&lang=${locale}`}
+              target="_blank"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              {dict.report.generate}
+            </a>
           </div>
           <h1 className="mt-4 text-xl font-bold text-zinc-900 dark:text-zinc-50">
             {ticket.subject}

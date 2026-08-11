@@ -88,9 +88,12 @@ export function formatDate(
   return `${MONTHS_EN[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}, ${time}`;
 }
 
-export function formatDateTime(value: string): string {
+export function formatDateTime(value: string, locale?: "pt" | "en"): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   const pad = (n: number) => String(n).padStart(2, "0");
+  if (locale === "en") {
+    return `${MONTHS_EN[date.getMonth()]} ${pad(date.getDate())}, ${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
   return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }

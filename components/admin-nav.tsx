@@ -32,6 +32,15 @@ export function AdminNav({
       show: canViewComplaints && features.complaintsEnabled,
     },
     {
+      href: `/${lang}/admin/reports`,
+      label: dict.report.title,
+      show:
+        canViewComplaints ||
+        (hasPermission(admin, "it") && features.itTicketsEnabled) ||
+        (hasPermission(admin, "maintenance") &&
+          features.maintenanceTicketsEnabled),
+    },
+    {
       href: `/${lang}/admin/places`,
       label: dict.admin.places.title,
       show: isSuperAdmin(admin),
