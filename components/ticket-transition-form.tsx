@@ -8,6 +8,8 @@ import {
 } from "@/lib/actions";
 import type { Dict, Locale } from "@/lib/i18n";
 import { SubmitButton } from "./submit-button";
+import { usePowGate } from "./use-pow-gate";
+import { PowProgress } from "./pow-progress";
 
 export function TicketTransitionForm({
   dict,
@@ -28,9 +30,12 @@ export function TicketTransitionForm({
     admin ? adminTicketTransition : userTicketTransition,
     undefined
   );
+  const pow = usePowGate();
 
   const isClosing = transition === "close";
   const errorText = (() => {
+    if (!admin && pow.error)
+      return dict.ticket[pow.error as keyof typeof dict.ticket] as string;
     if (!state?.error) return null;
     const key = state.error as keyof typeof dict.ticket;
     if (key in dict.ticket) return String(dict.ticket[key]);
@@ -40,12 +45,26 @@ export function TicketTransitionForm({
       : dict.common.generic;
   })();
 
+  // pow.* accessors below are plain state/ref-object reads returned from the
+  // usePowGate hook, not `.current` reads; eslint-plugin-react-hooks can't
+  // tell them apart from real ref-during-render access.
+  /* eslint-disable react-hooks/refs */
   return (
-    <form action={action} className="space-y-4">
+    <form
+      action={action}
+      className="space-y-4"
+      onSubmit={admin ? undefined : (e) => pow.guardSubmit(e)}
+    >
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="ticketId" value={ticketId} />
       <input type="hidden" name="transition" value={transition} />
       {cpf && <input type="hidden" name="cpf" value={cpf} />}
+      {!admin && (
+        <>
+          <input type="hidden" name="powToken" ref={pow.tokenInputRef} />
+          <input type="hidden" name="powSolution" ref={pow.solutionInputRef} />
+        </>
+      )}
 
       <div>
         <label
@@ -94,16 +113,21 @@ export function TicketTransitionForm({
         </p>
       )}
 
-      <SubmitButton
-        pendingLabel={dict.common.loading}
-        className={
-          isClosing
-            ? "bg-red-700 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500"
-            : "bg-emerald-700 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500"
-        }
-      >
-        {isClosing ? dict.ticket.closeTicket : dict.ticket.reopenTicket}
-      </SubmitButton>
+      {!admin && pow.solving ? (
+        <PowProgress progress={pow.progress} label={dict.ticket.powVerifying} />
+      ) : (
+        <SubmitButton
+          pendingLabel={dict.common.loading}
+          className={
+            isClosing
+              ? "bg-red-700 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500"
+              : "bg-emerald-700 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+          }
+        >
+          {isClosing ? dict.ticket.closeTicket : dict.ticket.reopenTicket}
+        </SubmitButton>
+      )}
     </form>
   );
+  /* eslint-enable react-hooks/refs */
 }

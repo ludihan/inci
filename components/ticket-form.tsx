@@ -9,6 +9,8 @@ import { features } from "@/lib/features";
 import { SubmitButton } from "./submit-button";
 import { FileInput } from "./file-input";
 import { CpfInput } from "./cpf-input";
+import { usePowGate } from "./use-pow-gate";
+import { PowProgress } from "./pow-progress";
 
 export function TicketForm({
   dict,
@@ -25,9 +27,11 @@ export function TicketForm({
   );
   const formRef = useRef<HTMLFormElement>(null);
   const [clientError, setClientError] = useState<string | null>(null);
+  const pow = usePowGate();
 
   const errorText = (() => {
     if (clientError) return clientError;
+    if (pow.error) return dict.ticket[pow.error as keyof typeof dict.ticket] as string;
     if (!state?.error) return null;
     const key = state.error as keyof typeof dict.ticket;
     if (key in dict.ticket) return String(dict.ticket[key]);
@@ -41,14 +45,15 @@ export function TicketForm({
     "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400";
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    const form = e.currentTarget;
-    const cpf = onlyDigits(String(new FormData(form).get("cpf") ?? ""));
-    if (!isValidCpf(cpf)) {
-      e.preventDefault();
-      setClientError(dict.ticket.cpfInvalid);
-      return;
-    }
-    setClientError(null);
+    pow.guardSubmit(e, () => {
+      const cpf = onlyDigits(String(new FormData(e.currentTarget).get("cpf") ?? ""));
+      if (!isValidCpf(cpf)) {
+        setClientError(dict.ticket.cpfInvalid);
+        return false;
+      }
+      setClientError(null);
+      return true;
+    });
   };
 
   const types = (["it", "maintenance"] as const).filter((type) =>
@@ -57,6 +62,10 @@ export function TicketForm({
       : features.maintenanceTicketsEnabled
   );
 
+  // pow.* accessors below are plain state/ref-object reads returned from the
+  // usePowGate hook, not `.current` reads; eslint-plugin-react-hooks can't
+  // tell them apart from real ref-during-render access.
+  /* eslint-disable react-hooks/refs */
   return (
     <form ref={formRef} action={action} onSubmit={handleSubmit} className="space-y-5">
       <input type="hidden" name="lang" value={lang} />
@@ -177,6 +186,9 @@ export function TicketForm({
         </div>
       </div>
 
+      <input type="hidden" name="powToken" ref={pow.tokenInputRef} />
+      <input type="hidden" name="powSolution" ref={pow.solutionInputRef} />
+
       {errorText && (
         <p
           role="alert"
@@ -186,9 +198,14 @@ export function TicketForm({
         </p>
       )}
 
-      <SubmitButton pendingLabel={dict.common.loading}>
-        {dict.ticket.submit}
-      </SubmitButton>
+      {pow.solving ? (
+        <PowProgress progress={pow.progress} label={dict.ticket.powVerifying} />
+      ) : (
+        <SubmitButton pendingLabel={dict.common.loading}>
+          {dict.ticket.submit}
+        </SubmitButton>
+      )}
     </form>
   );
+  /* eslint-enable react-hooks/refs */
 }

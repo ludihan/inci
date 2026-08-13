@@ -31,6 +31,7 @@ import {
 } from "./store";
 import { saveImage, deleteImage } from "./uploads";
 import { isValidCpf, onlyDigits, generateComplaintCode } from "./utils";
+import { createPowChallenge, verifyPowSolution, type PowChallenge } from "./pow";
 import { verifyPassword } from "./password";
 import { features, ticketsEnabled } from "./features";
 import {
@@ -53,6 +54,18 @@ function str(formData: FormData, key: string): string {
 function lang(formData: FormData): string {
   const value = str(formData, "lang");
   return hasLocale(value) ? value : "pt";
+}
+
+export async function getPowChallenge(): Promise<PowChallenge> {
+  return createPowChallenge();
+}
+
+function checkPow(formData: FormData): { error?: string } {
+  const token = str(formData, "powToken");
+  const solution = str(formData, "powSolution");
+  if (!token || !solution) return { error: "powRequired" };
+  if (!verifyPowSolution(token, solution)) return { error: "powInvalid" };
+  return {};
 }
 
 async function photoFromForm(
@@ -96,6 +109,9 @@ export async function createTicket(
   const place = await getPlaceById(placeId);
   if (!place) return { error: "placeInvalid" };
 
+  const powResult = checkPow(formData);
+  if (powResult.error) return { error: powResult.error };
+
   const photo = await photoFromForm(formData);
   if (photo.error === "invalid-type") return { error: "invalidPhotoType" };
   if (photo.error === "too-large") return { error: "photoTooLarge" };
@@ -127,6 +143,9 @@ export async function addTicketMessage(
   if (ticket.cpf !== cpf) return { error: "wrongCpf" };
   if (!content) return { error: "messageRequired" };
 
+  const powResult = checkPow(formData);
+  if (powResult.error) return { error: powResult.error };
+
   const photo = await photoFromForm(formData);
   if (photo.error) return { error: "generic" };
 
@@ -156,6 +175,9 @@ export async function userTicketTransition(
   if (transition !== "close" && transition !== "open")
     return { error: "generic" };
   if (!content) return { error: "messageRequired" };
+
+  const powResult = checkPow(formData);
+  if (powResult.error) return { error: powResult.error };
 
   const photo = await photoFromForm(formData);
   if (photo.error === "invalid-type") return { error: "invalidPhotoType" };

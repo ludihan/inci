@@ -8,6 +8,8 @@ import {
 } from "@/lib/actions";
 import type { Dict, Locale } from "@/lib/i18n";
 import { SubmitButton } from "./submit-button";
+import { usePowGate } from "./use-pow-gate";
+import { PowProgress } from "./pow-progress";
 
 export function TicketReplyForm({
   dict,
@@ -26,8 +28,11 @@ export function TicketReplyForm({
     admin ? adminAddTicketMessage : addTicketMessage,
     undefined
   );
+  const pow = usePowGate();
 
   const errorText = (() => {
+    if (!admin && pow.error)
+      return dict.ticket[pow.error as keyof typeof dict.ticket] as string;
     if (!state?.error) return null;
     const key = state.error as keyof typeof dict.ticket;
     if (key in dict.ticket) return String(dict.ticket[key]);
@@ -37,11 +42,25 @@ export function TicketReplyForm({
       : dict.common.generic;
   })();
 
+  // pow.* accessors below are plain state/ref-object reads returned from the
+  // usePowGate hook, not `.current` reads; eslint-plugin-react-hooks can't
+  // tell them apart from real ref-during-render access.
+  /* eslint-disable react-hooks/refs */
   return (
-    <form action={action} className="space-y-4">
+    <form
+      action={action}
+      className="space-y-4"
+      onSubmit={admin ? undefined : (e) => pow.guardSubmit(e)}
+    >
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="ticketId" value={ticketId} />
       {cpf && <input type="hidden" name="cpf" value={cpf} />}
+      {!admin && (
+        <>
+          <input type="hidden" name="powToken" ref={pow.tokenInputRef} />
+          <input type="hidden" name="powSolution" ref={pow.solutionInputRef} />
+        </>
+      )}
 
       <div>
         <label
@@ -69,9 +88,14 @@ export function TicketReplyForm({
         </p>
       )}
 
-      <SubmitButton pendingLabel={dict.common.sending}>
-        {dict.common.send}
-      </SubmitButton>
+      {!admin && pow.solving ? (
+        <PowProgress progress={pow.progress} label={dict.ticket.powVerifying} />
+      ) : (
+        <SubmitButton pendingLabel={dict.common.sending}>
+          {dict.common.send}
+        </SubmitButton>
+      )}
     </form>
   );
+  /* eslint-enable react-hooks/refs */
 }
