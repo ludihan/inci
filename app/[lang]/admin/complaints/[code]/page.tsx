@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { getDict, getLocale } from "@/lib/i18n";
 import { getCurrentAdmin, isSuperAdmin } from "@/lib/auth";
 import { getComplaintByCode, listAdmins } from "@/lib/store";
+import { AttachmentGallery } from "@/components/attachment-gallery";
 import {
   assumeComplaint,
   forwardComplaint,
@@ -98,23 +98,12 @@ export default async function AdminComplaintDetailPage({
               {dict.complaint.fields.place}: {complaint.place.name}
             </p>
           )}
-          {complaint.photoPath && (
-            <a
-              href={complaint.photoPath}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-block"
-            >
-              <span className="relative block h-72 w-full overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-800">
-                <Image
-                  src={complaint.photoPath}
-                  alt={dict.complaint.fields.photo}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-contain"
-                />
-              </span>
-            </a>
+          {complaint.attachments.length > 0 && (
+            <AttachmentGallery
+              attachments={complaint.attachments}
+              dict={dict}
+              alt={dict.complaint.fields.photo}
+            />
           )}
         </div>
 

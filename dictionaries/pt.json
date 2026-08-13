@@ -3,6 +3,25 @@
   "appDescription": "Sistema de gestão de chamados e denúncias para empresas",
   "tagline": "Gestão de chamados e denúncias",
 
+  "attachments": {
+    "photos": "Fotos",
+    "photosHelp": "JPG, PNG, WEBP ou GIF",
+    "videos": "Vídeos",
+    "videosHelp": "MP4, WEBM ou MOV",
+    "upTo": "Até {max} {label}, {size}MB cada.",
+    "tooManyImages": "Você pode enviar no máximo {max} imagens.",
+    "tooManyVideos": "Você pode enviar no máximo {max} vídeos.",
+    "tooLargeImage": "Cada imagem deve ter no máximo {max}MB.",
+    "tooLargeVideo": "Cada vídeo deve ter no máximo {max}MB.",
+    "enlarge": "Ampliar",
+    "remove": "Remover",
+    "close": "Fechar",
+    "prev": "Anterior",
+    "next": "Próximo",
+    "imagesLabel": "imagens",
+    "videosLabel": "vídeos"
+  },
+
   "nav": {
     "home": "Início",
     "openTicket": "Abrir chamado",
@@ -70,6 +89,10 @@
     "generic": "Ocorreu um erro. Tente novamente.",
     "invalidPhotoType": "O arquivo enviado não é uma imagem válida (JPG, PNG, WEBP ou GIF).",
     "photoTooLarge": "A imagem excede o tamanho máximo de 5MB.",
+    "invalidFileType": "Um dos arquivos enviados não é válido (imagens: JPG, PNG, WEBP ou GIF; vídeos: MP4, WEBM ou MOV).",
+    "fileTooLarge": "Um dos arquivos excede o tamanho máximo (5MB para imagens, 50MB para vídeos).",
+    "tooManyImages": "Você pode enviar no máximo 5 imagens.",
+    "tooManyVideos": "Você pode enviar no máximo 5 vídeos.",
     "sending": "Enviando...",
     "requester": "Solicitante",
     "admin": "Equipe",
@@ -99,7 +122,7 @@
       "closePlaceholder": "Ex.: Problema resolvido...",
       "reopenPlaceholder": "Ex.: O problema voltou a ocorrer..."
     },
-    "photoRequired": "Uma foto é obrigatória para abrir o chamado.",
+    "attachmentsRequired": "Envie ao menos uma foto ou vídeo para abrir o chamado.",
     "messageRequired": "A descrição do problema é obrigatória.",
     "subjectRequired": "O assunto é obrigatório.",
     "cpfRequired": "O CPF é obrigatório.",
@@ -358,6 +381,7 @@
     "subject": "Assunto",
     "noRecords": "Nenhum registro encontrado para os filtros selecionados.",
     "historyEmpty": "Sem histórico.",
-    "photo": "Foto"
+    "photo": "Foto",
+    "video": "Vídeo"
   }
 }

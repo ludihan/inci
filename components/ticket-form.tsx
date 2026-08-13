@@ -7,7 +7,7 @@ import type { Place } from "@/lib/types";
 import { isValidCpf, onlyDigits } from "@/lib/utils";
 import { features } from "@/lib/features";
 import { SubmitButton } from "./submit-button";
-import { FileInput } from "./file-input";
+import { MultiFileInput } from "./multi-file-input";
 import { CpfInput } from "./cpf-input";
 import { usePowGate } from "./use-pow-gate";
 import { PowProgress } from "./pow-progress";
@@ -46,9 +46,16 @@ export function TicketForm({
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     pow.guardSubmit(e, () => {
-      const cpf = onlyDigits(String(new FormData(e.currentTarget).get("cpf") ?? ""));
+      const data = new FormData(e.currentTarget);
+      const cpf = onlyDigits(String(data.get("cpf") ?? ""));
       if (!isValidCpf(cpf)) {
         setClientError(dict.ticket.cpfInvalid);
+        return false;
+      }
+      const images = data.getAll("images").filter((f) => f instanceof File && f.size > 0);
+      const videos = data.getAll("videos").filter((f) => f instanceof File && f.size > 0);
+      if (images.length === 0 && videos.length === 0) {
+        setClientError(dict.ticket.attachmentsRequired);
         return false;
       }
       setClientError(null);
@@ -172,17 +179,14 @@ export function TicketForm({
       </div>
 
       <div>
-        <label htmlFor="photo" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
           {dict.ticket.fields.photo} <span className="text-zinc-400">*</span>
         </label>
-        <div className="mt-1">
-          <FileInput
-            name="photo"
-            id="photo"
-            required
-            requiredLabel={dict.ticket.photoRequired}
-            help={dict.ticket.fields.photoHelp}
-          />
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          {dict.ticket.fields.photoHelp}
+        </p>
+        <div className="mt-2">
+          <MultiFileInput dict={dict} />
         </div>
       </div>
 

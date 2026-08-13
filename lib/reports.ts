@@ -243,14 +243,19 @@ async function drawMessageHistory(
         color: COLOR.zinc900,
       });
     }
-    if (photos && m.photoPath) {
-      drawText(doc, `${dict.report.photo}: ${path.basename(m.photoPath)}`, {
-        x: MARGIN + 8,
-        width: contentWidth,
-        size: 8.5,
-        color: COLOR.zinc400,
-      });
-      await drawPhotos(doc, m.photoPath);
+    if (photos && m.attachments.length > 0) {
+      for (const att of m.attachments) {
+        const label = att.kind === "video" ? dict.report.video : dict.report.photo;
+        drawText(doc, `${label}: ${path.basename(att.path)}`, {
+          x: MARGIN + 8,
+          width: contentWidth,
+          size: 8.5,
+          color: COLOR.zinc400,
+        });
+        if (att.kind === "image") {
+          await drawPhotos(doc, att.path);
+        }
+      }
     }
     doc.y += 12;
     doc.moveTo(MARGIN, doc.y).lineTo(MARGIN + CONTENT_WIDTH, doc.y);
@@ -549,8 +554,18 @@ export async function buildComplaintsReport(
       doc.y += 6;
     }
 
-    if (opts.sections.photos && complaint.photoPath) {
-      await drawPhotos(doc, complaint.photoPath);
+    if (opts.sections.photos && complaint.attachments.length > 0) {
+      for (const att of complaint.attachments) {
+        const label = att.kind === "video" ? d.report.video : d.report.photo;
+        drawText(doc, `${label}: ${path.basename(att.path)}`, {
+          width: CONTENT_WIDTH,
+          size: 8.5,
+          color: COLOR.zinc400,
+        });
+        if (att.kind === "image") {
+          await drawPhotos(doc, att.path);
+        }
+      }
     }
 
     if (opts.sections.history) {

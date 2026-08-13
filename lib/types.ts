@@ -24,6 +24,12 @@ export interface Settings {
   logoPath: string | null;
 }
 
+export interface Attachment {
+  id: string;
+  path: string;
+  kind: "image" | "video";
+}
+
 export type TicketMessageAction =
   | "open"
   | "close"
@@ -35,7 +41,7 @@ export type TicketMessageAction =
 export interface TicketMessage {
   id: string;
   content: string;
-  photoPath?: string;
+  attachments: Attachment[];
   sender: "user" | "admin";
   senderName?: string;
   action: TicketMessageAction;
@@ -67,7 +73,7 @@ export type ComplaintResponseAction =
 export interface ComplaintResponse {
   id: string;
   content: string;
-  photoPath?: string;
+  attachments: Attachment[];
   sender: "user" | "admin";
   senderName?: string;
   action: ComplaintResponseAction;
@@ -79,7 +85,7 @@ export interface Complaint {
   code: string;
   subject: string;
   content: string;
-  photoPath?: string;
+  attachments: Attachment[];
   place: Place | null;
   status: ComplaintStatus;
   assignedToId?: string;

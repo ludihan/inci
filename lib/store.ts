@@ -3,6 +3,7 @@ import { getDb, inTransaction } from "./db";
 import { hashPassword } from "./password";
 import type {
   Admin,
+  Attachment,
   Complaint,
   ComplaintResponse,
   DB,
@@ -14,6 +15,43 @@ import type {
 } from "./types";
 
 type Row = Record<string, unknown>;
+type AttachmentRef = { path: string; kind: "image" | "video" };
+
+function rowToAttachment(row: Row): Attachment {
+  return {
+    id: String(row.id),
+    path: String(row.path),
+    kind: row.kind === "video" ? "video" : "image",
+  };
+}
+
+function findAttachments(
+  table: string,
+  fkColumn: string,
+  fkValue: string
+): Attachment[] {
+  const db = getDb();
+  const rows = db
+    .prepare(`SELECT * FROM ${table} WHERE ${fkColumn} = ? ORDER BY created_at ASC`)
+    .all(fkValue) as Row[];
+  return rows.map(rowToAttachment);
+}
+
+function insertAttachments(
+  table: string,
+  fkColumn: string,
+  fkValue: string,
+  attachments: AttachmentRef[]
+): void {
+  if (attachments.length === 0) return;
+  const db = getDb();
+  const now = new Date().toISOString();
+  for (const att of attachments) {
+    db.prepare(
+      `INSERT INTO ${table} (id, ${fkColumn}, path, kind, created_at) VALUES (?, ?, ?, ?, ?)`
+    ).run(randomUUID(), fkValue, att.path, att.kind, now);
+  }
+}
 
 function rowToAdmin(row: Row): Admin {
   return {
@@ -36,10 +74,18 @@ function rowToPlace(row: Row): Place {
 }
 
 function rowToTicketMessage(row: Row): TicketMessage {
+  // Legacy rows created before multi-attachment support stored a single
+  // image directly on the message via photo_path.
+  const legacy: Attachment[] = row.photo_path
+    ? [{ id: `${row.id}-legacy`, path: String(row.photo_path), kind: "image" }]
+    : [];
   return {
     id: String(row.id),
     content: String(row.content),
-    photoPath: row.photo_path ? String(row.photo_path) : undefined,
+    attachments: [
+      ...legacy,
+      ...findAttachments("ticket_message_attachments", "message_id", String(row.id)),
+    ],
     sender: row.sender === "admin" ? "admin" : "user",
     senderName: row.sender_name ? String(row.sender_name) : undefined,
     action: row.action as TicketMessage["action"],
@@ -114,12 +160,18 @@ function rowToComplaint(row: Row): Complaint {
     row.assigned_to !== null && row.assigned_to !== undefined
       ? String(row.assigned_to)
       : undefined;
+  const legacy: Attachment[] = row.photo_path
+    ? [{ id: `${row.id}-legacy`, path: String(row.photo_path), kind: "image" }]
+    : [];
   return {
     id: String(row.id),
     code: String(row.code),
     subject: String(row.subject),
     content: String(row.content),
-    photoPath: row.photo_path ? String(row.photo_path) : undefined,
+    attachments: [
+      ...legacy,
+      ...findAttachments("complaint_attachments", "complaint_id", String(row.id)),
+    ],
     place,
     status: row.status === "closed" ? "closed" : "open",
     assignedToId,
@@ -132,10 +184,16 @@ function rowToComplaint(row: Row): Complaint {
 
 function rowToComplaintResponse(row: Row): ComplaintResponse {
   const action = String(row.action);
+  const legacy: Attachment[] = row.photo_path
+    ? [{ id: `${row.id}-legacy`, path: String(row.photo_path), kind: "image" }]
+    : [];
   return {
     id: String(row.id),
     content: String(row.content),
-    photoPath: row.photo_path ? String(row.photo_path) : undefined,
+    attachments: [
+      ...legacy,
+      ...findAttachments("complaint_response_attachments", "response_id", String(row.id)),
+    ],
     sender: row.sender === "admin" ? "admin" : "user",
     senderName: row.sender_name ? String(row.sender_name) : undefined,
     action:
@@ -174,7 +232,7 @@ export async function createTicket(input: {
   subject: string;
   placeId: string;
   message: string;
-  photoPath: string;
+  attachments: AttachmentRef[];
 }): Promise<Ticket> {
   const db = getDb();
   const now = new Date().toISOString();
@@ -197,16 +255,8 @@ export async function createTicket(input: {
     db.prepare(
       `INSERT INTO ticket_messages (id, ticket_id, content, photo_path, sender, sender_name, action, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      messageId,
-      ticketId,
-      input.message,
-      input.photoPath,
-      "user",
-      null,
-      "open",
-      now
-    );
+    ).run(messageId, ticketId, input.message, null, "user", null, "open", now);
+    insertAttachments("ticket_message_attachments", "message_id", messageId, input.attachments);
   });
   const row = db.prepare("SELECT * FROM tickets WHERE id = ?").get(ticketId) as Row;
   return rowToTicket(row);
@@ -230,7 +280,7 @@ export async function addTicketMessage(
   id: string,
   input: {
     content: string;
-    photoPath?: string;
+    attachments?: AttachmentRef[];
     sender: "user" | "admin";
     senderName?: string;
     action: "message" | "close" | "open";
@@ -246,19 +296,26 @@ export async function addTicketMessage(
       : ticket.assigned_to
         ? "in_progress"
         : "open";
+  const messageId = randomUUID();
   inTransaction(() => {
     db.prepare(
       `INSERT INTO ticket_messages (id, ticket_id, content, photo_path, sender, sender_name, action, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
-      randomUUID(),
+      messageId,
       id,
       input.content,
-      input.photoPath ?? null,
+      null,
       input.sender,
       input.senderName ?? null,
       input.action,
       now
+    );
+    insertAttachments(
+      "ticket_message_attachments",
+      "message_id",
+      messageId,
+      input.attachments ?? []
     );
     db.prepare("UPDATE tickets SET status = ?, updated_at = ? WHERE id = ?").run(
       status,
@@ -303,7 +360,7 @@ export async function addTicketAssignment(
 export async function createComplaint(input: {
   subject: string;
   content: string;
-  photoPath?: string;
+  attachments?: AttachmentRef[];
   code: string;
   placeId: string;
 }): Promise<Complaint> {
@@ -319,11 +376,17 @@ export async function createComplaint(input: {
       input.code,
       input.subject,
       input.content,
-      input.photoPath ?? null,
+      null,
       input.placeId,
       "open",
       now,
       now
+    );
+    insertAttachments(
+      "complaint_attachments",
+      "complaint_id",
+      complaintId,
+      input.attachments ?? []
     );
     db.prepare(
       `INSERT INTO complaint_responses (id, complaint_id, content, photo_path, sender, sender_name, action, created_at)
@@ -359,7 +422,12 @@ export async function getComplaintById(id: string): Promise<Complaint | null> {
 
 export async function addComplaintResponse(
   code: string,
-  input: { content: string; sender: "user" | "admin"; senderName?: string; photoPath?: string }
+  input: {
+    content: string;
+    sender: "user" | "admin";
+    senderName?: string;
+    attachments?: AttachmentRef[];
+  }
 ): Promise<Complaint | null> {
   const db = getDb();
   const complaint = db
@@ -367,19 +435,26 @@ export async function addComplaintResponse(
     .get(code) as Row | undefined;
   if (!complaint) return null;
   const now = new Date().toISOString();
+  const responseId = randomUUID();
   inTransaction(() => {
     db.prepare(
       `INSERT INTO complaint_responses (id, complaint_id, content, photo_path, sender, sender_name, action, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
-      randomUUID(),
+      responseId,
       String(complaint.id),
       input.content,
-      input.photoPath ?? null,
+      null,
       input.sender,
       input.senderName ?? null,
       "message",
       now
+    );
+    insertAttachments(
+      "complaint_response_attachments",
+      "response_id",
+      responseId,
+      input.attachments ?? []
     );
     db.prepare("UPDATE complaints SET updated_at = ? WHERE id = ?").run(
       now,
@@ -432,7 +507,7 @@ export async function setComplaintStatus(
   status: "open" | "closed",
   content: string,
   senderName?: string,
-  photoPath?: string
+  attachments?: AttachmentRef[]
 ): Promise<Complaint | null> {
   const db = getDb();
   const complaint = db
@@ -440,19 +515,26 @@ export async function setComplaintStatus(
     .get(code) as Row | undefined;
   if (!complaint) return null;
   const now = new Date().toISOString();
+  const responseId = randomUUID();
   inTransaction(() => {
     db.prepare(
       `INSERT INTO complaint_responses (id, complaint_id, content, photo_path, sender, sender_name, action, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
-      randomUUID(),
+      responseId,
       String(complaint.id),
       content,
-      photoPath ?? null,
+      null,
       "admin",
       senderName ?? null,
       status === "closed" ? "close" : "open",
       now
+    );
+    insertAttachments(
+      "complaint_response_attachments",
+      "response_id",
+      responseId,
+      attachments ?? []
     );
     db.prepare("UPDATE complaints SET status = ?, updated_at = ? WHERE id = ?").run(
       status,

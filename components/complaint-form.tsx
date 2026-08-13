@@ -5,7 +5,7 @@ import { createComplaint, type ActionState } from "@/lib/actions";
 import type { Dict, Locale } from "@/lib/i18n";
 import type { Place } from "@/lib/types";
 import { SubmitButton } from "./submit-button";
-import { FileInput } from "./file-input";
+import { MultiFileInput } from "./multi-file-input";
 
 export function ComplaintForm({
   dict,
@@ -94,17 +94,14 @@ export function ComplaintForm({
       </div>
 
       <div>
-        <label htmlFor="photo" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
           {dict.complaint.fields.photo}
         </label>
-        <div className="mt-1">
-          <FileInput
-            name="photo"
-            id="photo"
-            optionalLabel={dict.common.optional}
-            requiredLabel={dict.common.required}
-            help={dict.complaint.fields.photoHelp}
-          />
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          {dict.complaint.fields.photoHelp}
+        </p>
+        <div className="mt-2">
+          <MultiFileInput dict={dict} />
         </div>
       </div>
 

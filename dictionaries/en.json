@@ -3,6 +3,25 @@
   "appDescription": "Ticket and complaint management system for companies",
   "tagline": "Ticket and complaint management",
 
+  "attachments": {
+    "photos": "Photos",
+    "photosHelp": "JPG, PNG, WEBP or GIF",
+    "videos": "Videos",
+    "videosHelp": "MP4, WEBM or MOV",
+    "upTo": "Up to {max} {label}, {size}MB each.",
+    "tooManyImages": "You can send at most {max} images.",
+    "tooManyVideos": "You can send at most {max} videos.",
+    "tooLargeImage": "Each image must be at most {max}MB.",
+    "tooLargeVideo": "Each video must be at most {max}MB.",
+    "enlarge": "Enlarge",
+    "remove": "Remove",
+    "close": "Close",
+    "prev": "Previous",
+    "next": "Next",
+    "imagesLabel": "images",
+    "videosLabel": "videos"
+  },
+
   "nav": {
     "home": "Home",
     "openTicket": "Open ticket",
@@ -70,6 +89,10 @@
     "generic": "An error occurred. Please try again.",
     "invalidPhotoType": "The uploaded file is not a valid image (JPG, PNG, WEBP or GIF).",
     "photoTooLarge": "The image exceeds the maximum size of 5MB.",
+    "invalidFileType": "One of the uploaded files is not valid (images: JPG, PNG, WEBP or GIF; videos: MP4, WEBM or MOV).",
+    "fileTooLarge": "One of the uploaded files exceeds the maximum size (5MB for images, 50MB for videos).",
+    "tooManyImages": "You can send at most 5 images.",
+    "tooManyVideos": "You can send at most 5 videos.",
     "sending": "Sending...",
     "requester": "Requester",
     "admin": "Team",
@@ -99,7 +122,7 @@
       "closePlaceholder": "e.g. Issue resolved...",
       "reopenPlaceholder": "e.g. The issue happened again..."
     },
-    "photoRequired": "A photo is required to open the ticket.",
+    "attachmentsRequired": "Send at least one photo or video to open the ticket.",
     "messageRequired": "The problem description is required.",
     "subjectRequired": "The subject is required.",
     "cpfRequired": "The CPF is required.",
@@ -358,6 +381,7 @@
     "subject": "Subject",
     "noRecords": "No records found for the selected filters.",
     "historyEmpty": "No history.",
-    "photo": "Photo"
+    "photo": "Photo",
+    "video": "Video"
   }
 }

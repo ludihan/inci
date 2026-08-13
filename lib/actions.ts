@@ -29,7 +29,13 @@ import {
   updateAdmin as storeUpdateAdmin,
   deleteAdmin as storeDeleteAdmin,
 } from "./store";
-import { saveImage, deleteImage } from "./uploads";
+import {
+  saveImage,
+  saveAttachment,
+  deleteImage,
+  MAX_IMAGES_PER_MESSAGE,
+  MAX_VIDEOS_PER_MESSAGE,
+} from "./uploads";
 import { isValidCpf, onlyDigits, generateComplaintCode } from "./utils";
 import { createPowChallenge, verifyPowSolution, type PowChallenge } from "./pow";
 import { verifyPassword } from "./password";
@@ -68,16 +74,37 @@ function checkPow(formData: FormData): { error?: string } {
   return {};
 }
 
-async function photoFromForm(
+type Attachment = { path: string; kind: "image" | "video" };
+
+async function attachmentsFromForm(
   formData: FormData
-): Promise<{ path?: string; error?: string }> {
-  const file = formData.get("photo");
-  if (!file || typeof file === "string" || file.size === 0) {
-    return { path: undefined };
+): Promise<{ attachments?: Attachment[]; error?: string }> {
+  const imageFiles = formData
+    .getAll("images")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+  const videoFiles = formData
+    .getAll("videos")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+
+  if (imageFiles.length > MAX_IMAGES_PER_MESSAGE) return { error: "tooManyImages" };
+  if (videoFiles.length > MAX_VIDEOS_PER_MESSAGE) return { error: "tooManyVideos" };
+
+  const saved: Attachment[] = [];
+  const queue: { file: File; kind: "image" | "video" }[] = [
+    ...imageFiles.map((file) => ({ file, kind: "image" as const })),
+    ...videoFiles.map((file) => ({ file, kind: "video" as const })),
+  ];
+
+  for (const item of queue) {
+    const result = await saveAttachment(item.file, item.kind);
+    if (!result.ok) {
+      for (const s of saved) await deleteImage(s.path);
+      return { error: result.error };
+    }
+    saved.push({ path: result.path, kind: item.kind });
   }
-  const result = await saveImage(file as File);
-  if (!result.ok) return { error: result.error };
-  return { path: result.path };
+
+  return { attachments: saved };
 }
 
 // ---- User: tickets ----
@@ -112,10 +139,14 @@ export async function createTicket(
   const powResult = checkPow(formData);
   if (powResult.error) return { error: powResult.error };
 
-  const photo = await photoFromForm(formData);
-  if (photo.error === "invalid-type") return { error: "invalidPhotoType" };
-  if (photo.error === "too-large") return { error: "photoTooLarge" };
-  if (!photo.path) return { error: "photoRequired" };
+  const attachmentsResult = await attachmentsFromForm(formData);
+  if (attachmentsResult.error === "invalid-type") return { error: "invalidFileType" };
+  if (attachmentsResult.error === "too-large") return { error: "fileTooLarge" };
+  if (attachmentsResult.error === "tooManyImages") return { error: "tooManyImages" };
+  if (attachmentsResult.error === "tooManyVideos") return { error: "tooManyVideos" };
+  if (!attachmentsResult.attachments || attachmentsResult.attachments.length === 0) {
+    return { error: "attachmentsRequired" };
+  }
 
   const ticket = await storeCreateTicket({
     type,
@@ -123,7 +154,7 @@ export async function createTicket(
     subject,
     message,
     placeId,
-    photoPath: photo.path,
+    attachments: attachmentsResult.attachments,
   });
 
   redirect(`/${l}/track/ticket/${ticket.id}?cpf=${encodeURIComponent(cpf)}`);
@@ -146,12 +177,12 @@ export async function addTicketMessage(
   const powResult = checkPow(formData);
   if (powResult.error) return { error: powResult.error };
 
-  const photo = await photoFromForm(formData);
-  if (photo.error) return { error: "generic" };
+  const attachmentsResult = await attachmentsFromForm(formData);
+  if (attachmentsResult.error) return { error: "generic" };
 
   await storeAddTicketMessage(ticketId, {
     content,
-    photoPath: photo.path,
+    attachments: attachmentsResult.attachments,
     sender: "user",
     action: "message",
   });
@@ -179,13 +210,15 @@ export async function userTicketTransition(
   const powResult = checkPow(formData);
   if (powResult.error) return { error: powResult.error };
 
-  const photo = await photoFromForm(formData);
-  if (photo.error === "invalid-type") return { error: "invalidPhotoType" };
-  if (photo.error === "too-large") return { error: "photoTooLarge" };
+  const attachmentsResult = await attachmentsFromForm(formData);
+  if (attachmentsResult.error === "invalid-type") return { error: "invalidFileType" };
+  if (attachmentsResult.error === "too-large") return { error: "fileTooLarge" };
+  if (attachmentsResult.error === "tooManyImages") return { error: "tooManyImages" };
+  if (attachmentsResult.error === "tooManyVideos") return { error: "tooManyVideos" };
 
   await storeAddTicketMessage(ticketId, {
     content,
-    photoPath: photo.path,
+    attachments: attachmentsResult.attachments,
     sender: "user",
     action: transition,
   });
@@ -211,9 +244,11 @@ export async function createComplaint(
   const place = await getPlaceById(placeId);
   if (!place) return { error: "placeInvalid" };
 
-  const photo = await photoFromForm(formData);
-  if (photo.error === "invalid-type") return { error: "invalidPhotoType" };
-  if (photo.error === "too-large") return { error: "photoTooLarge" };
+  const attachmentsResult = await attachmentsFromForm(formData);
+  if (attachmentsResult.error === "invalid-type") return { error: "invalidFileType" };
+  if (attachmentsResult.error === "too-large") return { error: "fileTooLarge" };
+  if (attachmentsResult.error === "tooManyImages") return { error: "tooManyImages" };
+  if (attachmentsResult.error === "tooManyVideos") return { error: "tooManyVideos" };
 
   let code = generateComplaintCode();
   while (await getComplaintByCode(code)) {
@@ -223,7 +258,7 @@ export async function createComplaint(
   const complaint = await storeCreateComplaint({
     subject,
     content,
-    photoPath: photo.path,
+    attachments: attachmentsResult.attachments,
     code,
     placeId,
   });
@@ -244,12 +279,12 @@ export async function submitComplaintReply(
   if (complaint.status === "closed") return { error: "replyClosed" };
   if (!content) return { error: "messageRequired" };
 
-  const photo = await photoFromForm(formData);
-  if (photo.error === "invalid-type") return { error: "invalidPhotoType" };
-  if (photo.error === "too-large") return { error: "photoTooLarge" };
+  const attachmentsResult = await attachmentsFromForm(formData);
+  if (attachmentsResult.error) return { error: "generic" };
 
   await storeAddComplaintResponse(code, {
     content,
+    attachments: attachmentsResult.attachments,
     sender: "user",
   });
 
@@ -299,12 +334,12 @@ export async function adminAddTicketMessage(
   const admin = await requireAdminForModule(moduleForTicketType(ticket.type));
   if (!content) return { error: "messageRequired" };
 
-  const photo = await photoFromForm(formData);
-  if (photo.error) return { error: "generic" };
+  const attachmentsResult = await attachmentsFromForm(formData);
+  if (attachmentsResult.error) return { error: "generic" };
 
   await storeAddTicketMessage(ticketId, {
     content,
-    photoPath: photo.path,
+    attachments: attachmentsResult.attachments,
     sender: "admin",
     senderName: admin.name,
     action: "message",
@@ -330,13 +365,15 @@ export async function adminTicketTransition(
     return { error: "generic" };
   if (!content) return { error: "messageRequired" };
 
-  const photo = await photoFromForm(formData);
-  if (photo.error === "invalid-type") return { error: "invalidPhotoType" };
-  if (photo.error === "too-large") return { error: "photoTooLarge" };
+  const attachmentsResult = await attachmentsFromForm(formData);
+  if (attachmentsResult.error === "invalid-type") return { error: "invalidFileType" };
+  if (attachmentsResult.error === "too-large") return { error: "fileTooLarge" };
+  if (attachmentsResult.error === "tooManyImages") return { error: "tooManyImages" };
+  if (attachmentsResult.error === "tooManyVideos") return { error: "tooManyVideos" };
 
   await storeAddTicketMessage(ticketId, {
     content,
-    photoPath: photo.path,
+    attachments: attachmentsResult.attachments,
     sender: "admin",
     senderName: admin.name,
     action: transition,
@@ -388,11 +425,19 @@ export async function adminSetComplaintStatus(
   if (status !== "open" && status !== "closed") return { error: "generic" };
   if (!content) return { error: "statusContentRequired" };
 
-  const photo = await photoFromForm(formData);
-  if (photo.error === "invalid-type") return { error: "invalidPhotoType" };
-  if (photo.error === "too-large") return { error: "photoTooLarge" };
+  const attachmentsResult = await attachmentsFromForm(formData);
+  if (attachmentsResult.error === "invalid-type") return { error: "invalidFileType" };
+  if (attachmentsResult.error === "too-large") return { error: "fileTooLarge" };
+  if (attachmentsResult.error === "tooManyImages") return { error: "tooManyImages" };
+  if (attachmentsResult.error === "tooManyVideos") return { error: "tooManyVideos" };
 
-  await storeSetComplaintStatus(code, status, content, admin.name, photo.path);
+  await storeSetComplaintStatus(
+    code,
+    status,
+    content,
+    admin.name,
+    attachmentsResult.attachments
+  );
 
   redirect(`/${l}/admin/complaints/${code}`);
 }

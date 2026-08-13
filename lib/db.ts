@@ -90,10 +90,37 @@ function initSchema(db: DatabaseSync): void {
       created_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS ticket_message_attachments (
+      id TEXT PRIMARY KEY,
+      message_id TEXT NOT NULL REFERENCES ticket_messages(id) ON DELETE CASCADE,
+      path TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS complaint_attachments (
+      id TEXT PRIMARY KEY,
+      complaint_id TEXT NOT NULL REFERENCES complaints(id) ON DELETE CASCADE,
+      path TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS complaint_response_attachments (
+      id TEXT PRIMARY KEY,
+      response_id TEXT NOT NULL REFERENCES complaint_responses(id) ON DELETE CASCADE,
+      path TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_tickets_cpf ON tickets(cpf);
     CREATE INDEX IF NOT EXISTS idx_ticket_messages_ticket ON ticket_messages(ticket_id);
     CREATE INDEX IF NOT EXISTS idx_complaints_code ON complaints(code);
     CREATE INDEX IF NOT EXISTS idx_complaint_responses_complaint ON complaint_responses(complaint_id);
+    CREATE INDEX IF NOT EXISTS idx_ticket_message_attachments_message ON ticket_message_attachments(message_id);
+    CREATE INDEX IF NOT EXISTS idx_complaint_attachments_complaint ON complaint_attachments(complaint_id);
+    CREATE INDEX IF NOT EXISTS idx_complaint_response_attachments_response ON complaint_response_attachments(response_id);
   `);
 
   ensureColumn(db, "complaint_responses", "action", "TEXT NOT NULL DEFAULT 'message'");

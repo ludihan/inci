@@ -1,11 +1,11 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getDict, getLocale, type Dict } from "@/lib/i18n";
 import { getComplaintByCode } from "@/lib/store";
 import type { Complaint } from "@/lib/types";
 import { StatusBadge } from "@/components/badges";
 import { ComplaintResponses } from "@/components/complaint-responses";
+import { AttachmentGallery } from "@/components/attachment-gallery";
 import { CodeCopy } from "@/components/code-copy";
 
 export default async function TrackComplaintDetailPage({
@@ -96,18 +96,12 @@ function ComplaintContent({
           {dict.complaint.fields.place}: {complaint.place.name}
         </p>
       )}
-      {complaint.photoPath && (
-        <a href={complaint.photoPath} target="_blank" rel="noopener noreferrer" className="mt-4 inline-block">
-          <span className="relative block h-72 w-full overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-800">
-            <Image
-              src={complaint.photoPath}
-              alt={dict.complaint.fields.photo}
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-contain"
-            />
-          </span>
-        </a>
+      {complaint.attachments.length > 0 && (
+        <AttachmentGallery
+          attachments={complaint.attachments}
+          dict={dict}
+          alt={dict.complaint.fields.photo}
+        />
       )}
       <p className="mt-4 text-xs text-zinc-500 dark:text-zinc-400">
         {complaint.createdAt.slice(0, 10)}

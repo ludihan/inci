@@ -1,7 +1,7 @@
-import Image from "next/image";
 import type { Ticket } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
 import { formatDate } from "@/lib/utils";
+import { AttachmentGallery } from "./attachment-gallery";
 
 export function TicketMessages({
   ticket,
@@ -61,23 +61,12 @@ export function TicketMessages({
                 {msg.content}
               </p>
             )}
-            {msg.photoPath && (
-              <a
-                href={msg.photoPath}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-block"
-              >
-                <span className="relative block h-56 w-full overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-800">
-                  <Image
-                    src={msg.photoPath}
-                    alt={dict.ticket.fields.photo}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 50vw"
-                    className="object-contain"
-                  />
-                </span>
-              </a>
+            {msg.attachments.length > 0 && (
+              <AttachmentGallery
+                attachments={msg.attachments}
+                dict={dict}
+                alt={dict.ticket.fields.photo}
+              />
             )}
           </li>
         );

@@ -1,7 +1,7 @@
-import Image from "next/image";
 import type { Complaint } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
 import { formatDate } from "@/lib/utils";
+import { AttachmentGallery } from "./attachment-gallery";
 
 export function ComplaintResponses({
   complaint,
@@ -61,23 +61,12 @@ export function ComplaintResponses({
                 {r.content}
               </p>
             )}
-            {r.photoPath && (
-              <a
-                href={r.photoPath}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-block"
-              >
-                <span className="relative block h-56 w-full overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-800">
-                  <Image
-                    src={r.photoPath}
-                    alt={dict.common.photo}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 50vw"
-                    className="object-contain"
-                  />
-                </span>
-              </a>
+            {r.attachments.length > 0 && (
+              <AttachmentGallery
+                attachments={r.attachments}
+                dict={dict}
+                alt={dict.common.photo}
+              />
             )}
           </li>
         );
