@@ -1,8 +1,8 @@
 import { mkdir, writeFile, unlink } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
+import { DATA_DIR } from "./data-dir";
 
-const DATA_DIR = path.join(process.cwd(), "data");
 export const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 
 const MAX_SIZE = 5 * 1024 * 1024;

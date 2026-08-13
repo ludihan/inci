@@ -3,8 +3,8 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { DatabaseSync } from "node:sqlite";
 import { hashPassword } from "./password";
+import { DATA_DIR } from "./data-dir";
 
-const DATA_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "db.sqlite");
 
 declare global {
