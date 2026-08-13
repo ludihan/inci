@@ -13,7 +13,12 @@
     "login": "Sign in",
     "logout": "Sign out",
     "language": "Language",
-    "settings": "Settings"
+    "settings": "Settings",
+    "theme": {
+      "light": "Light theme",
+      "dark": "Dark theme",
+      "system": "System theme"
+    }
   },
 
   "home": {

@@ -13,7 +13,12 @@
     "login": "Entrar",
     "logout": "Sair",
     "language": "Idioma",
-    "settings": "Configurações"
+    "settings": "Configurações",
+    "theme": {
+      "light": "Tema claro",
+      "dark": "Tema escuro",
+      "system": "Tema do sistema"
+    }
   },
 
   "home": {

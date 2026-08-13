@@ -4,6 +4,7 @@ import { hasPermission, isSuperAdmin } from "@/lib/auth";
 import { features } from "@/lib/features";
 import type { Admin } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function AdminNav({
   dict,
@@ -73,6 +74,7 @@ export function AdminNav({
           ))}
       </div>
       <div className="flex items-center gap-3">
+        <ThemeToggle labels={dict.nav.theme} />
         <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
           {admin.name}
         </span>

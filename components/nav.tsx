@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Dict, Locale } from "@/lib/i18n";
 import { features, ticketsEnabled } from "@/lib/features";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Nav({
   dict,
@@ -95,6 +96,7 @@ export function Nav({
           >
             {otherLocale}
           </button>
+          <ThemeToggle labels={dict.nav.theme} className="ml-2" />
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
@@ -106,6 +108,7 @@ export function Nav({
           >
             {otherLocale}
           </button>
+          <ThemeToggle labels={dict.nav.theme} />
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
