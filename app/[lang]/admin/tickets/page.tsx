@@ -28,7 +28,10 @@ export default async function AdminTicketsPage({
   const { type, status } = await searchParams;
   const typeFilter =
     type === "it" || type === "maintenance" ? type : undefined;
-  const statusFilter = status === "open" || status === "closed" ? status : undefined;
+  const statusFilter =
+    status === "open" || status === "in_progress" || status === "closed"
+      ? status
+      : undefined;
 
   const db = await getDB();
   const tickets = db.tickets
@@ -80,6 +83,12 @@ export default async function AdminTicketsPage({
             active={statusFilter === "open"}
           >
             {dict.admin.dashboard.openTickets}
+          </FilterLink>
+          <FilterLink
+            href={`/${locale}/admin/tickets?status=in_progress${typeFilter ? `&type=${typeFilter}` : ""}`}
+            active={statusFilter === "in_progress"}
+          >
+            {dict.admin.dashboard.inProgressTickets}
           </FilterLink>
           <FilterLink
             href={`/${locale}/admin/tickets?status=closed${typeFilter ? `&type=${typeFilter}` : ""}`}

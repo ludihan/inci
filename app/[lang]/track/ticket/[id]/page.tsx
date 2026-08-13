@@ -44,7 +44,7 @@ function TicketDetail({
   dict: Dict;
   locale: "pt" | "en";
 }) {
-  const isOpen = ticket.status === "open";
+  const isOpen = ticket.status !== "closed";
 
   return (
     <div className="space-y-8">

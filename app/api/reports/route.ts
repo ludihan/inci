@@ -38,8 +38,12 @@ export async function GET(request: Request) {
   const d = getReportDict(lang);
 
   const status = searchParams.get("status");
-  const statusFilter =
-    status === "open" || status === "closed" ? status : undefined;
+  const statusFilter: string | undefined =
+    status === "open" ||
+    status === "closed" ||
+    (reportModule === "tickets" && status === "in_progress")
+      ? status
+      : undefined;
 
   const type = searchParams.get("type");
   const typeFilter =
@@ -99,11 +103,15 @@ export async function GET(request: Request) {
     );
   }
   if (statusFilter) {
-    filterParts.push(
-      `${d.report.statusLabel}: ${
-        statusFilter === "open" ? d.common.open : d.complaint.closed
-      }`
-    );
+    const statusLabel =
+      statusFilter === "open"
+        ? d.common.open
+        : statusFilter === "in_progress"
+          ? d.common.inProgress
+          : reportModule === "tickets"
+            ? d.common.closed
+            : d.complaint.closed;
+    filterParts.push(`${d.report.statusLabel}: ${statusLabel}`);
   }
   if (placeId) {
     const place = await getPlaceById(placeId);

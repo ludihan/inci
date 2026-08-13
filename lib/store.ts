@@ -84,7 +84,12 @@ function rowToTicket(row: Row): Ticket {
     cpf: String(row.cpf),
     subject: String(row.subject),
     place,
-    status: row.status === "closed" ? "closed" : "open",
+    status:
+      row.status === "closed"
+        ? "closed"
+        : row.status === "in_progress"
+          ? "in_progress"
+          : "open",
     assignedToId,
     assignedToName: assignedToId ? findAdminName(assignedToId) : undefined,
     messages,
@@ -235,7 +240,12 @@ export async function addTicketMessage(
   const ticket = db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row | undefined;
   if (!ticket) return null;
   const now = new Date().toISOString();
-  const status = input.action === "close" ? "closed" : "open";
+  const status =
+    input.action === "close"
+      ? "closed"
+      : ticket.assigned_to
+        ? "in_progress"
+        : "open";
   inTransaction(() => {
     db.prepare(
       `INSERT INTO ticket_messages (id, ticket_id, content, photo_path, sender, sender_name, action, created_at)
@@ -471,9 +481,10 @@ export async function assignTicket(
   const db = getDb();
   const ticket = db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row | undefined;
   if (!ticket) return null;
+  const status = ticket.status === "closed" ? "closed" : "in_progress";
   db.prepare(
-    "UPDATE tickets SET assigned_to = ?, updated_at = ? WHERE id = ?"
-  ).run(adminId, new Date().toISOString(), id);
+    "UPDATE tickets SET assigned_to = ?, status = ?, updated_at = ? WHERE id = ?"
+  ).run(adminId, status, new Date().toISOString(), id);
   return rowToTicket(db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row);
 }
 
@@ -481,9 +492,10 @@ export async function releaseTicket(id: string): Promise<Ticket | null> {
   const db = getDb();
   const ticket = db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row | undefined;
   if (!ticket) return null;
+  const status = ticket.status === "closed" ? "closed" : "open";
   db.prepare(
-    "UPDATE tickets SET assigned_to = NULL, updated_at = ? WHERE id = ?"
-  ).run(new Date().toISOString(), id);
+    "UPDATE tickets SET assigned_to = NULL, status = ?, updated_at = ? WHERE id = ?"
+  ).run(status, new Date().toISOString(), id);
   return rowToTicket(db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row);
 }
 

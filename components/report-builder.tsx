@@ -125,6 +125,9 @@ function ReportPanel({
             >
               <option value="">{dict.report.statusAll}</option>
               <option value="open">{dict.common.open}</option>
+              {module === "tickets" && (
+                <option value="in_progress">{dict.common.inProgress}</option>
+              )}
               <option value="closed">
                 {module === "tickets" ? dict.common.closed : dict.complaint.closed}
               </option>

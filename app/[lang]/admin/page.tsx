@@ -59,6 +59,7 @@ export default async function AdminDashboardPage() {
   const db = await getDB();
   const tickets = visibleTicketsFor(admin, db);
   const openTickets = tickets.filter((t) => t.status === "open");
+  const inProgressTickets = tickets.filter((t) => t.status === "in_progress");
   const closedTickets = tickets.filter((t) => t.status === "closed");
   const canComplaints =
     isSuperAdmin(admin) && features.complaintsEnabled;
@@ -100,7 +101,7 @@ export default async function AdminDashboardPage() {
         <div className="space-y-8">
           <div
             className={`grid grid-cols-2 gap-4 ${
-              canComplaints ? "lg:grid-cols-4" : "lg:grid-cols-3"
+              canComplaints ? "lg:grid-cols-5" : "lg:grid-cols-4"
             }`}
           >
             <StatCard
@@ -111,6 +112,10 @@ export default async function AdminDashboardPage() {
             <StatCard
               label={dict.admin.dashboard.openTickets}
               value={openTickets.length}
+            />
+            <StatCard
+              label={dict.admin.dashboard.inProgressTickets}
+              value={inProgressTickets.length}
             />
             <StatCard
               label={dict.admin.dashboard.closedTickets}

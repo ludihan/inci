@@ -1,5 +1,5 @@
 export type TicketType = "it" | "maintenance";
-export type TicketStatus = "open" | "closed";
+export type TicketStatus = "open" | "in_progress" | "closed";
 export type ComplaintStatus = "open" | "closed";
 export type Module = "it" | "maintenance";
 export type AdminRole = "admin" | "superadmin";

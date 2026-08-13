@@ -29,6 +29,14 @@ export function StatusBadge({
   status: TicketStatus | ComplaintStatus;
   dict: Dict;
 }) {
+  if (status === "in_progress") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+        {dict.common.inProgress}
+      </span>
+    );
+  }
   const isOpen = status === "open";
   return (
     <span

@@ -42,7 +42,7 @@ export default async function AdminTicketDetailPage({
     redirect(`/${locale}/admin`);
   }
 
-  const isOpen = ticket.status === "open";
+  const isOpen = ticket.status !== "closed";
 
   return (
     <div className="mx-auto max-w-3xl">

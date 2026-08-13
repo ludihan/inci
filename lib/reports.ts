@@ -116,7 +116,15 @@ function drawFieldRow(
 }
 
 function statusColor(status: string): string {
-  return status === "open" ? COLOR.green : COLOR.gray;
+  if (status === "open") return COLOR.green;
+  if (status === "in_progress") return COLOR.amber;
+  return COLOR.gray;
+}
+
+function ticketStatusLabel(d: Dict, status: string): string {
+  if (status === "open") return d.common.open;
+  if (status === "in_progress") return d.common.inProgress;
+  return d.common.closed;
 }
 
 function typeColor(type: string): string {
@@ -387,12 +395,14 @@ export async function buildTicketsReport(
   if (opts.sections.summary) {
     sectionTitle(doc, d.report.summary);
     const open = tickets.filter((t) => t.status === "open").length;
+    const inProgress = tickets.filter((t) => t.status === "in_progress").length;
     const closed = tickets.filter((t) => t.status === "closed").length;
     const it = tickets.filter((t) => t.type === "it").length;
     const maint = tickets.length - it;
     const rows: [string, string, string][] = [
       [d.report.totalRecords, String(tickets.length), ""],
       [d.admin.dashboard.openTickets, String(open), ""],
+      [d.admin.dashboard.inProgressTickets, String(inProgress), ""],
       [d.admin.dashboard.closedTickets, String(closed), ""],
       [d.ticket.fields.it, String(it), ""],
       [d.ticket.fields.maintenance, String(maint), ""],
@@ -420,16 +430,16 @@ export async function buildTicketsReport(
     doc.text(ticket.id, MARGIN + 8, headerY + 6, { width: CONTENT_WIDTH - 200 });
     doc.font("Helvetica").fontSize(9.5);
     doc.fillColor(typeColor(ticket.type));
-    doc.text(d.ticket.fields[ticket.type], MARGIN + CONTENT_WIDTH - 96, headerY + 7, {
-      width: 56,
+    doc.text(d.ticket.fields[ticket.type], MARGIN + CONTENT_WIDTH - 190, headerY + 7, {
+      width: 70,
       align: "left",
     });
     doc.fillColor(statusColor(ticket.status));
     doc.text(
-      ticket.status === "open" ? d.common.open : d.common.closed,
-      MARGIN + CONTENT_WIDTH - 40,
+      ticketStatusLabel(d, ticket.status),
+      MARGIN + CONTENT_WIDTH - 112,
       headerY + 7,
-      { width: 40, align: "right" }
+      { width: 104, align: "right" }
     );
     doc.y = headerY + 26;
 
@@ -437,7 +447,7 @@ export async function buildTicketsReport(
       const fields: [string, string][] = [
         [d.report.subject, ticket.subject],
         [d.report.placeLabel, ticket.place?.name ?? "—"],
-        [d.report.statusLabel, ticket.status === "open" ? d.common.open : d.common.closed],
+        [d.report.statusLabel, ticketStatusLabel(d, ticket.status)],
         [d.report.created, formatDateTime(ticket.createdAt, opts.lang)],
         [d.report.updated, formatDateTime(ticket.updatedAt, opts.lang)],
       ];
