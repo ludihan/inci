@@ -4,6 +4,21 @@ export function onlyDigits(value: string): string {
   return value.replace(/\D/g, "");
 }
 
+export function caretPositionForDigitCount(
+  formatted: string,
+  digitCount: number
+): number {
+  if (digitCount <= 0) return 0;
+  let seen = 0;
+  for (let i = 0; i < formatted.length; i++) {
+    if (/\d/.test(formatted[i])) {
+      seen++;
+      if (seen === digitCount) return i + 1;
+    }
+  }
+  return formatted.length;
+}
+
 export function isValidCpf(value: string): boolean {
   const cpf = onlyDigits(value);
   if (cpf.length !== 11) return false;

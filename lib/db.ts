@@ -127,6 +127,9 @@ function initSchema(db: DatabaseSync): void {
   ensureColumn(db, "tickets", "assigned_to", "TEXT");
   ensureColumn(db, "complaints", "assigned_to", "TEXT");
   ensureColumn(db, "complaint_responses", "photo_path", "TEXT");
+  ensureColumn(db, "ticket_messages", "signature_path", "TEXT");
+  ensureColumn(db, "ticket_messages", "geo_lat", "REAL");
+  ensureColumn(db, "ticket_messages", "geo_lng", "REAL");
 
   const settingsCount = db.prepare("SELECT COUNT(*) AS n FROM settings").get() as { n: number };
   if (settingsCount.n === 0) {

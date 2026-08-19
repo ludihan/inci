@@ -75,6 +75,20 @@ export async function saveAttachment(
   return { ok: true, path: `/uploads/${name}` };
 }
 
+const SIGNATURE_MAX_SIZE = 512 * 1024;
+const DATA_URL_PNG = /^data:image\/png;base64,([a-zA-Z0-9+/]+=*)$/;
+
+export async function saveSignature(dataUrl: string): Promise<string | null> {
+  const match = DATA_URL_PNG.exec(dataUrl.trim());
+  if (!match) return null;
+  const buffer = Buffer.from(match[1], "base64");
+  if (buffer.length === 0 || buffer.length > SIGNATURE_MAX_SIZE) return null;
+  const name = `${randomUUID()}.png`;
+  await mkdir(UPLOADS_DIR, { recursive: true });
+  await writeFile(path.join(UPLOADS_DIR, name), buffer);
+  return `/uploads/${name}`;
+}
+
 export async function deleteImage(photoPath?: string): Promise<void> {
   if (!photoPath) return;
   const name = path.basename(photoPath);

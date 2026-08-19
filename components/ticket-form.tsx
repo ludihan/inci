@@ -6,6 +6,7 @@ import type { Dict, Locale } from "@/lib/i18n";
 import type { Place } from "@/lib/types";
 import { isValidCpf, onlyDigits } from "@/lib/utils";
 import { features } from "@/lib/features";
+import { NAME_MAX_LENGTH, MESSAGE_MAX_LENGTH } from "@/lib/limits";
 import { SubmitButton } from "./submit-button";
 import { MultiFileInput } from "./multi-file-input";
 import { CpfInput } from "./cpf-input";
@@ -131,6 +132,7 @@ export function TicketForm({
           id="subject"
           name="subject"
           required
+          maxLength={NAME_MAX_LENGTH}
           placeholder={dict.ticket.fields.subjectPlaceholder}
           className={inputClass}
         />
@@ -172,6 +174,7 @@ export function TicketForm({
           id="message"
           name="message"
           required
+          maxLength={MESSAGE_MAX_LENGTH}
           rows={5}
           placeholder={dict.ticket.fields.messagePlaceholder}
           className={inputClass}
