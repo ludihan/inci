@@ -40,6 +40,8 @@ import { isValidCpf, onlyDigits, generateComplaintCode } from "./utils";
 import { createPowChallenge, verifyPowSolution, type PowChallenge } from "./pow";
 import { verifyPassword } from "./password";
 import { features, ticketsEnabled } from "./features";
+import { getDb } from "./db";
+import { SQL_QUERY_MAX_LENGTH } from "./limits";
 import {
   createSession,
   deleteSession,
@@ -715,4 +717,84 @@ export async function deleteAdmin(
   if (id === current.id) return;
   await storeDeleteAdmin(id);
   redirect(`/${l}/admin/users`);
+}
+
+// ---- Admin: SQL console ----
+
+const SQL_ROW_RETURNING_KEYWORDS = ["SELECT", "PRAGMA", "EXPLAIN", "WITH"];
+
+export type SqlActionState =
+  | {
+      ok: false;
+      query: string;
+      error: string;
+    }
+  | {
+      ok: true;
+      query: string;
+      columns: string[];
+      rows: Record<string, unknown>[];
+      changes?: number;
+      lastInsertRowid?: string;
+      elapsedMs: number;
+    }
+  | undefined;
+
+function serializeSqlValue(value: unknown): unknown {
+  if (value instanceof Uint8Array) return `<blob: ${value.length} bytes>`;
+  if (typeof value === "bigint") return value.toString();
+  return value;
+}
+
+export async function runSqlQuery(
+  _prev: SqlActionState,
+  formData: FormData
+): Promise<SqlActionState> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) {
+    redirect(`/${l}/admin`);
+  }
+
+  const query = str(formData, "query");
+  if (!query) return { ok: false, query, error: "empty" };
+  if (query.length > SQL_QUERY_MAX_LENGTH) {
+    return { ok: false, query, error: "tooLong" };
+  }
+
+  const trimmed = query.replace(/;\s*$/, "");
+  const firstWord = trimmed.match(/^\s*(\w+)/)?.[1]?.toUpperCase() ?? "";
+  const returnsRows = SQL_ROW_RETURNING_KEYWORDS.includes(firstWord);
+
+  const db = getDb();
+  const start = performance.now();
+  try {
+    const stmt = db.prepare(trimmed);
+    if (returnsRows) {
+      const rawRows = stmt.all() as Record<string, unknown>[];
+      const columns = stmt.columns().map((c) => c.name as string);
+      const rows = rawRows.map((row) => {
+        const out: Record<string, unknown> = {};
+        for (const key of Object.keys(row)) out[key] = serializeSqlValue(row[key]);
+        return out;
+      });
+      return { ok: true, query, columns, rows, elapsedMs: performance.now() - start };
+    }
+    const info = stmt.run();
+    return {
+      ok: true,
+      query,
+      columns: [],
+      rows: [],
+      changes: Number(info.changes),
+      lastInsertRowid: String(info.lastInsertRowid),
+      elapsedMs: performance.now() - start,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      query,
+      error: error instanceof Error ? error.message : "generic",
+    };
+  }
 }

@@ -259,6 +259,22 @@
       "nameRequired": "Informe o nome do local.",
       "duplicate": "Já existe um local com este nome."
     },
+    "sql": {
+      "title": "Console SQL",
+      "subtitle": "Execute comandos SQL diretamente no banco de dados.",
+      "warning": "Cuidado: os comandos aqui são executados diretamente no banco de dados, sem confirmação. Alterações e exclusões são permanentes.",
+      "placeholder": "SELECT * FROM tickets LIMIT 20; (Ctrl+Enter para executar)",
+      "run": "Executar",
+      "running": "Executando...",
+      "empty": "Nenhum comando executado ainda. Digite uma consulta abaixo.",
+      "errorEmpty": "Informe uma consulta SQL.",
+      "errorTooLong": "Consulta muito longa (máximo de 20000 caracteres).",
+      "noRows": "Nenhum resultado.",
+      "rowsAffected": "linha(s) afetada(s).",
+      "commandExecuted": "Comando executado.",
+      "lastInsertId": "Último ID inserido:",
+      "rows": "linha(s)"
+    },
     "dashboard": {
       "title": "Painel administrativo",
       "subtitle": "Visão geral dos chamados e denúncias.",

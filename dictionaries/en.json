@@ -259,6 +259,22 @@
       "nameRequired": "Place name is required.",
       "duplicate": "A place with this name already exists."
     },
+    "sql": {
+      "title": "SQL Console",
+      "subtitle": "Run SQL commands directly against the database.",
+      "warning": "Careful: commands here run directly against the database, with no confirmation. Changes and deletions are permanent.",
+      "placeholder": "SELECT * FROM tickets LIMIT 20; (Ctrl+Enter to run)",
+      "run": "Run",
+      "running": "Running...",
+      "empty": "No command executed yet. Type a query below.",
+      "errorEmpty": "Enter a SQL query.",
+      "errorTooLong": "Query too long (maximum 20000 characters).",
+      "noRows": "No results.",
+      "rowsAffected": "row(s) affected.",
+      "commandExecuted": "Command executed.",
+      "lastInsertId": "Last inserted ID:",
+      "rows": "row(s)"
+    },
     "dashboard": {
       "title": "Admin dashboard",
       "subtitle": "Overview of tickets and complaints.",
