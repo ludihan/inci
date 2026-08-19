@@ -4,6 +4,8 @@ import { getCurrentAdmin, hasPermission } from "@/lib/auth";
 import { features } from "@/lib/features";
 import { getDB } from "@/lib/store";
 import { TicketCard } from "@/components/ticket-card";
+import { TicketsTable } from "@/components/tickets-table";
+import { TicketCodeJump } from "@/components/ticket-code-jump";
 
 export default async function AdminTicketsPage({
   searchParams,
@@ -97,6 +99,7 @@ export default async function AdminTicketsPage({
             {dict.admin.dashboard.closedTickets}
           </FilterLink>
         </div>
+        <TicketCodeJump dict={dict} locale={locale} />
       </div>
 
       {tickets.length === 0 ? (
@@ -104,17 +107,20 @@ export default async function AdminTicketsPage({
           {dict.ticket.empty}
         </p>
       ) : (
-        <div className="space-y-3">
-          {tickets.map((t) => (
-            <TicketCard
-              key={t.id}
-              ticket={t}
-              dict={dict}
-              locale={locale}
-              href={`/${locale}/admin/tickets/${t.id}`}
-            />
-          ))}
-        </div>
+        <>
+          <TicketsTable tickets={tickets} dict={dict} locale={locale} />
+          <div className="space-y-3 lg:hidden">
+            {tickets.map((t) => (
+              <TicketCard
+                key={t.id}
+                ticket={t}
+                dict={dict}
+                locale={locale}
+                href={`/${locale}/admin/tickets/${t.id}`}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

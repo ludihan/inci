@@ -375,7 +375,24 @@
     "release": "Release",
     "reassign": "Reassign",
     "denied": "Access denied. You do not have permission to access this resource.",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "notAssignedYet": "This ticket has not been claimed yet. Claim it to reply, close, or reopen it.",
+    "notAssigneeWithName": "This ticket was claimed by {name}. Only they can reply, close, or reopen it.",
+    "table": {
+      "legendLabel": "Row color:",
+      "status": "Status",
+      "type": "Type",
+      "code": "Code",
+      "createdAt": "Created at",
+      "assignedTo": "Claimed by",
+      "place": "Place",
+      "subject": "Issue description",
+      "cpf": "CPF",
+      "empty": "No records found.",
+      "jumpPlaceholder": "Jump to a ticket, e.g. TCK-A1B2C3D4",
+      "jumpButton": "Go",
+      "jumpError": "Enter the ticket number."
+    }
   },
 
   "report": {
