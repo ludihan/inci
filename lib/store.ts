@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { getDb, inTransaction } from "./db";
 import { hashPassword } from "./password";
+import { publishAdminEvent } from "./events";
 import type {
   Admin,
   Attachment,
@@ -268,6 +269,7 @@ export async function createTicket(input: {
     insertAttachments("ticket_message_attachments", "message_id", messageId, input.attachments);
   });
   const row = db.prepare("SELECT * FROM tickets WHERE id = ?").get(ticketId) as Row;
+  publishAdminEvent(ticketId);
   return rowToTicket(row);
 }
 
@@ -339,6 +341,7 @@ export async function addTicketMessage(
     );
   });
   const updated = db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row;
+  publishAdminEvent(id);
   return rowToTicket(updated);
 }
 
@@ -367,6 +370,7 @@ export async function addTicketAssignment(
     db.prepare("UPDATE tickets SET updated_at = ? WHERE id = ?").run(now, id);
   });
   const updated = db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row;
+  publishAdminEvent(id);
   return rowToTicket(updated);
 }
 
@@ -418,6 +422,7 @@ export async function createComplaint(input: {
     );
   });
   const row = db.prepare("SELECT * FROM complaints WHERE id = ?").get(complaintId) as Row;
+  publishAdminEvent(input.code);
   return rowToComplaint(row);
 }
 
@@ -479,6 +484,7 @@ export async function addComplaintResponse(
   const updated = db
     .prepare("SELECT * FROM complaints WHERE LOWER(code) = LOWER(?)")
     .get(code) as Row;
+  publishAdminEvent(code);
   return rowToComplaint(updated);
 }
 
@@ -514,6 +520,7 @@ export async function addComplaintAssignment(
   const updated = db
     .prepare("SELECT * FROM complaints WHERE LOWER(code) = LOWER(?)")
     .get(code) as Row;
+  publishAdminEvent(code);
   return rowToComplaint(updated);
 }
 
@@ -560,6 +567,7 @@ export async function setComplaintStatus(
   const updated = db
     .prepare("SELECT * FROM complaints WHERE LOWER(code) = LOWER(?)")
     .get(code) as Row;
+  publishAdminEvent(code);
   return rowToComplaint(updated);
 }
 
@@ -582,6 +590,7 @@ export async function assignTicket(
   db.prepare(
     "UPDATE tickets SET assigned_to = ?, status = ?, updated_at = ? WHERE id = ?"
   ).run(adminId, status, new Date().toISOString(), id);
+  publishAdminEvent(id);
   return rowToTicket(db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row);
 }
 
@@ -593,6 +602,7 @@ export async function releaseTicket(id: string): Promise<Ticket | null> {
   db.prepare(
     "UPDATE tickets SET assigned_to = NULL, status = ?, updated_at = ? WHERE id = ?"
   ).run(status, new Date().toISOString(), id);
+  publishAdminEvent(id);
   return rowToTicket(db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row);
 }
 
@@ -611,6 +621,7 @@ export async function assignComplaint(
   const updated = db
     .prepare("SELECT * FROM complaints WHERE LOWER(code) = LOWER(?)")
     .get(code) as Row;
+  publishAdminEvent(code);
   return rowToComplaint(updated);
 }
 
@@ -626,6 +637,7 @@ export async function releaseComplaint(code: string): Promise<Complaint | null> 
   const updated = db
     .prepare("SELECT * FROM complaints WHERE LOWER(code) = LOWER(?)")
     .get(code) as Row;
+  publishAdminEvent(code);
   return rowToComplaint(updated);
 }
 

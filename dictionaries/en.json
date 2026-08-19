@@ -440,6 +440,14 @@
     "noRecords": "No records found for the selected filters.",
     "historyEmpty": "No history.",
     "photo": "Photo",
-    "video": "Video"
+    "video": "Video",
+    "signatures": "Closing signature",
+    "signaturesHelp": "Includes the signature captured when the ticket was closed.",
+    "signatureUser": "Requester's signature",
+    "signatureTech": "Technician's signature",
+    "finalizedDate": "Closed on",
+    "duration": "Duration",
+    "geoLocation": "Geographic location",
+    "generating": "Generating PDF..."
   }
 }

@@ -15,6 +15,7 @@ export interface ReportSections {
   photos: boolean;
   assignee: boolean;
   requester: boolean;
+  signatures: boolean;
 }
 
 export interface ReportOptions {
@@ -129,6 +130,31 @@ function ticketStatusLabel(d: Dict, status: string): string {
 
 function typeColor(type: string): string {
   return type === "it" ? COLOR.blue : COLOR.amber;
+}
+
+/** Draws a right-aligned pill ending at `right`; returns its left edge (its width). */
+function drawPill(
+  doc: PDFKit.PDFDocument,
+  text: string,
+  right: number,
+  y: number,
+  color: string
+): number {
+  doc.font("Helvetica-Bold").fontSize(8);
+  const width = doc.widthOfString(text) + 16;
+  const x = right - width;
+  doc.roundedRect(x, y, width, 15, 7.5).fill(color);
+  doc.fillColor(COLOR.white);
+  doc.text(text, x, y + 4, { width, align: "center" });
+  return x;
+}
+
+function formatDuration(fromIso: string, toIso: string): string {
+  const from = new Date(fromIso).getTime();
+  const to = new Date(toIso).getTime();
+  if (Number.isNaN(from) || Number.isNaN(to) || to < from) return "—";
+  const hours = Math.round((to - from) / (1000 * 60 * 60));
+  return `${hours}h`;
 }
 
 function senderName(
@@ -367,6 +393,49 @@ function addFooters(doc: PDFKit.PDFDocument, totalPages: number): void {
   }
 }
 
+async function loadImageBuffer(relativePath: string): Promise<Buffer | null> {
+  const name = path.basename(relativePath);
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  if (ext !== "png" && ext !== "jpg" && ext !== "jpeg") return null;
+  try {
+    return await readFile(path.join(UPLOADS_DIR, name));
+  } catch {
+    return null;
+  }
+}
+
+async function drawSignatures(
+  doc: PDFKit.PDFDocument,
+  d: Dict,
+  message: TicketMessage,
+  lang: "pt" | "en"
+): Promise<void> {
+  if (!message.signaturePath) return;
+
+  const boxWidth = 220;
+  const imgHeight = 50;
+  ensure(doc, imgHeight + 32);
+  const y = doc.y;
+  const dateStr = formatDateTime(message.createdAt, lang);
+  const label = message.sender === "user" ? d.report.signatureUser : d.report.signatureTech;
+
+  const buffer = await loadImageBuffer(message.signaturePath);
+  if (buffer) {
+    try {
+      doc.image(buffer, MARGIN, y, { fit: [boxWidth, imgHeight] });
+    } catch {
+      // malformed image, skip drawing but still render the line/labels
+    }
+  }
+  doc.moveTo(MARGIN, y + imgHeight + 6).lineTo(MARGIN + boxWidth, y + imgHeight + 6);
+  doc.lineWidth(1).strokeColor(COLOR.zinc400).stroke();
+  doc.font("Helvetica").fontSize(8.5).fillColor(COLOR.zinc500);
+  doc.text(dateStr, MARGIN, y + imgHeight + 9, { width: boxWidth, align: "center" });
+  doc.font("Helvetica-Bold").fontSize(9).fillColor(COLOR.zinc700);
+  doc.text(label, MARGIN, y + imgHeight + 20, { width: boxWidth, align: "center" });
+  doc.y = y + imgHeight + 32;
+}
+
 function finish(doc: PDFKit.PDFDocument): Promise<Buffer> {
   return new Promise<Buffer>((resolve, reject) => {
     const chunks: Buffer[] = [];
@@ -424,29 +493,42 @@ export async function buildTicketsReport(
     });
   }
 
+  const CARD_PADDING = 8;
+  const CARD_GAP = 20;
+  let pageCounter = doc.bufferedPageRange().count || 1;
+  doc.on("pageAdded", () => {
+    pageCounter += 1;
+  });
+
   let index = 0;
   for (const ticket of tickets) {
-    ensure(doc, 48);
-    doc.y += 6;
+    ensure(doc, 60);
+    doc.y += CARD_PADDING;
+    const cardStartPage = pageCounter;
+    const cardTop = doc.y;
 
     const headerY = doc.y;
-    doc.rect(MARGIN, headerY, CONTENT_WIDTH, 24).fill(COLOR.zinc100);
-    doc.fillColor(COLOR.zinc900).font("Helvetica-Bold").fontSize(11);
-    doc.text(ticket.id, MARGIN + 8, headerY + 6, { width: CONTENT_WIDTH - 200 });
-    doc.font("Helvetica").fontSize(9.5);
-    doc.fillColor(typeColor(ticket.type));
-    doc.text(d.ticket.fields[ticket.type], MARGIN + CONTENT_WIDTH - 190, headerY + 7, {
-      width: 70,
-      align: "left",
-    });
-    doc.fillColor(statusColor(ticket.status));
-    doc.text(
+    const headerHeight = 26;
+    doc.roundedRect(MARGIN, headerY, CONTENT_WIDTH, headerHeight, 3).fill(COLOR.zinc900);
+    doc.fillColor(COLOR.white).font("Helvetica-Bold").fontSize(11);
+    doc.text(ticket.id, MARGIN + 10, headerY + 7, { width: CONTENT_WIDTH - 200 });
+    const statusRight = drawPill(
+      doc,
       ticketStatusLabel(d, ticket.status),
-      MARGIN + CONTENT_WIDTH - 112,
-      headerY + 7,
-      { width: 104, align: "right" }
+      MARGIN + CONTENT_WIDTH - 10,
+      headerY + 5.5,
+      statusColor(ticket.status)
     );
-    doc.y = headerY + 26;
+    drawPill(
+      doc,
+      d.ticket.fields[ticket.type],
+      statusRight - 6,
+      headerY + 5.5,
+      typeColor(ticket.type)
+    );
+    doc.y = headerY + headerHeight + 12;
+
+    const closeMessage = [...ticket.messages].reverse().find((m) => m.action === "close");
 
     if (opts.sections.details) {
       const fields: [string, string][] = [
@@ -458,8 +540,18 @@ export async function buildTicketsReport(
       ];
       if (opts.sections.requester) fields.push([d.report.requester, formatCpf(ticket.cpf)]);
       if (opts.sections.assignee) fields.push([d.report.assignee, ticket.assignedToName ?? d.admin.unassigned]);
+      if (closeMessage) {
+        fields.push([d.report.finalizedDate, formatDateTime(closeMessage.createdAt, opts.lang)]);
+        fields.push([d.report.duration, formatDuration(ticket.createdAt, closeMessage.createdAt)]);
+        if (closeMessage.geoLat != null && closeMessage.geoLng != null) {
+          fields.push([
+            d.report.geoLocation,
+            `${closeMessage.geoLat.toFixed(4)}, ${closeMessage.geoLng.toFixed(4)}`,
+          ]);
+        }
+      }
       fields.forEach(([label, value], i) => drawFieldRow(doc, label, value, i % 2 === 1));
-      doc.y += 6;
+      doc.y += 12;
     }
 
     if (opts.sections.history) {
@@ -474,12 +566,35 @@ export async function buildTicketsReport(
       );
     }
 
-    index += 1;
-    if (index < tickets.length) {
-      ensure(doc, 16);
+    if (opts.sections.signatures && closeMessage?.signaturePath) {
+      sectionTitle(doc, d.report.signatures);
+      await drawSignatures(doc, d, closeMessage, opts.lang);
+    }
+
+    // Frame the whole card so it's obvious where this ticket ends, as long as
+    // it didn't spill onto a new page (a border can't span pages in pdfkit).
+    const cardBottom = doc.y;
+    if (pageCounter === cardStartPage) {
+      doc
+        .roundedRect(
+          MARGIN - CARD_PADDING,
+          cardTop - CARD_PADDING,
+          CONTENT_WIDTH + CARD_PADDING * 2,
+          cardBottom - cardTop + CARD_PADDING * 2,
+          4
+        )
+        .lineWidth(1)
+        .strokeColor(COLOR.zinc100)
+        .stroke();
+    } else {
       doc.moveTo(MARGIN, doc.y).lineTo(MARGIN + CONTENT_WIDTH, doc.y);
       doc.lineWidth(1).strokeColor(COLOR.zinc100).stroke();
-      doc.y += 14;
+    }
+
+    index += 1;
+    if (index < tickets.length) {
+      ensure(doc, CARD_GAP);
+      doc.y += CARD_GAP;
     }
   }
 

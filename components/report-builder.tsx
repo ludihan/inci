@@ -79,6 +79,16 @@ function ReportPanel({
       },
       { key: "assignee", label: dict.report.assignee, checked: true },
       { key: "requester", label: dict.report.requester, checked: module === "tickets" },
+      ...(module === "tickets"
+        ? [
+            {
+              key: "signatures",
+              label: dict.report.signatures,
+              checked: true,
+              help: dict.report.signaturesHelp,
+            },
+          ]
+        : []),
     ];
 
   return (

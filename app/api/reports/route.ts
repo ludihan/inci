@@ -11,6 +11,7 @@ const DEFAULT_SECTIONS: ReportSections = {
   photos: false,
   assignee: true,
   requester: true,
+  signatures: true,
 };
 
 const SECTION_KEYS: (keyof ReportSections)[] = [
@@ -20,6 +21,7 @@ const SECTION_KEYS: (keyof ReportSections)[] = [
   "photos",
   "assignee",
   "requester",
+  "signatures",
 ];
 
 export async function GET(request: Request) {
@@ -80,6 +82,7 @@ export async function GET(request: Request) {
       photos: selected.has("photos"),
       assignee: selected.has("assignee"),
       requester: selected.has("requester"),
+      signatures: selected.has("signatures"),
     };
   }
   if (!SECTION_KEYS.some((k) => sections[k])) {
@@ -152,11 +155,16 @@ export async function GET(request: Request) {
       })
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
+    const isSingleTicket = ids.length === 1 && tickets.length === 1;
+    if (isSingleTicket) sections = { ...sections, summary: false };
+
     const buffer = await (await import("@/lib/reports")).buildTicketsReport(
       tickets,
       {
         lang,
-        title: searchParams.get("title") || undefined,
+        title:
+          searchParams.get("title") ||
+          (isSingleTicket ? tickets[0].id : undefined),
         filters,
         sections,
         generatedBy: admin.name,
