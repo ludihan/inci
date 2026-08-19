@@ -33,6 +33,7 @@ import {
 import {
   saveImage,
   saveAttachment,
+  saveSignature,
   deleteImage,
   MAX_IMAGES_PER_MESSAGE,
   MAX_VIDEOS_PER_MESSAGE,
@@ -42,7 +43,11 @@ import { createPowChallenge, verifyPowSolution, type PowChallenge } from "./pow"
 import { verifyPassword } from "./password";
 import { features, ticketsEnabled } from "./features";
 import { getDb } from "./db";
-import { SQL_QUERY_MAX_LENGTH } from "./limits";
+import {
+  SQL_QUERY_MAX_LENGTH,
+  NAME_MAX_LENGTH,
+  MESSAGE_MAX_LENGTH,
+} from "./limits";
 import {
   createSession,
   deleteSession,
@@ -63,6 +68,13 @@ function str(formData: FormData, key: string): string {
 function lang(formData: FormData): string {
   const value = str(formData, "lang");
   return hasLocale(value) ? value : "pt";
+}
+
+function optionalNum(formData: FormData, key: string): number | undefined {
+  const raw = str(formData, key);
+  if (!raw) return undefined;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : undefined;
 }
 
 export async function getPowChallenge(): Promise<PowChallenge> {
@@ -126,7 +138,9 @@ export async function createTicket(
   if (cpf.length === 0) return { error: "cpfRequired" };
   if (!isValidCpf(cpf)) return { error: "cpfInvalid" };
   if (!subject) return { error: "subjectRequired" };
+  if (subject.length > NAME_MAX_LENGTH) return { error: "textTooLong" };
   if (!message) return { error: "messageRequired" };
+  if (message.length > MESSAGE_MAX_LENGTH) return { error: "textTooLong" };
   if (type !== "it" && type !== "maintenance") return { error: "generic" };
   if (!ticketsEnabled) return { error: "generic" };
   if (
@@ -176,6 +190,7 @@ export async function addTicketMessage(
   if (!ticket) return { error: "notFound" };
   if (ticket.cpf !== cpf) return { error: "wrongCpf" };
   if (!content) return { error: "messageRequired" };
+  if (content.length > MESSAGE_MAX_LENGTH) return { error: "textTooLong" };
 
   const powResult = checkPow(formData);
   if (powResult.error) return { error: powResult.error };
@@ -209,6 +224,7 @@ export async function userTicketTransition(
   if (transition !== "close" && transition !== "open")
     return { error: "generic" };
   if (!content) return { error: "messageRequired" };
+  if (content.length > MESSAGE_MAX_LENGTH) return { error: "textTooLong" };
 
   const powResult = checkPow(formData);
   if (powResult.error) return { error: powResult.error };
@@ -219,11 +235,24 @@ export async function userTicketTransition(
   if (attachmentsResult.error === "tooManyImages") return { error: "tooManyImages" };
   if (attachmentsResult.error === "tooManyVideos") return { error: "tooManyVideos" };
 
+  let signaturePath: string | undefined;
+  let geoLat: number | undefined;
+  let geoLng: number | undefined;
+  if (transition === "close") {
+    signaturePath = (await saveSignature(str(formData, "signature"))) ?? undefined;
+    if (!signaturePath) return { error: "signatureRequired" };
+    geoLat = optionalNum(formData, "geoLat");
+    geoLng = optionalNum(formData, "geoLng");
+  }
+
   await storeAddTicketMessage(ticketId, {
     content,
     attachments: attachmentsResult.attachments,
     sender: "user",
     action: transition,
+    signaturePath,
+    geoLat,
+    geoLng,
   });
 
   redirect(`/${l}/track/ticket/${ticketId}?cpf=${encodeURIComponent(cpf)}`);
@@ -336,6 +365,7 @@ export async function adminAddTicketMessage(
 
   const admin = await requireAdminForModule(moduleForTicketType(ticket.type));
   if (!content) return { error: "messageRequired" };
+  if (content.length > MESSAGE_MAX_LENGTH) return { error: "textTooLong" };
 
   const attachmentsResult = await attachmentsFromForm(formData);
   if (attachmentsResult.error) return { error: "generic" };
@@ -368,6 +398,7 @@ export async function adminTicketTransition(
   if (transition !== "close" && transition !== "open")
     return { error: "generic" };
   if (!content) return { error: "messageRequired" };
+  if (content.length > MESSAGE_MAX_LENGTH) return { error: "textTooLong" };
 
   const attachmentsResult = await attachmentsFromForm(formData);
   if (attachmentsResult.error === "invalid-type") return { error: "invalidFileType" };
@@ -375,12 +406,25 @@ export async function adminTicketTransition(
   if (attachmentsResult.error === "tooManyImages") return { error: "tooManyImages" };
   if (attachmentsResult.error === "tooManyVideos") return { error: "tooManyVideos" };
 
+  let signaturePath: string | undefined;
+  let geoLat: number | undefined;
+  let geoLng: number | undefined;
+  if (transition === "close") {
+    signaturePath = (await saveSignature(str(formData, "signature"))) ?? undefined;
+    if (!signaturePath) return { error: "signatureRequired" };
+    geoLat = optionalNum(formData, "geoLat");
+    geoLng = optionalNum(formData, "geoLng");
+  }
+
   await storeAddTicketMessage(ticketId, {
     content,
     attachments: attachmentsResult.attachments,
     sender: "admin",
     senderName: admin.name,
     action: transition,
+    signaturePath,
+    geoLat,
+    geoLng,
   });
 
   revalidatePath(`/${l}/admin/tickets/${ticketId}`);

@@ -87,6 +87,7 @@
     "today": "hoje",
     "yesterday": "ontem",
     "generic": "Ocorreu um erro. Tente novamente.",
+    "textTooLong": "O texto excede o tamanho máximo permitido.",
     "invalidPhotoType": "O arquivo enviado não é uma imagem válida (JPG, PNG, WEBP ou GIF).",
     "photoTooLarge": "A imagem excede o tamanho máximo de 5MB.",
     "invalidFileType": "Um dos arquivos enviados não é válido (imagens: JPG, PNG, WEBP ou GIF; vídeos: MP4, WEBM ou MOV).",
@@ -169,6 +170,14 @@
     "transitionPrompt": "Descreva a resolução ou a justificativa",
     "closeTicket": "Fechar chamado",
     "reopenTicket": "Reabrir chamado",
+    "signatureRequired": "É necessário assinar para encerrar o chamado.",
+    "signature": {
+      "label": "Assinatura",
+      "fullscreen": "Tela cheia",
+      "clear": "Limpar",
+      "cancel": "Cancelar",
+      "done": "Concluir"
+    },
     "messages": {
       "created": "Chamado aberto",
       "closed": "Chamado fechado",

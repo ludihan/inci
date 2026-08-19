@@ -45,6 +45,9 @@ export interface TicketMessage {
   sender: "user" | "admin";
   senderName?: string;
   action: TicketMessageAction;
+  signaturePath?: string;
+  geoLat?: number;
+  geoLng?: number;
   createdAt: string;
 }
 

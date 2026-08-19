@@ -1,14 +1,16 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState, type FormEvent } from "react";
 import {
   userTicketTransition,
   adminTicketTransition,
   type ActionState,
 } from "@/lib/actions";
 import type { Dict, Locale } from "@/lib/i18n";
+import { MESSAGE_MAX_LENGTH } from "@/lib/limits";
 import { SubmitButton } from "./submit-button";
 import { MultiFileInput } from "./multi-file-input";
+import { SignaturePad } from "./signature-pad";
 import { usePowGate } from "./use-pow-gate";
 import { PowProgress } from "./pow-progress";
 
@@ -32,9 +34,22 @@ export function TicketTransitionForm({
     undefined
   );
   const pow = usePowGate();
+  const [clientError, setClientError] = useState<string | null>(null);
+  const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null);
 
   const isClosing = transition === "close";
+
+  useEffect(() => {
+    if (!isClosing || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setGeo({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => undefined,
+      { timeout: 5000 }
+    );
+  }, [isClosing]);
+
   const errorText = (() => {
+    if (clientError) return clientError;
     if (!admin && pow.error)
       return dict.ticket[pow.error as keyof typeof dict.ticket] as string;
     if (!state?.error) return null;
@@ -46,20 +61,42 @@ export function TicketTransitionForm({
       : dict.common.generic;
   })();
 
+  const checkSignature = (form: HTMLFormElement): boolean => {
+    if (!isClosing) return true;
+    const data = new FormData(form);
+    const signature = String(data.get("signature") ?? "");
+    if (!signature) {
+      setClientError(dict.ticket.signatureRequired);
+      return false;
+    }
+    setClientError(null);
+    return true;
+  };
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    if (admin) {
+      if (!checkSignature(e.currentTarget)) e.preventDefault();
+      return;
+    }
+    pow.guardSubmit(e, () => checkSignature(e.currentTarget));
+  };
+
   // pow.* accessors below are plain state/ref-object reads returned from the
   // usePowGate hook, not `.current` reads; eslint-plugin-react-hooks can't
   // tell them apart from real ref-during-render access.
   /* eslint-disable react-hooks/refs */
   return (
-    <form
-      action={action}
-      className="space-y-4"
-      onSubmit={admin ? undefined : (e) => pow.guardSubmit(e)}
-    >
+    <form action={action} className="space-y-4" onSubmit={handleSubmit}>
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="ticketId" value={ticketId} />
       <input type="hidden" name="transition" value={transition} />
       {cpf && <input type="hidden" name="cpf" value={cpf} />}
+      {geo && (
+        <>
+          <input type="hidden" name="geoLat" value={geo.lat} />
+          <input type="hidden" name="geoLng" value={geo.lng} />
+        </>
+      )}
       {!admin && (
         <>
           <input type="hidden" name="powToken" ref={pow.tokenInputRef} />
@@ -79,6 +116,7 @@ export function TicketTransitionForm({
           id={`transition-${ticketId}`}
           name="content"
           required
+          maxLength={MESSAGE_MAX_LENGTH}
           rows={2}
           placeholder={
             isClosing
@@ -98,6 +136,18 @@ export function TicketTransitionForm({
           <MultiFileInput dict={dict} />
         </div>
       </div>
+
+      {isClosing && (
+        <SignaturePad
+          name="signature"
+          label={dict.ticket.signature.label}
+          required
+          fullscreenLabel={dict.ticket.signature.fullscreen}
+          clearLabel={dict.ticket.signature.clear}
+          cancelLabel={dict.ticket.signature.cancel}
+          doneLabel={dict.ticket.signature.done}
+        />
+      )}
 
       {errorText && (
         <p

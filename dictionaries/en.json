@@ -87,6 +87,7 @@
     "today": "today",
     "yesterday": "yesterday",
     "generic": "An error occurred. Please try again.",
+    "textTooLong": "The text exceeds the maximum allowed length.",
     "invalidPhotoType": "The uploaded file is not a valid image (JPG, PNG, WEBP or GIF).",
     "photoTooLarge": "The image exceeds the maximum size of 5MB.",
     "invalidFileType": "One of the uploaded files is not valid (images: JPG, PNG, WEBP or GIF; videos: MP4, WEBM or MOV).",
@@ -169,6 +170,14 @@
     "transitionPrompt": "Describe the resolution or the reason",
     "closeTicket": "Close ticket",
     "reopenTicket": "Reopen ticket",
+    "signatureRequired": "A signature is required to close the ticket.",
+    "signature": {
+      "label": "Signature",
+      "fullscreen": "Fullscreen",
+      "clear": "Clear",
+      "cancel": "Cancel",
+      "done": "Done"
+    },
     "messages": {
       "created": "Ticket opened",
       "closed": "Ticket closed",

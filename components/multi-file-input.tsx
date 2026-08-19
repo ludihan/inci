@@ -52,13 +52,19 @@ function MultiFilePicker({
   useEffect(() => {
     if (previewIndex === null) return;
     const count = files.length;
+    // Capture phase + stopPropagation so Escape closes only this lightbox,
+    // not an ancestor modal (e.g. the ticket popup) it happens to be nested
+    // inside.
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setPreviewIndex(null);
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setPreviewIndex(null);
+      }
       if (e.key === "ArrowLeft") setPreviewIndex((i) => (i === null ? null : (i - 1 + count) % count));
       if (e.key === "ArrowRight") setPreviewIndex((i) => (i === null ? null : (i + 1) % count));
     };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [previewIndex, files.length]);
 
   function sync(next: File[]) {
