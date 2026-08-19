@@ -440,6 +440,14 @@
     "noRecords": "Nenhum registro encontrado para os filtros selecionados.",
     "historyEmpty": "Sem histórico.",
     "photo": "Foto",
-    "video": "Vídeo"
+    "video": "Vídeo",
+    "signatures": "Assinatura de encerramento",
+    "signaturesHelp": "Inclui a assinatura registrada ao encerrar o chamado.",
+    "signatureUser": "Assinatura do solicitante",
+    "signatureTech": "Assinatura do técnico",
+    "finalizedDate": "Encerrado em",
+    "duration": "Duração",
+    "geoLocation": "Localização geográfica",
+    "generating": "Gerando PDF..."
   }
 }
