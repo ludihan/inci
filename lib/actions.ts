@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { hasLocale } from "./i18n";
 import {
   getTicketById,
@@ -347,7 +348,8 @@ export async function adminAddTicketMessage(
     action: "message",
   });
 
-  redirect(`/${l}/admin/tickets/${ticketId}`);
+  revalidatePath(`/${l}/admin/tickets/${ticketId}`);
+  revalidatePath(`/${l}/admin/tickets`);
 }
 
 export async function adminTicketTransition(
@@ -381,7 +383,8 @@ export async function adminTicketTransition(
     action: transition,
   });
 
-  redirect(`/${l}/admin/tickets/${ticketId}`);
+  revalidatePath(`/${l}/admin/tickets/${ticketId}`);
+  revalidatePath(`/${l}/admin/tickets`);
 }
 
 // ---- Admin: complaints ----
@@ -407,7 +410,8 @@ export async function adminAddComplaintResponse(
     senderName: admin.name,
   });
 
-  redirect(`/${l}/admin/complaints/${code}`);
+  revalidatePath(`/${l}/admin/complaints/${code}`);
+  revalidatePath(`/${l}/admin/complaints`);
 }
 
 export async function adminSetComplaintStatus(
@@ -441,7 +445,8 @@ export async function adminSetComplaintStatus(
     attachmentsResult.attachments
   );
 
-  redirect(`/${l}/admin/complaints/${code}`);
+  revalidatePath(`/${l}/admin/complaints/${code}`);
+  revalidatePath(`/${l}/admin/complaints`);
 }
 
 // ---- Admin: assume ----
@@ -454,7 +459,8 @@ export async function assumeTicket(formData: FormData): Promise<void> {
   const admin = await requireAdminForModule(moduleForTicketType(ticket.type));
   await storeAssignTicket(id, admin.id);
   await storeAddTicketAssignment(id, { action: "assume", actorName: admin.name });
-  redirect(`/${l}/admin/tickets/${id}`);
+  revalidatePath(`/${l}/admin/tickets/${id}`);
+  revalidatePath(`/${l}/admin/tickets`);
 }
 
 export async function releaseTicket(formData: FormData): Promise<void> {
@@ -465,7 +471,8 @@ export async function releaseTicket(formData: FormData): Promise<void> {
   const admin = await requireAdminForModule(moduleForTicketType(ticket.type));
   await storeReleaseTicket(id);
   await storeAddTicketAssignment(id, { action: "release", actorName: admin.name });
-  redirect(`/${l}/admin/tickets/${id}`);
+  revalidatePath(`/${l}/admin/tickets/${id}`);
+  revalidatePath(`/${l}/admin/tickets`);
 }
 
 export async function assumeComplaint(formData: FormData): Promise<void> {
@@ -475,7 +482,8 @@ export async function assumeComplaint(formData: FormData): Promise<void> {
   if (!admin) redirect(`/${l}/admin/complaints`);
   await storeAssignComplaint(code, admin.id);
   await storeAddComplaintAssignment(code, { action: "assume", actorName: admin.name });
-  redirect(`/${l}/admin/complaints/${code}`);
+  revalidatePath(`/${l}/admin/complaints/${code}`);
+  revalidatePath(`/${l}/admin/complaints`);
 }
 
 export async function forwardComplaint(formData: FormData): Promise<void> {
@@ -495,7 +503,8 @@ export async function forwardComplaint(formData: FormData): Promise<void> {
     actorName: current.name,
     targetName: target.name,
   });
-  redirect(`/${l}/admin/complaints/${code}`);
+  revalidatePath(`/${l}/admin/complaints/${code}`);
+  revalidatePath(`/${l}/admin/complaints`);
 }
 
 export async function releaseComplaint(formData: FormData): Promise<void> {
@@ -505,7 +514,8 @@ export async function releaseComplaint(formData: FormData): Promise<void> {
   if (!admin) redirect(`/${l}/admin/complaints`);
   await storeReleaseComplaint(code);
   await storeAddComplaintAssignment(code, { action: "release", actorName: admin.name });
-  redirect(`/${l}/admin/complaints/${code}`);
+  revalidatePath(`/${l}/admin/complaints/${code}`);
+  revalidatePath(`/${l}/admin/complaints`);
 }
 
 // ---- Admin: auth ----

@@ -375,7 +375,24 @@
     "release": "Liberar",
     "reassign": "Reatribuir",
     "denied": "Acesso negado. Você não tem permissão para acessar este recurso.",
-    "logout": "Sair"
+    "logout": "Sair",
+    "notAssignedYet": "Este chamado ainda não foi assumido. Assuma o chamado para poder responder, fechar ou reabri-lo.",
+    "notAssigneeWithName": "Este chamado foi assumido por {name}. Apenas quem assumiu pode responder, fechar ou reabrir o chamado.",
+    "table": {
+      "legendLabel": "Cor da linha:",
+      "status": "Status",
+      "type": "Tipo",
+      "code": "Código",
+      "createdAt": "Data/hora da criação",
+      "assignedTo": "Assumido por",
+      "place": "Local",
+      "subject": "Descrição do problema",
+      "cpf": "CPF",
+      "empty": "Nenhum registro encontrado.",
+      "jumpPlaceholder": "Ir para o chamado, ex.: TCK-A1B2C3D4",
+      "jumpButton": "Ir",
+      "jumpError": "Informe o número do chamado."
+    }
   },
 
   "report": {
