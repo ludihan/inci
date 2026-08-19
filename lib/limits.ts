@@ -1,0 +1,1 @@
+export const SQL_QUERY_MAX_LENGTH = 20000;

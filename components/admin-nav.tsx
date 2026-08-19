@@ -56,6 +56,11 @@ export function AdminNav({
       label: dict.admin.settings.title,
       show: isSuperAdmin(admin),
     },
+    {
+      href: `/${lang}/admin/sql`,
+      label: dict.admin.sql.title,
+      show: isSuperAdmin(admin),
+    },
   ];
 
   return (
