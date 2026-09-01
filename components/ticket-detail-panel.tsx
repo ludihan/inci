@@ -1,6 +1,6 @@
 import type { Admin, Ticket } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
-import { formatCpf, formatDateTime } from "@/lib/utils";
+import { formatCpf, formatDateTime, formatPhone } from "@/lib/utils";
 import { assumeTicket, releaseTicket } from "@/lib/actions";
 import { StatusBadge, TicketTypeBadge } from "@/components/badges";
 import { TicketMessages } from "@/components/ticket-messages";
@@ -97,7 +97,39 @@ export function TicketDetailPanel({
           {ticket.place && (
             <InfoField label={dict.ticket.fields.place} value={ticket.place.name} />
           )}
+          {ticket.requesterName && (
+            <InfoField label={dict.ticket.fields.requesterName} value={ticket.requesterName} />
+          )}
+          {ticket.requesterPhone && (
+            <InfoField
+              label={dict.ticket.fields.requesterPhone}
+              value={formatPhone(ticket.requesterPhone)}
+            />
+          )}
+          {ticket.role && (
+            <InfoField label={dict.ticket.fields.role} value={ticket.role} />
+          )}
+          {ticket.equipment && (
+            <InfoField label={dict.ticket.fields.equipment} value={ticket.equipment} />
+          )}
+          {ticket.equipmentBrand && (
+            <InfoField label={dict.ticket.fields.equipmentBrand} value={ticket.equipmentBrand} />
+          )}
+          {ticket.equipmentModel && (
+            <InfoField label={dict.ticket.fields.equipmentModel} value={ticket.equipmentModel} />
+          )}
         </div>
+
+        {ticket.notes && (
+          <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+            <p className="text-[11px] uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+              {dict.ticket.fields.notes}
+            </p>
+            <p className="mt-1 whitespace-pre-wrap text-xs text-zinc-800 dark:text-zinc-200">
+              {ticket.notes}
+            </p>
+          </div>
+        )}
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">

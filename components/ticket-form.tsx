@@ -10,6 +10,7 @@ import { NAME_MAX_LENGTH, MESSAGE_MAX_LENGTH } from "@/lib/limits";
 import { SubmitButton } from "./submit-button";
 import { MultiFileInput } from "./multi-file-input";
 import { CpfInput } from "./cpf-input";
+import { PhoneInput } from "./phone-input";
 import { usePowGate } from "./use-pow-gate";
 import { PowProgress } from "./pow-progress";
 
@@ -138,6 +139,98 @@ export function TicketForm({
         />
       </div>
 
+      <fieldset className="space-y-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
+        <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          {dict.ticket.fields.requesterSection}{" "}
+          <span className="font-normal normal-case text-zinc-400">
+            {dict.common.optional}
+          </span>
+        </legend>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="requesterName" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              {dict.ticket.fields.requesterName}
+            </label>
+            <input
+              id="requesterName"
+              name="requesterName"
+              maxLength={NAME_MAX_LENGTH}
+              placeholder={dict.ticket.fields.requesterNamePlaceholder}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label htmlFor="requesterPhone" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              {dict.ticket.fields.requesterPhone}
+            </label>
+            <PhoneInput
+              id="requesterPhone"
+              placeholder={dict.ticket.fields.requesterPhonePlaceholder}
+              errorMessage={dict.ticket.phoneInvalid}
+            />
+          </div>
+        </div>
+        <div>
+          <label htmlFor="role" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            {dict.ticket.fields.role}
+          </label>
+          <input
+            id="role"
+            name="role"
+            maxLength={NAME_MAX_LENGTH}
+            placeholder={dict.ticket.fields.rolePlaceholder}
+            className={inputClass}
+          />
+        </div>
+      </fieldset>
+
+      <fieldset className="space-y-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
+        <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          {dict.ticket.fields.equipmentSection}{" "}
+          <span className="font-normal normal-case text-zinc-400">
+            {dict.common.optional}
+          </span>
+        </legend>
+        <div>
+          <label htmlFor="equipment" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            {dict.ticket.fields.equipment}
+          </label>
+          <input
+            id="equipment"
+            name="equipment"
+            maxLength={NAME_MAX_LENGTH}
+            placeholder={dict.ticket.fields.equipmentPlaceholder}
+            className={inputClass}
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="equipmentBrand" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              {dict.ticket.fields.equipmentBrand}
+            </label>
+            <input
+              id="equipmentBrand"
+              name="equipmentBrand"
+              maxLength={NAME_MAX_LENGTH}
+              placeholder={dict.ticket.fields.equipmentBrandPlaceholder}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label htmlFor="equipmentModel" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              {dict.ticket.fields.equipmentModel}
+            </label>
+            <input
+              id="equipmentModel"
+              name="equipmentModel"
+              maxLength={NAME_MAX_LENGTH}
+              placeholder={dict.ticket.fields.equipmentModelPlaceholder}
+              className={inputClass}
+            />
+          </div>
+        </div>
+      </fieldset>
+
       <div>
         <label htmlFor="place" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
           {dict.ticket.fields.place} <span className="text-zinc-400">*</span>
@@ -177,6 +270,21 @@ export function TicketForm({
           maxLength={MESSAGE_MAX_LENGTH}
           rows={5}
           placeholder={dict.ticket.fields.messagePlaceholder}
+          className={inputClass}
+        />
+      </div>
+
+      <div>
+        <label htmlFor="notes" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          {dict.ticket.fields.notes}{" "}
+          <span className="text-zinc-400">{dict.common.optional}</span>
+        </label>
+        <textarea
+          id="notes"
+          name="notes"
+          maxLength={MESSAGE_MAX_LENGTH}
+          rows={3}
+          placeholder={dict.ticket.fields.notesPlaceholder}
           className={inputClass}
         />
       </div>

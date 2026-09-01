@@ -38,7 +38,7 @@ import {
   MAX_IMAGES_PER_MESSAGE,
   MAX_VIDEOS_PER_MESSAGE,
 } from "./uploads";
-import { isValidCpf, onlyDigits, generateComplaintCode } from "./utils";
+import { isValidCpf, isValidPhone, onlyDigits, generateComplaintCode } from "./utils";
 import { createPowChallenge, verifyPowSolution, type PowChallenge } from "./pow";
 import { verifyPassword } from "./password";
 import { features, ticketsEnabled } from "./features";
@@ -134,11 +134,22 @@ export async function createTicket(
   const subject = str(formData, "subject");
   const message = str(formData, "message");
   const placeId = str(formData, "placeId");
+  const requesterName = str(formData, "requesterName");
+  const requesterPhone = onlyDigits(str(formData, "requesterPhone"));
+  const role = str(formData, "role");
+  const equipment = str(formData, "equipment");
+  const equipmentBrand = str(formData, "equipmentBrand");
+  const equipmentModel = str(formData, "equipmentModel");
+  const notes = str(formData, "notes");
 
   if (cpf.length === 0) return { error: "cpfRequired" };
   if (!isValidCpf(cpf)) return { error: "cpfInvalid" };
   if (!subject) return { error: "subjectRequired" };
   if (subject.length > NAME_MAX_LENGTH) return { error: "textTooLong" };
+  if (requesterName.length > NAME_MAX_LENGTH) return { error: "textTooLong" };
+  if (requesterPhone && !isValidPhone(requesterPhone))
+    return { error: "phoneInvalid" };
+  if (notes.length > MESSAGE_MAX_LENGTH) return { error: "textTooLong" };
   if (!message) return { error: "messageRequired" };
   if (message.length > MESSAGE_MAX_LENGTH) return { error: "textTooLong" };
   if (type !== "it" && type !== "maintenance") return { error: "generic" };
@@ -172,6 +183,13 @@ export async function createTicket(
     message,
     placeId,
     attachments: attachmentsResult.attachments,
+    requesterName,
+    requesterPhone,
+    role,
+    equipment,
+    equipmentBrand,
+    equipmentModel,
+    notes,
   });
 
   redirect(`/${l}/track/ticket/${ticket.id}?cpf=${encodeURIComponent(cpf)}`);

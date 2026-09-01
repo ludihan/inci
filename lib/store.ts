@@ -139,6 +139,13 @@ function rowToTicket(row: Row): Ticket {
     type: row.type === "it" ? "it" : "maintenance",
     cpf: String(row.cpf),
     subject: String(row.subject),
+    requesterName: String(row.requester_name ?? ""),
+    requesterPhone: String(row.requester_phone ?? ""),
+    role: String(row.role ?? ""),
+    equipment: String(row.equipment ?? ""),
+    equipmentBrand: String(row.equipment_brand ?? ""),
+    equipmentModel: String(row.equipment_model ?? ""),
+    notes: String(row.notes ?? ""),
     place,
     status:
       row.status === "closed"
@@ -243,6 +250,13 @@ export async function createTicket(input: {
   placeId: string;
   message: string;
   attachments: AttachmentRef[];
+  requesterName?: string;
+  requesterPhone?: string;
+  role?: string;
+  equipment?: string;
+  equipmentBrand?: string;
+  equipmentModel?: string;
+  notes?: string;
 }): Promise<Ticket> {
   const db = getDb();
   const now = new Date().toISOString();
@@ -250,8 +264,11 @@ export async function createTicket(input: {
   const messageId = randomUUID();
   inTransaction(() => {
     db.prepare(
-      `INSERT INTO tickets (id, type, cpf, subject, place_id, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO tickets
+         (id, type, cpf, subject, place_id, status, created_at, updated_at,
+          requester_name, requester_phone, role, equipment, equipment_brand,
+          equipment_model, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       ticketId,
       input.type,
@@ -260,7 +277,14 @@ export async function createTicket(input: {
       input.placeId,
       "open",
       now,
-      now
+      now,
+      input.requesterName ?? "",
+      input.requesterPhone ?? "",
+      input.role ?? "",
+      input.equipment ?? "",
+      input.equipmentBrand ?? "",
+      input.equipmentModel ?? "",
+      input.notes ?? ""
     );
     db.prepare(
       `INSERT INTO ticket_messages (id, ticket_id, content, photo_path, sender, sender_name, action, created_at)
