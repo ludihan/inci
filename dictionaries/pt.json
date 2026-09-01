@@ -516,6 +516,11 @@
     "finalizedDate": "Encerrado em",
     "duration": "Duração",
     "geoLocation": "Localização geográfica",
-    "generating": "Gerando PDF..."
+    "generating": "Gerando PDF...",
+    "tableTitle": "Tabela de chamados",
+    "generateTable": "Gerar tabela (PDF)",
+    "rowColorNote": "Cor da linha = situação do chamado:",
+    "itemsTitle": "Itens utilizados",
+    "itemsTotal": "Valor total dos itens"
   }
 }

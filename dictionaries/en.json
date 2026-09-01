@@ -516,6 +516,11 @@
     "finalizedDate": "Closed on",
     "duration": "Duration",
     "geoLocation": "Geographic location",
-    "generating": "Generating PDF..."
+    "generating": "Generating PDF...",
+    "tableTitle": "Tickets table",
+    "generateTable": "Generate table (PDF)",
+    "rowColorNote": "Row color = ticket status:",
+    "itemsTitle": "Items used",
+    "itemsTotal": "Items total"
   }
 }

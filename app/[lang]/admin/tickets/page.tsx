@@ -6,6 +6,7 @@ import { getDB } from "@/lib/store";
 import { TicketCard } from "@/components/ticket-card";
 import { TicketsTable } from "@/components/tickets-table";
 import { TicketCodeJump } from "@/components/ticket-code-jump";
+import { TicketsReportButton } from "@/components/tickets-report-button";
 
 export default async function AdminTicketsPage({
   searchParams,
@@ -99,7 +100,10 @@ export default async function AdminTicketsPage({
             {dict.admin.dashboard.closedTickets}
           </FilterLink>
         </div>
-        <TicketCodeJump dict={dict} locale={locale} />
+        <div className="flex flex-wrap items-center gap-2">
+          <TicketsReportButton dict={dict} locale={locale} />
+          <TicketCodeJump dict={dict} locale={locale} />
+        </div>
       </div>
 
       {tickets.length === 0 ? (

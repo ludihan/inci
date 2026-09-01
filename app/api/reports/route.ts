@@ -155,6 +155,21 @@ export async function GET(request: Request) {
       })
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
+    if (searchParams.get("view") === "table") {
+      const tableBuffer = await (
+        await import("@/lib/reports")
+      ).buildTicketsTablePdf(tickets, {
+        lang,
+        title: searchParams.get("title") || undefined,
+        filters,
+        generatedBy: admin.name,
+      });
+      return pdfResponse(
+        tableBuffer,
+        `chamados-tabela-${new Date().toISOString().slice(0, 10)}.pdf`
+      );
+    }
+
     const isSingleTicket = ids.length === 1 && tickets.length === 1;
     if (isSingleTicket) sections = { ...sections, summary: false };
 
