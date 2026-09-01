@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getDict, getLocale } from "@/lib/i18n";
 import { getCurrentAdmin, hasPermission, moduleForTicketType } from "@/lib/auth";
-import { getTicketById } from "@/lib/store";
+import { getTicketById, listItems } from "@/lib/store";
 import { Modal } from "@/components/modal";
 import { TicketDetailPanel } from "@/components/ticket-detail-panel";
 
@@ -20,6 +20,7 @@ export default async function AdminTicketModal({
 
   const { id } = await params;
   const ticket = await getTicketById(id);
+  const catalog = await listItems();
 
   if (!ticket) {
     return (
@@ -48,6 +49,7 @@ export default async function AdminTicketModal({
         admin={admin}
         dict={dict}
         locale={locale}
+        catalog={catalog}
       />
     </Modal>
   );

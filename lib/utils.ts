@@ -46,6 +46,13 @@ export function formatCpf(value: string): string {
   );
 }
 
+export function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(Number.isFinite(value) ? value : 0);
+}
+
 export function isValidPhone(value: string): boolean {
   const digits = onlyDigits(value);
   return digits.length === 10 || digits.length === 11;

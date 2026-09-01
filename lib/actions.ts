@@ -24,6 +24,12 @@ import {
   createPlace as storeCreatePlace,
   deletePlace as storeDeletePlace,
   renamePlace as storeRenamePlace,
+  createItem as storeCreateItem,
+  updateItem as storeUpdateItem,
+  deleteItem as storeDeleteItem,
+  addTicketItem as storeAddTicketItem,
+  updateTicketItem as storeUpdateTicketItem,
+  removeTicketItem as storeRemoveTicketItem,
   getSettings,
   setLogoPath,
   getAdminByUsername,
@@ -483,6 +489,125 @@ export async function adminUpdateTicketCriticality(
 
   revalidatePath(`/${l}/admin/tickets/${ticketId}`);
   revalidatePath(`/${l}/admin/tickets`);
+}
+
+// ---- Admin: item catalog ----
+
+function numField(formData: FormData, key: string, fallback = 0): number {
+  const raw = Number(str(formData, key).replace(",", "."));
+  return Number.isFinite(raw) ? raw : fallback;
+}
+
+export async function createItem(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) redirect(`/${l}/admin`);
+
+  const name = str(formData, "name");
+  if (!name) return { error: "nameRequired" };
+
+  const result = await storeCreateItem(name, Math.max(0, numField(formData, "defaultPrice")));
+  if (!result.ok) return { error: "duplicate-item" };
+  redirect(`/${l}/admin/items`);
+}
+
+export async function updateItem(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) redirect(`/${l}/admin`);
+
+  const id = str(formData, "id");
+  const name = str(formData, "name");
+  if (!name) return { error: "nameRequired" };
+
+  const result = await storeUpdateItem(id, name, Math.max(0, numField(formData, "defaultPrice")));
+  if (!result.ok) {
+    if (result.error === "not-found") return { error: "notFound" };
+    return { error: "duplicate-item" };
+  }
+  redirect(`/${l}/admin/items`);
+}
+
+export async function deleteItem(formData: FormData): Promise<void> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) redirect(`/${l}/admin`);
+
+  const id = str(formData, "id");
+  await storeDeleteItem(id);
+  redirect(`/${l}/admin/items`);
+}
+
+// ---- Admin: ticket items ----
+
+async function requireTicketAdmin(ticketId: string) {
+  const ticket = await getTicketById(ticketId);
+  if (!ticket) return null;
+  await requireAdminForModule(moduleForTicketType(ticket.type));
+  return ticket;
+}
+
+export async function addTicketItemAction(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const ticketId = str(formData, "ticketId");
+  const ticket = await requireTicketAdmin(ticketId);
+  if (!ticket) return { error: "notFound" };
+
+  const quantity = numField(formData, "quantity", 1);
+  if (!(quantity > 0)) return { error: "quantityInvalid" };
+
+  const result = await storeAddTicketItem({
+    ticketId,
+    itemId: str(formData, "itemId") || undefined,
+    newItemName: str(formData, "newItemName") || undefined,
+    quantity,
+    unitPrice: Math.max(0, numField(formData, "unitPrice")),
+    discount: Math.max(0, numField(formData, "discount")),
+  });
+  if (!result.ok) return { error: result.error ?? "generic" };
+
+  revalidatePath(`/${l}/admin/tickets/${ticketId}`);
+}
+
+export async function updateTicketItemAction(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const ticketId = str(formData, "ticketId");
+  const ticket = await requireTicketAdmin(ticketId);
+  if (!ticket) return { error: "notFound" };
+
+  const quantity = numField(formData, "quantity", 1);
+  if (!(quantity > 0)) return { error: "quantityInvalid" };
+
+  await storeUpdateTicketItem(
+    ticketId,
+    str(formData, "itemId"),
+    quantity,
+    Math.max(0, numField(formData, "unitPrice")),
+    Math.max(0, numField(formData, "discount"))
+  );
+  revalidatePath(`/${l}/admin/tickets/${ticketId}`);
+}
+
+export async function removeTicketItemAction(formData: FormData): Promise<void> {
+  const l = lang(formData);
+  const ticketId = str(formData, "ticketId");
+  const ticket = await requireTicketAdmin(ticketId);
+  if (!ticket) return;
+
+  await storeRemoveTicketItem(ticketId, str(formData, "itemId"));
+  revalidatePath(`/${l}/admin/tickets/${ticketId}`);
 }
 
 // ---- Admin: complaints ----

@@ -146,6 +146,26 @@
       "medio": "Média",
       "baixo": "Baixa"
     },
+    "items": {
+      "title": "Itens necessários",
+      "add": "+ Adicionar item",
+      "cancelAdd": "Cancelar item",
+      "fromCatalog": "Item do catálogo",
+      "newItem": "Novo item...",
+      "newItemName": "Nome do novo item",
+      "newItemNamePlaceholder": "Ex.: Cabo de rede 5m",
+      "quantity": "Quantidade",
+      "quantityShort": "Qtd.",
+      "unitPrice": "Preço (R$)",
+      "discount": "Desconto (R$)",
+      "addButton": "Adicionar item",
+      "adding": "Adicionando...",
+      "edit": "Editar",
+      "remove": "Remover",
+      "total": "Total",
+      "itemRequired": "Selecione um item existente ou informe o nome de um novo item.",
+      "quantityInvalid": "Informe uma quantidade maior que zero."
+    },
     "attachmentsRequired": "Envie ao menos uma foto ou vídeo para abrir o chamado.",
     "messageRequired": "A descrição do problema é obrigatória.",
     "subjectRequired": "O assunto é obrigatório.",
@@ -295,6 +315,21 @@
       "empty": "Nenhum local cadastrado.",
       "nameRequired": "Informe o nome do local.",
       "duplicate": "Já existe um local com este nome."
+    },
+    "items": {
+      "title": "Itens / peças",
+      "subtitle": "Catálogo de itens e peças que podem ser usados nos chamados.",
+      "newTitle": "Novo item",
+      "name": "Nome do item",
+      "namePlaceholder": "Ex.: Cabo de rede 5m",
+      "price": "Preço padrão (R$)",
+      "create": "Adicionar item",
+      "delete": "Excluir",
+      "rename": "Editar",
+      "empty": "Nenhum item cadastrado.",
+      "nameRequired": "Informe o nome do item.",
+      "duplicate": "Já existe um item com este nome.",
+      "inUse": "Este item está em uso em um ou mais chamados."
     },
     "sql": {
       "title": "Console SQL",

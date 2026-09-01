@@ -21,6 +21,22 @@ export interface Place {
   createdAt: string;
 }
 
+export interface Item {
+  id: string;
+  name: string;
+  defaultPrice: number;
+  createdAt: string;
+}
+
+export interface TicketItemUsage {
+  id: string;
+  item: Item;
+  quantity: number;
+  unitPrice: number;
+  discount: number;
+  total: number;
+}
+
 export interface Settings {
   logoPath: string | null;
 }
@@ -65,6 +81,7 @@ export interface Ticket {
   equipmentModel: string;
   notes: string;
   criticality: TicketCriticality;
+  items: TicketItemUsage[];
   place: Place | null;
   status: TicketStatus;
   assignedToId?: string;
@@ -110,6 +127,7 @@ export interface Complaint {
 export interface DB {
   admins: Admin[];
   places: Place[];
+  items: Item[];
   tickets: Ticket[];
   complaints: Complaint[];
 }
