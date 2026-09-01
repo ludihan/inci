@@ -3,6 +3,16 @@ import type { Dict, Locale } from "@/lib/i18n";
 import { formatDate } from "@/lib/utils";
 import { AttachmentGallery } from "./attachment-gallery";
 
+// Color-codes the timeline dot by the kind of event it marks, so the
+// history is scannable at a glance (ported from inci-masf-fsa).
+const DOT_COLOR_BY_ACTION: Record<string, string> = {
+  close: "bg-red-500",
+  assume: "bg-amber-500",
+  forward: "bg-amber-500",
+  release: "bg-zinc-400 dark:bg-zinc-500",
+  message: "bg-sky-500",
+};
+
 export function TicketMessages({
   ticket,
   dict,
@@ -34,12 +44,18 @@ export function TicketMessages({
                     : msg.action === "message"
                       ? null
                       : dict.ticket.messages.reopened;
+        const isReopen = msg.action === "open" && isUser;
+        const dotColor =
+          DOT_COLOR_BY_ACTION[msg.action] ??
+          (msg.action === "open"
+            ? isReopen
+              ? "bg-sky-500"
+              : "bg-emerald-500"
+            : "bg-zinc-400 dark:bg-zinc-500");
         return (
           <li key={i} className="relative">
             <span
-              className={`absolute -left-[31px] top-1 h-3 w-3 rounded-full ring-4 ring-white dark:ring-zinc-950 ${
-                isUser ? "bg-zinc-400 dark:bg-zinc-500" : "bg-emerald-500"
-              }`}
+              className={`absolute -left-[31px] top-1 h-3 w-3 rounded-full ring-4 ring-white dark:ring-zinc-950 ${dotColor}`}
             />
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
