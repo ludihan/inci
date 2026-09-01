@@ -1,10 +1,11 @@
-import type { Admin, Ticket } from "@/lib/types";
+import type { Admin, Item, Ticket } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
 import { formatCpf, formatDateTime, formatPhone } from "@/lib/utils";
 import { assumeTicket, releaseTicket } from "@/lib/actions";
 import { CriticalityBadge, StatusBadge, TicketTypeBadge } from "@/components/badges";
 import { TicketMessages } from "@/components/ticket-messages";
 import { TicketCriticalitySelect } from "@/components/ticket-criticality-select";
+import { TicketItemsForm } from "@/components/ticket-items-form";
 import { TicketReplyForm } from "@/components/ticket-reply-form";
 import { TicketTransitionForm } from "@/components/ticket-transition-form";
 import { CopyButton } from "@/components/copy-button";
@@ -29,11 +30,13 @@ export function TicketDetailPanel({
   admin,
   dict,
   locale,
+  catalog = [],
 }: {
   ticket: Ticket;
   admin: Admin;
   dict: Dict;
   locale: Locale;
+  catalog?: Item[];
 }) {
   const isClosed = ticket.status === "closed";
   const isAssignee = ticket.assignedToId === admin.id;
@@ -163,6 +166,16 @@ export function TicketDetailPanel({
           <TicketMessages ticket={ticket} dict={dict} locale={locale} />
         </div>
       </div>
+
+      {isAssignee && (
+        <TicketItemsForm
+          dict={dict}
+          lang={locale}
+          ticketId={ticket.id}
+          items={ticket.items}
+          catalog={catalog}
+        />
+      )}
 
       <div className="space-y-3">
         {isAssignee ? (

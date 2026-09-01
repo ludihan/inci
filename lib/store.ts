@@ -8,10 +8,12 @@ import type {
   Complaint,
   ComplaintResponse,
   DB,
+  Item,
   Place,
   Settings,
   Ticket,
   TicketCriticality,
+  TicketItemUsage,
   TicketMessage,
   TicketType,
 } from "./types";
@@ -132,6 +134,49 @@ function findAdminName(id: unknown): string | undefined {
   return row ? String(row.name) : undefined;
 }
 
+function rowToItem(row: Row): Item {
+  return {
+    id: String(row.id),
+    name: String(row.name),
+    defaultPrice: Number(row.default_price ?? 0),
+    createdAt: String(row.created_at),
+  };
+}
+
+function rowToTicketItemUsage(row: Row): TicketItemUsage {
+  const quantity = Number(row.quantity ?? 0);
+  const unitPrice = Number(row.unit_price ?? 0);
+  const discount = Number(row.discount ?? 0);
+  return {
+    id: String(row.id),
+    item: {
+      id: String(row.item_id),
+      name: String(row.item_name),
+      defaultPrice: Number(row.default_price ?? 0),
+      createdAt: String(row.item_created_at),
+    },
+    quantity,
+    unitPrice,
+    discount,
+    total: Math.max(0, quantity * unitPrice - discount),
+  };
+}
+
+function findTicketItems(ticketId: string): TicketItemUsage[] {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT ti.*, i.name AS item_name, i.default_price AS default_price,
+              i.created_at AS item_created_at
+       FROM ticket_items ti
+       JOIN items i ON i.id = ti.item_id
+       WHERE ti.ticket_id = ?
+       ORDER BY ti.created_at ASC`
+    )
+    .all(ticketId) as Row[];
+  return rows.map(rowToTicketItemUsage);
+}
+
 function rowToTicket(row: Row): Ticket {
   const db = getDb();
   const messages = db
@@ -161,6 +206,7 @@ function rowToTicket(row: Row): Ticket {
     equipmentModel: String(row.equipment_model ?? ""),
     notes: String(row.notes ?? ""),
     criticality: toCriticality(row.criticality),
+    items: findTicketItems(String(row.id)),
     place,
     status:
       row.status === "closed"
@@ -246,11 +292,13 @@ export async function getDB(): Promise<DB> {
   const db = getDb();
   const admins = db.prepare("SELECT * FROM admins ORDER BY created_at ASC").all() as Row[];
   const places = db.prepare("SELECT * FROM places ORDER BY name ASC").all() as Row[];
+  const items = db.prepare("SELECT * FROM items ORDER BY name ASC").all() as Row[];
   const tickets = db.prepare("SELECT * FROM tickets").all() as Row[];
   const complaints = db.prepare("SELECT * FROM complaints").all() as Row[];
   return {
     admins: admins.map(rowToAdmin),
     places: places.map(rowToPlace),
+    items: items.map(rowToItem),
     tickets: tickets.map(rowToTicket),
     complaints: complaints.map(rowToComplaint),
   };
@@ -659,6 +707,159 @@ export async function releaseTicket(id: string): Promise<Ticket | null> {
   ).run(status, new Date().toISOString(), id);
   publishAdminEvent(id);
   return rowToTicket(db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row);
+}
+
+// ---- Items ----
+
+export async function listItems(): Promise<Item[]> {
+  const db = getDb();
+  const rows = db.prepare("SELECT * FROM items ORDER BY name ASC").all() as Row[];
+  return rows.map(rowToItem);
+}
+
+export async function createItem(
+  name: string,
+  defaultPrice = 0
+): Promise<{ ok: boolean; error?: string; item?: Item }> {
+  const db = getDb();
+  const existing = db
+    .prepare("SELECT id FROM items WHERE LOWER(name) = LOWER(?)")
+    .get(name) as Row | undefined;
+  if (existing) return { ok: false, error: "duplicate-item" };
+  const item: Item = {
+    id: randomUUID(),
+    name,
+    defaultPrice: Number.isFinite(defaultPrice) ? Math.max(0, defaultPrice) : 0,
+    createdAt: new Date().toISOString(),
+  };
+  db.prepare(
+    "INSERT INTO items (id, name, default_price, created_at) VALUES (?, ?, ?, ?)"
+  ).run(item.id, item.name, item.defaultPrice, item.createdAt);
+  return { ok: true, item };
+}
+
+export async function updateItem(
+  id: string,
+  name: string,
+  defaultPrice: number
+): Promise<{ ok: boolean; error?: string }> {
+  const db = getDb();
+  const item = db.prepare("SELECT * FROM items WHERE id = ?").get(id) as Row | undefined;
+  if (!item) return { ok: false, error: "not-found" };
+  const clash = db
+    .prepare("SELECT id FROM items WHERE LOWER(name) = LOWER(?) AND id != ?")
+    .get(name, id) as Row | undefined;
+  if (clash) return { ok: false, error: "duplicate-item" };
+  db.prepare("UPDATE items SET name = ?, default_price = ? WHERE id = ?").run(
+    name,
+    Number.isFinite(defaultPrice) ? Math.max(0, defaultPrice) : 0,
+    id
+  );
+  return { ok: true };
+}
+
+export async function deleteItem(
+  id: string
+): Promise<{ ok: boolean; error?: string }> {
+  const db = getDb();
+  const usage = db
+    .prepare("SELECT COUNT(*) AS n FROM ticket_items WHERE item_id = ?")
+    .get(id) as { n: number };
+  if (usage.n > 0) return { ok: false, error: "item-in-use" };
+  const result = db.prepare("DELETE FROM items WHERE id = ?").run(id);
+  return { ok: result.changes > 0 };
+}
+
+export async function addTicketItem(input: {
+  ticketId: string;
+  itemId?: string;
+  newItemName?: string;
+  quantity: number;
+  unitPrice: number;
+  discount: number;
+}): Promise<{ ok: boolean; error?: string }> {
+  const db = getDb();
+  const ticket = db
+    .prepare("SELECT id FROM tickets WHERE id = ?")
+    .get(input.ticketId);
+  if (!ticket) return { ok: false, error: "not-found" };
+
+  let itemId = input.itemId;
+  if (!itemId) {
+    const name = (input.newItemName ?? "").trim();
+    if (!name) return { ok: false, error: "itemRequired" };
+    const existing = db
+      .prepare("SELECT id FROM items WHERE LOWER(name) = LOWER(?)")
+      .get(name) as Row | undefined;
+    if (existing) {
+      itemId = String(existing.id);
+    } else {
+      const created = await createItem(name, input.unitPrice);
+      if (!created.ok || !created.item) return { ok: false, error: "generic" };
+      itemId = created.item.id;
+    }
+  } else {
+    const item = db.prepare("SELECT id FROM items WHERE id = ?").get(itemId);
+    if (!item) return { ok: false, error: "itemRequired" };
+  }
+
+  const now = new Date().toISOString();
+  db.prepare(
+    `INSERT INTO ticket_items (id, ticket_id, item_id, quantity, unit_price, discount, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(ticket_id, item_id) DO UPDATE SET
+       quantity = excluded.quantity,
+       unit_price = excluded.unit_price,
+       discount = excluded.discount`
+  ).run(
+    randomUUID(),
+    input.ticketId,
+    itemId,
+    input.quantity,
+    input.unitPrice,
+    input.discount,
+    now
+  );
+  db.prepare("UPDATE tickets SET updated_at = ? WHERE id = ?").run(now, input.ticketId);
+  publishAdminEvent(input.ticketId);
+  return { ok: true };
+}
+
+export async function updateTicketItem(
+  ticketId: string,
+  itemId: string,
+  quantity: number,
+  unitPrice: number,
+  discount: number
+): Promise<{ ok: boolean }> {
+  const db = getDb();
+  const result = db
+    .prepare(
+      "UPDATE ticket_items SET quantity = ?, unit_price = ?, discount = ? WHERE ticket_id = ? AND item_id = ?"
+    )
+    .run(quantity, unitPrice, discount, ticketId, itemId);
+  db.prepare("UPDATE tickets SET updated_at = ? WHERE id = ?").run(
+    new Date().toISOString(),
+    ticketId
+  );
+  publishAdminEvent(ticketId);
+  return { ok: result.changes > 0 };
+}
+
+export async function removeTicketItem(
+  ticketId: string,
+  itemId: string
+): Promise<{ ok: boolean }> {
+  const db = getDb();
+  const result = db
+    .prepare("DELETE FROM ticket_items WHERE ticket_id = ? AND item_id = ?")
+    .run(ticketId, itemId);
+  db.prepare("UPDATE tickets SET updated_at = ? WHERE id = ?").run(
+    new Date().toISOString(),
+    ticketId
+  );
+  publishAdminEvent(ticketId);
+  return { ok: result.changes > 0 };
 }
 
 export async function assignComplaint(

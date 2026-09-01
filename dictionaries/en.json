@@ -146,6 +146,26 @@
       "medio": "Medium",
       "baixo": "Low"
     },
+    "items": {
+      "title": "Required items",
+      "add": "+ Add item",
+      "cancelAdd": "Cancel item",
+      "fromCatalog": "Catalog item",
+      "newItem": "New item...",
+      "newItemName": "New item name",
+      "newItemNamePlaceholder": "e.g. Network cable 5m",
+      "quantity": "Quantity",
+      "quantityShort": "Qty.",
+      "unitPrice": "Price (R$)",
+      "discount": "Discount (R$)",
+      "addButton": "Add item",
+      "adding": "Adding...",
+      "edit": "Edit",
+      "remove": "Remove",
+      "total": "Total",
+      "itemRequired": "Pick an existing item or enter a name for a new one.",
+      "quantityInvalid": "Enter a quantity greater than zero."
+    },
     "attachmentsRequired": "Send at least one photo or video to open the ticket.",
     "messageRequired": "The problem description is required.",
     "subjectRequired": "The subject is required.",
@@ -295,6 +315,21 @@
       "empty": "No places registered.",
       "nameRequired": "Place name is required.",
       "duplicate": "A place with this name already exists."
+    },
+    "items": {
+      "title": "Items / parts",
+      "subtitle": "Catalog of items and parts that can be used on tickets.",
+      "newTitle": "New item",
+      "name": "Item name",
+      "namePlaceholder": "e.g. Network cable 5m",
+      "price": "Default price (R$)",
+      "create": "Add item",
+      "delete": "Delete",
+      "rename": "Edit",
+      "empty": "No items registered.",
+      "nameRequired": "Item name is required.",
+      "duplicate": "An item with this name already exists.",
+      "inUse": "This item is in use on one or more tickets."
     },
     "sql": {
       "title": "SQL Console",
