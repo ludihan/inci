@@ -4,6 +4,8 @@ import { useActionState, useRef } from "react";
 import { submitComplaintReply, type ActionState } from "@/lib/actions";
 import type { Dict, Locale } from "@/lib/i18n";
 import { SubmitButton } from "./submit-button";
+import { usePowGate } from "./use-pow-gate";
+import { PowProgress } from "./pow-progress";
 
 export function ComplaintReplyForm({
   dict,
@@ -19,18 +21,27 @@ export function ComplaintReplyForm({
     undefined
   );
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const pow = usePowGate();
 
   const errorText = (() => {
+    if (pow.error)
+      return dict.complaint[pow.error as keyof typeof dict.complaint] as string;
     if (!state?.error) return null;
     const key = state.error as keyof typeof dict.complaint;
     if (key in dict.complaint) return String(dict.complaint[key]);
     return dict.common.generic;
   })();
 
+  // pow.* accessors below are plain state/ref-object reads returned from the
+  // usePowGate hook, not `.current` reads; eslint-plugin-react-hooks can't
+  // tell them apart from real ref-during-render access.
+  /* eslint-disable react-hooks/refs */
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} className="space-y-4" onSubmit={(e) => pow.guardSubmit(e)}>
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="code" value={code} />
+      <input type="hidden" name="powToken" ref={pow.tokenInputRef} />
+      <input type="hidden" name="powSolution" ref={pow.solutionInputRef} />
 
       <div>
         <label htmlFor="content" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -72,9 +83,14 @@ export function ComplaintReplyForm({
         </p>
       )}
 
-      <SubmitButton pendingLabel={dict.common.sending}>
-        {dict.complaint.replyButton}
-      </SubmitButton>
+      {pow.solving ? (
+        <PowProgress progress={pow.progress} label={dict.complaint.powVerifying} />
+      ) : (
+        <SubmitButton pendingLabel={dict.common.sending}>
+          {dict.complaint.replyButton}
+        </SubmitButton>
+      )}
     </form>
   );
+  /* eslint-enable react-hooks/refs */
 }
