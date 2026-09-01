@@ -139,6 +139,13 @@
       "closePlaceholder": "Ex.: Problema resolvido...",
       "reopenPlaceholder": "Ex.: O problema voltou a ocorrer..."
     },
+    "criticality": {
+      "label": "Criticidade",
+      "critica": "Crítica",
+      "urgente": "Urgente",
+      "medio": "Média",
+      "baixo": "Baixa"
+    },
     "attachmentsRequired": "Envie ao menos uma foto ou vídeo para abrir o chamado.",
     "messageRequired": "A descrição do problema é obrigatória.",
     "subjectRequired": "O assunto é obrigatório.",

@@ -1,5 +1,40 @@
-import type { ComplaintStatus, TicketStatus, TicketType } from "@/lib/types";
+import type {
+  ComplaintStatus,
+  TicketCriticality,
+  TicketStatus,
+  TicketType,
+} from "@/lib/types";
 import type { Dict } from "@/lib/i18n";
+
+export const CRITICALITY_ORDER: TicketCriticality[] = [
+  "critica",
+  "urgente",
+  "medio",
+  "baixo",
+];
+
+const CRITICALITY_CLASS: Record<TicketCriticality, string> = {
+  critica: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
+  urgente: "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
+  medio: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  baixo: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+};
+
+export function CriticalityBadge({
+  criticality,
+  dict,
+}: {
+  criticality: TicketCriticality;
+  dict: Dict;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${CRITICALITY_CLASS[criticality]}`}
+    >
+      {dict.ticket.criticality[criticality]}
+    </span>
+  );
+}
 
 export function TicketTypeBadge({
   type,
