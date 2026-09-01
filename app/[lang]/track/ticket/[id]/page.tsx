@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDict, getLocale, type Dict } from "@/lib/i18n";
 import { getTicketById } from "@/lib/store";
-import { isValidCpf, onlyDigits, formatCpf } from "@/lib/utils";
+import { isValidCpf, onlyDigits, formatCpf, formatPhone } from "@/lib/utils";
 import type { Ticket } from "@/lib/types";
 import { StatusBadge, TicketTypeBadge } from "@/components/badges";
 import { TicketMessages } from "@/components/ticket-messages";
@@ -71,6 +71,42 @@ function TicketDetail({
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
             </svg>
             {ticket.place.name}
+          </p>
+        )}
+        {(ticket.requesterName ||
+          ticket.role ||
+          ticket.equipment ||
+          ticket.equipmentBrand ||
+          ticket.equipmentModel ||
+          ticket.requesterPhone) && (
+          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-3">
+            {(
+              [
+                [dict.ticket.fields.requesterName, ticket.requesterName],
+                [
+                  dict.ticket.fields.requesterPhone,
+                  ticket.requesterPhone && formatPhone(ticket.requesterPhone),
+                ],
+                [dict.ticket.fields.role, ticket.role],
+                [dict.ticket.fields.equipment, ticket.equipment],
+                [dict.ticket.fields.equipmentBrand, ticket.equipmentBrand],
+                [dict.ticket.fields.equipmentModel, ticket.equipmentModel],
+              ] as const
+            )
+              .filter(([, value]) => value)
+              .map(([label, value]) => (
+                <div key={label}>
+                  <dt className="text-[11px] uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                    {label}
+                  </dt>
+                  <dd className="text-zinc-800 dark:text-zinc-200">{value}</dd>
+                </div>
+              ))}
+          </dl>
+        )}
+        {ticket.notes && (
+          <p className="mt-3 whitespace-pre-wrap border-t border-zinc-100 pt-3 text-sm text-zinc-700 dark:border-zinc-800 dark:text-zinc-300">
+            {ticket.notes}
           </p>
         )}
       </div>

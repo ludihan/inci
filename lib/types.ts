@@ -56,6 +56,13 @@ export interface Ticket {
   type: TicketType;
   cpf: string;
   subject: string;
+  requesterName: string;
+  requesterPhone: string;
+  role: string;
+  equipment: string;
+  equipmentBrand: string;
+  equipmentModel: string;
+  notes: string;
   place: Place | null;
   status: TicketStatus;
   assignedToId?: string;
