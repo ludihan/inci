@@ -11,12 +11,26 @@ import type {
   Place,
   Settings,
   Ticket,
+  TicketCriticality,
   TicketMessage,
   TicketType,
 } from "./types";
 
 type Row = Record<string, unknown>;
 type AttachmentRef = { path: string; kind: "image" | "video" };
+
+export const TICKET_CRITICALITIES: TicketCriticality[] = [
+  "critica",
+  "urgente",
+  "medio",
+  "baixo",
+];
+
+function toCriticality(value: unknown): TicketCriticality {
+  return TICKET_CRITICALITIES.includes(value as TicketCriticality)
+    ? (value as TicketCriticality)
+    : "medio";
+}
 
 function rowToAttachment(row: Row): Attachment {
   return {
@@ -146,6 +160,7 @@ function rowToTicket(row: Row): Ticket {
     equipmentBrand: String(row.equipment_brand ?? ""),
     equipmentModel: String(row.equipment_model ?? ""),
     notes: String(row.notes ?? ""),
+    criticality: toCriticality(row.criticality),
     place,
     status:
       row.status === "closed"
@@ -257,6 +272,7 @@ export async function createTicket(input: {
   equipmentBrand?: string;
   equipmentModel?: string;
   notes?: string;
+  criticality?: TicketCriticality;
 }): Promise<Ticket> {
   const db = getDb();
   const now = new Date().toISOString();
@@ -267,8 +283,8 @@ export async function createTicket(input: {
       `INSERT INTO tickets
          (id, type, cpf, subject, place_id, status, created_at, updated_at,
           requester_name, requester_phone, role, equipment, equipment_brand,
-          equipment_model, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          equipment_model, notes, criticality)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       ticketId,
       input.type,
@@ -284,7 +300,8 @@ export async function createTicket(input: {
       input.equipment ?? "",
       input.equipmentBrand ?? "",
       input.equipmentModel ?? "",
-      input.notes ?? ""
+      input.notes ?? "",
+      toCriticality(input.criticality)
     );
     db.prepare(
       `INSERT INTO ticket_messages (id, ticket_id, content, photo_path, sender, sender_name, action, created_at)
@@ -614,6 +631,20 @@ export async function assignTicket(
   db.prepare(
     "UPDATE tickets SET assigned_to = ?, status = ?, updated_at = ? WHERE id = ?"
   ).run(adminId, status, new Date().toISOString(), id);
+  publishAdminEvent(id);
+  return rowToTicket(db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row);
+}
+
+export async function updateTicketCriticality(
+  id: string,
+  criticality: TicketCriticality
+): Promise<Ticket | null> {
+  const db = getDb();
+  const ticket = db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row | undefined;
+  if (!ticket) return null;
+  db.prepare(
+    "UPDATE tickets SET criticality = ?, updated_at = ? WHERE id = ?"
+  ).run(toCriticality(criticality), new Date().toISOString(), id);
   publishAdminEvent(id);
   return rowToTicket(db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row);
 }

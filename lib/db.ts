@@ -134,6 +134,7 @@ function initSchema(db: DatabaseSync): void {
   ensureColumn(db, "tickets", "equipment_brand", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "tickets", "equipment_model", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "tickets", "notes", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "tickets", "criticality", "TEXT NOT NULL DEFAULT 'medio'");
   ensureColumn(db, "ticket_messages", "signature_path", "TEXT");
   ensureColumn(db, "ticket_messages", "geo_lat", "REAL");
   ensureColumn(db, "ticket_messages", "geo_lng", "REAL");

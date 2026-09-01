@@ -13,6 +13,8 @@ import {
   getComplaintByCode,
   assignTicket as storeAssignTicket,
   releaseTicket as storeReleaseTicket,
+  updateTicketCriticality as storeUpdateTicketCriticality,
+  TICKET_CRITICALITIES,
   assignComplaint as storeAssignComplaint,
   releaseComplaint as storeReleaseComplaint,
   addTicketAssignment as storeAddTicketAssignment,
@@ -141,6 +143,12 @@ export async function createTicket(
   const equipmentBrand = str(formData, "equipmentBrand");
   const equipmentModel = str(formData, "equipmentModel");
   const notes = str(formData, "notes");
+  const criticalityRaw = str(formData, "criticality");
+  const criticality = TICKET_CRITICALITIES.includes(
+    criticalityRaw as (typeof TICKET_CRITICALITIES)[number]
+  )
+    ? (criticalityRaw as (typeof TICKET_CRITICALITIES)[number])
+    : "medio";
 
   if (cpf.length === 0) return { error: "cpfRequired" };
   if (!isValidCpf(cpf)) return { error: "cpfInvalid" };
@@ -190,6 +198,7 @@ export async function createTicket(
     equipmentBrand,
     equipmentModel,
     notes,
+    criticality,
   });
 
   redirect(`/${l}/track/ticket/${ticket.id}?cpf=${encodeURIComponent(cpf)}`);
@@ -450,6 +459,27 @@ export async function adminTicketTransition(
     geoLat,
     geoLng,
   });
+
+  revalidatePath(`/${l}/admin/tickets/${ticketId}`);
+  revalidatePath(`/${l}/admin/tickets`);
+}
+
+export async function adminUpdateTicketCriticality(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const ticketId = str(formData, "ticketId");
+  const criticality = str(formData, "criticality");
+
+  const ticket = await getTicketById(ticketId);
+  if (!ticket) return { error: "notFound" };
+
+  await requireAdminForModule(moduleForTicketType(ticket.type));
+  if (!TICKET_CRITICALITIES.includes(criticality as (typeof TICKET_CRITICALITIES)[number]))
+    return { error: "generic" };
+
+  await storeUpdateTicketCriticality(ticketId, criticality as (typeof TICKET_CRITICALITIES)[number]);
 
   revalidatePath(`/${l}/admin/tickets/${ticketId}`);
   revalidatePath(`/${l}/admin/tickets`);

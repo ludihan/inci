@@ -139,6 +139,13 @@
       "closePlaceholder": "e.g. Issue resolved...",
       "reopenPlaceholder": "e.g. The issue happened again..."
     },
+    "criticality": {
+      "label": "Criticality",
+      "critica": "Critical",
+      "urgente": "Urgent",
+      "medio": "Medium",
+      "baixo": "Low"
+    },
     "attachmentsRequired": "Send at least one photo or video to open the ticket.",
     "messageRequired": "The problem description is required.",
     "subjectRequired": "The subject is required.",

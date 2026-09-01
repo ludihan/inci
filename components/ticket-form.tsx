@@ -139,6 +139,24 @@ export function TicketForm({
         />
       </div>
 
+      <div>
+        <label htmlFor="criticality" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          {dict.ticket.criticality.label}
+        </label>
+        <select
+          id="criticality"
+          name="criticality"
+          defaultValue="medio"
+          className={inputClass}
+        >
+          {(["critica", "urgente", "medio", "baixo"] as const).map((c) => (
+            <option key={c} value={c}>
+              {dict.ticket.criticality[c]}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <fieldset className="space-y-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
         <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
           {dict.ticket.fields.requesterSection}{" "}

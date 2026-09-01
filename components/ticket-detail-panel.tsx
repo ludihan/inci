@@ -2,8 +2,9 @@ import type { Admin, Ticket } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
 import { formatCpf, formatDateTime, formatPhone } from "@/lib/utils";
 import { assumeTicket, releaseTicket } from "@/lib/actions";
-import { StatusBadge, TicketTypeBadge } from "@/components/badges";
+import { CriticalityBadge, StatusBadge, TicketTypeBadge } from "@/components/badges";
 import { TicketMessages } from "@/components/ticket-messages";
+import { TicketCriticalitySelect } from "@/components/ticket-criticality-select";
 import { TicketReplyForm } from "@/components/ticket-reply-form";
 import { TicketTransitionForm } from "@/components/ticket-transition-form";
 import { CopyButton } from "@/components/copy-button";
@@ -75,6 +76,7 @@ export function TicketDetailPanel({
             </span>
             <TicketTypeBadge type={ticket.type} dict={dict} />
             <StatusBadge status={ticket.status} dict={dict} />
+            <CriticalityBadge criticality={ticket.criticality} dict={dict} />
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
@@ -140,6 +142,17 @@ export function TicketDetailPanel({
           </p>
           <div className="flex items-center gap-2">{assignButton}</div>
         </div>
+
+        {isAssignee && !isClosed && (
+          <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+            <TicketCriticalitySelect
+              dict={dict}
+              lang={locale}
+              ticketId={ticket.id}
+              criticality={ticket.criticality}
+            />
+          </div>
+        )}
       </div>
 
       <div>

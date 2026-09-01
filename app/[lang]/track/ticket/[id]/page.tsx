@@ -4,7 +4,7 @@ import { getDict, getLocale, type Dict } from "@/lib/i18n";
 import { getTicketById } from "@/lib/store";
 import { isValidCpf, onlyDigits, formatCpf, formatPhone } from "@/lib/utils";
 import type { Ticket } from "@/lib/types";
-import { StatusBadge, TicketTypeBadge } from "@/components/badges";
+import { CriticalityBadge, StatusBadge, TicketTypeBadge } from "@/components/badges";
 import { TicketMessages } from "@/components/ticket-messages";
 import { TicketReplyForm } from "@/components/ticket-reply-form";
 import { TicketTransitionForm } from "@/components/ticket-transition-form";
@@ -56,6 +56,7 @@ function TicketDetail({
             </span>
             <TicketTypeBadge type={ticket.type} dict={dict} />
             <StatusBadge status={ticket.status} dict={dict} />
+            <CriticalityBadge criticality={ticket.criticality} dict={dict} />
           </div>
           <span className="text-xs text-zinc-500 dark:text-zinc-400">
             {dict.common.createdAt}: {ticket.createdAt.slice(0, 10)}

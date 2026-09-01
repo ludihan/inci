@@ -1,5 +1,6 @@
 export type TicketType = "it" | "maintenance";
 export type TicketStatus = "open" | "in_progress" | "closed";
+export type TicketCriticality = "critica" | "urgente" | "medio" | "baixo";
 export type ComplaintStatus = "open" | "closed";
 export type Module = "it" | "maintenance";
 export type AdminRole = "admin" | "superadmin";
@@ -63,6 +64,7 @@ export interface Ticket {
   equipmentBrand: string;
   equipmentModel: string;
   notes: string;
+  criticality: TicketCriticality;
   place: Place | null;
   status: TicketStatus;
   assignedToId?: string;
