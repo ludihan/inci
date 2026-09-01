@@ -29,12 +29,17 @@ export function AttachmentGallery({
     if (previewIndex === null) return;
     const count = attachments.length;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setPreviewIndex(null);
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setPreviewIndex(null);
+      }
       if (e.key === "ArrowLeft") setPreviewIndex((i) => (i === null ? null : (i - 1 + count) % count));
       if (e.key === "ArrowRight") setPreviewIndex((i) => (i === null ? null : (i + 1) % count));
     };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    // Capture phase so Escape closes just this lightbox, not an ancestor
+    // modal (e.g. the ticket popup) whose own Escape handler is on bubble.
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [previewIndex, attachments.length]);
 
   return (
