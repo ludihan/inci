@@ -6,6 +6,8 @@ import type { Dict, Locale } from "@/lib/i18n";
 import type { Place } from "@/lib/types";
 import { SubmitButton } from "./submit-button";
 import { MultiFileInput } from "./multi-file-input";
+import { usePowGate } from "./use-pow-gate";
+import { PowProgress } from "./pow-progress";
 
 export function ComplaintForm({
   dict,
@@ -20,8 +22,11 @@ export function ComplaintForm({
     createComplaint,
     undefined
   );
+  const pow = usePowGate();
 
   const errorText = (() => {
+    if (pow.error)
+      return dict.complaint[pow.error as keyof typeof dict.complaint] as string;
     if (!state?.error) return null;
     const key = state.error as keyof typeof dict.complaint;
     if (key in dict.complaint) return String(dict.complaint[key]);
@@ -34,9 +39,15 @@ export function ComplaintForm({
   const inputClass =
     "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400";
 
+  // pow.* accessors below are plain state/ref-object reads returned from the
+  // usePowGate hook, not `.current` reads; eslint-plugin-react-hooks can't
+  // tell them apart from real ref-during-render access.
+  /* eslint-disable react-hooks/refs */
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} className="space-y-5" onSubmit={(e) => pow.guardSubmit(e)}>
       <input type="hidden" name="lang" value={lang} />
+      <input type="hidden" name="powToken" ref={pow.tokenInputRef} />
+      <input type="hidden" name="powSolution" ref={pow.solutionInputRef} />
 
       <div>
         <label htmlFor="subject" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -114,9 +125,14 @@ export function ComplaintForm({
         </p>
       )}
 
-      <SubmitButton pendingLabel={dict.common.loading}>
-        {dict.complaint.submit}
-      </SubmitButton>
+      {pow.solving ? (
+        <PowProgress progress={pow.progress} label={dict.complaint.powVerifying} />
+      ) : (
+        <SubmitButton pendingLabel={dict.common.loading}>
+          {dict.complaint.submit}
+        </SubmitButton>
+      )}
     </form>
   );
+  /* eslint-enable react-hooks/refs */
 }

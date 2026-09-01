@@ -276,6 +276,9 @@ export async function createComplaint(
   const place = await getPlaceById(placeId);
   if (!place) return { error: "placeInvalid" };
 
+  const powResult = checkPow(formData);
+  if (powResult.error) return { error: powResult.error };
+
   const attachmentsResult = await attachmentsFromForm(formData);
   if (attachmentsResult.error === "invalid-type") return { error: "invalidFileType" };
   if (attachmentsResult.error === "too-large") return { error: "fileTooLarge" };
@@ -310,6 +313,9 @@ export async function submitComplaintReply(
   if (!complaint) return { error: "notFound" };
   if (complaint.status === "closed") return { error: "replyClosed" };
   if (!content) return { error: "messageRequired" };
+
+  const powResult = checkPow(formData);
+  if (powResult.error) return { error: powResult.error };
 
   const attachmentsResult = await attachmentsFromForm(formData);
   if (attachmentsResult.error) return { error: "generic" };
