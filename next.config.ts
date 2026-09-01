@@ -5,7 +5,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["pdfkit"],
   experimental: {
     serverActions: {
-      bodySizeLimit: "300mb",
+      // Up to 5 images (50MB) + 2 videos (500MB) can be attached to a single
+      // submission, so the limit must cover that worst case plus multipart overhead.
+      bodySizeLimit: "1300mb",
     },
   },
 };

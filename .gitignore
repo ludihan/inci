@@ -26,6 +26,11 @@
 
 # application data (local persistence + uploads)
 /data
+/inci-db
+
+# cpanel deploy output
+/deploy-*.zip
+/inci.zip
 
 # debug
 npm-debug.log*
