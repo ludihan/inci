@@ -7,6 +7,7 @@ import { features } from "@/lib/features";
 import type { Admin, Complaint, Ticket, TicketStatus } from "@/lib/types";
 import { StatusBadge, TicketTypeBadge } from "@/components/badges";
 import { BarList, TrendChart } from "@/components/dashboard-charts";
+import { PeriodRangeFilter } from "@/components/period-range-filter";
 
 const PERIOD_KEYS = ["7", "30", "90", "all"] as const;
 type PeriodKey = (typeof PERIOD_KEYS)[number];
@@ -114,7 +115,13 @@ function buildTrend(
 export default async function AdminDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; placeId?: string; type?: string }>;
+  searchParams: Promise<{
+    period?: string;
+    placeId?: string;
+    type?: string;
+    from?: string;
+    to?: string;
+  }>;
 }) {
   const dict = await getDict();
   const locale = await getLocale();
@@ -137,7 +144,13 @@ export default async function AdminDashboardPage({
     ? db.complaints.filter((c) => isSuperAdmin(admin) || c.assignedToId === admin.id)
     : [];
 
-  const { period: rawPeriod, placeId: rawPlaceId, type: rawType } = await searchParams;
+  const {
+    period: rawPeriod,
+    placeId: rawPlaceId,
+    type: rawType,
+    from: rawFrom,
+    to: rawTo,
+  } = await searchParams;
   const periodKey: PeriodKey = PERIOD_KEYS.includes(rawPeriod as PeriodKey)
     ? (rawPeriod as PeriodKey)
     : "30";
@@ -145,9 +158,19 @@ export default async function AdminDashboardPage({
   const typeFilter =
     showType && (rawType === "it" || rawType === "maintenance") ? rawType : undefined;
 
+  const isDate = (v: string | undefined): v is string =>
+    !!v && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
+  const fromStr = isDate(rawFrom) ? rawFrom : "";
+  const toStr = isDate(rawTo) ? rawTo : "";
+  const customRange = Boolean(fromStr || toStr);
+
+  const rangeStart = fromStr ? new Date(`${fromStr}T00:00:00`) : null;
+  const rangeEnd = toStr ? new Date(`${toStr}T23:59:59.999`) : null;
+
   const days = PERIOD_DAYS[periodKey];
-  const cutoff =
-    days === null
+  const cutoff = customRange
+    ? rangeStart
+    : days === null
       ? null
       : (() => {
           const d = new Date();
@@ -155,15 +178,23 @@ export default async function AdminDashboardPage({
           d.setHours(0, 0, 0, 0);
           return d;
         })();
+  const until = customRange ? rangeEnd : null;
+
+  const inRange = (createdAt: string) => {
+    const t = new Date(createdAt);
+    if (cutoff && t < cutoff) return false;
+    if (until && t > until) return false;
+    return true;
+  };
 
   const tickets = allTickets.filter((t) => {
-    if (cutoff && new Date(t.createdAt) < cutoff) return false;
+    if (!inRange(t.createdAt)) return false;
     if (placeId && t.place?.id !== placeId) return false;
     if (typeFilter && t.type !== typeFilter) return false;
     return true;
   });
   const complaints = allComplaints.filter((c) => {
-    if (cutoff && new Date(c.createdAt) < cutoff) return false;
+    if (!inRange(c.createdAt)) return false;
     if (placeId && c.place?.id !== placeId) return false;
     return true;
   });
@@ -194,7 +225,7 @@ export default async function AdminDashboardPage({
     .slice(0, 6)
     .map(([label, value]) => ({ label, value, colorClass: "bg-sky-500" }));
 
-  const trend = buildTrend(tickets, periodKey);
+  const trend = buildTrend(tickets, customRange ? "all" : periodKey);
 
   const recentTickets = [...tickets]
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
@@ -210,16 +241,23 @@ export default async function AdminDashboardPage({
     const nextPeriod = "period" in overrides ? overrides.period : periodKey;
     const nextPlaceId = "placeId" in overrides ? overrides.placeId : placeId;
     const nextType = "type" in overrides ? overrides.type : typeFilter;
+    // Choosing a preset period drops any custom range; other filter links
+    // keep the range in place.
+    const keepRange = !("period" in overrides);
     if (nextPeriod && nextPeriod !== "30") params.set("period", nextPeriod);
     if (nextPlaceId) params.set("placeId", nextPlaceId);
     if (nextType) params.set("type", nextType);
+    if (keepRange && fromStr) params.set("from", fromStr);
+    if (keepRange && toStr) params.set("to", toStr);
     const query = params.toString();
     return `/${locale}/admin${query ? `?${query}` : ""}`;
   };
 
-  const periodLabel = dict.admin.dashboard[
-    `period${periodKey === "all" ? "All" : periodKey}` as keyof typeof dict.admin.dashboard
-  ] as string;
+  const periodLabel = customRange
+    ? dict.admin.dashboard.customRange
+    : (dict.admin.dashboard[
+        `period${periodKey === "all" ? "All" : periodKey}` as keyof typeof dict.admin.dashboard
+      ] as string);
 
   return (
     <div>
@@ -246,7 +284,7 @@ export default async function AdminDashboardPage({
               <FilterLink
                 key={key}
                 href={qs({ period: key })}
-                active={periodKey === key}
+                active={!customRange && periodKey === key}
               >
                 {
                   dict.admin.dashboard[
@@ -275,6 +313,16 @@ export default async function AdminDashboardPage({
                 </FilterLink>
               </>
             )}
+
+            <span className="ml-3 mr-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              {dict.admin.dashboard.customRange}
+            </span>
+            <PeriodRangeFilter
+              dict={dict}
+              locale={locale}
+              from={fromStr}
+              to={toStr}
+            />
 
             {places.length > 0 && (
               <>
