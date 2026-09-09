@@ -24,6 +24,11 @@ import {
   createPlace as storeCreatePlace,
   deletePlace as storeDeletePlace,
   renamePlace as storeRenamePlace,
+  getAreaById,
+  getAreaByName,
+  createArea as storeCreateArea,
+  deleteArea as storeDeleteArea,
+  renameArea as storeRenameArea,
   createItem as storeCreateItem,
   updateItem as storeUpdateItem,
   deleteItem as storeDeleteItem,
@@ -192,6 +197,11 @@ export async function createTicket(
   const place = await getPlaceById(placeId);
   if (!place) return { error: "placeInvalid" };
 
+  const areaId = str(formData, "areaId");
+  if (!areaId) return { error: "areaRequired" };
+  const area = await getAreaById(areaId);
+  if (!area) return { error: "areaInvalid" };
+
   const powResult = checkPow(formData);
   if (powResult.error) return { error: powResult.error };
 
@@ -210,6 +220,7 @@ export async function createTicket(
     subject,
     message,
     placeId,
+    areaId,
     attachments: attachmentsResult.attachments,
     requesterName,
     requesterPhone,
@@ -959,6 +970,62 @@ export async function renamePlace(
   }
 
   redirect(`/${l}/admin/places`);
+}
+
+// ---- Admin: areas ----
+
+export async function createArea(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) {
+    redirect(`/${l}/admin`);
+  }
+
+  const name = str(formData, "name");
+  if (!name) return { error: "nameRequired" };
+
+  const existing = await getAreaByName(name);
+  if (existing) return { error: "duplicate-area" };
+
+  await storeCreateArea(name);
+  redirect(`/${l}/admin/areas`);
+}
+
+export async function deleteArea(formData: FormData): Promise<void> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) {
+    redirect(`/${l}/admin`);
+  }
+  const id = str(formData, "id");
+  await storeDeleteArea(id);
+  redirect(`/${l}/admin/areas`);
+}
+
+export async function renameArea(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) {
+    redirect(`/${l}/admin`);
+  }
+
+  const id = str(formData, "id");
+  const name = str(formData, "name");
+  if (!name) return { error: "nameRequired" };
+
+  const result = await storeRenameArea(id, name);
+  if (!result.ok) {
+    if (result.error === "not-found") return { error: "notFound" };
+    return { error: "duplicate-area" };
+  }
+
+  redirect(`/${l}/admin/areas`);
 }
 
 // ---- Admin: settings ----

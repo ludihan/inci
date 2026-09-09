@@ -29,6 +29,12 @@ export interface Item {
   createdAt: string;
 }
 
+export interface Area {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface TicketItemUsage {
   id: string;
   item: Item;
@@ -112,6 +118,7 @@ export interface Ticket {
   items: TicketItemUsage[];
   services: TicketServiceUsage[];
   place: Place | null;
+  area: Area | null;
   status: TicketStatus;
   assignedToId?: string;
   assignedToName?: string;
@@ -156,6 +163,7 @@ export interface Complaint {
 export interface DB {
   admins: Admin[];
   places: Place[];
+  areas: Area[];
   items: Item[];
   serviceTypes: ServiceType[];
   tickets: Ticket[];

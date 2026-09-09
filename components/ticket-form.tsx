@@ -3,7 +3,7 @@
 import { useActionState, useRef, useState, type FormEvent } from "react";
 import { createTicket, type ActionState } from "@/lib/actions";
 import type { Dict, Locale } from "@/lib/i18n";
-import type { Place } from "@/lib/types";
+import type { Area, Place } from "@/lib/types";
 import { isValidCpf, onlyDigits } from "@/lib/utils";
 import { features } from "@/lib/features";
 import { NAME_MAX_LENGTH, MESSAGE_MAX_LENGTH } from "@/lib/limits";
@@ -18,10 +18,12 @@ export function TicketForm({
   dict,
   lang,
   places,
+  areas,
 }: {
   dict: Dict;
   lang: Locale;
   places: Place[];
+  areas: Area[];
 }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(
     createTicket,
@@ -271,6 +273,34 @@ export function TicketForm({
             {places.map((place) => (
               <option key={place.id} value={place.id}>
                 {place.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+
+      <div>
+        <label htmlFor="area" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          {dict.ticket.fields.area} <span className="text-zinc-400">*</span>
+        </label>
+        {areas.length === 0 ? (
+          <p className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+            {dict.ticket.noAreas}
+          </p>
+        ) : (
+          <select
+            id="area"
+            name="areaId"
+            required
+            defaultValue=""
+            className={inputClass}
+          >
+            <option value="" disabled>
+              {dict.ticket.fields.areaPlaceholder}
+            </option>
+            {areas.map((area) => (
+              <option key={area.id} value={area.id}>
+                {area.name}
               </option>
             ))}
           </select>

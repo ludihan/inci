@@ -145,6 +145,12 @@ function initSchema(db: DatabaseSync): void {
       updated_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS areas (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,
+      created_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS service_types (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL UNIQUE,
@@ -178,6 +184,7 @@ function initSchema(db: DatabaseSync): void {
 
   ensureColumn(db, "complaint_responses", "action", "TEXT NOT NULL DEFAULT 'message'");
   ensureColumn(db, "places", "cnpj", "TEXT");
+  ensureColumn(db, "tickets", "area_id", "TEXT");
   ensureColumn(db, "tickets", "assigned_to", "TEXT");
   ensureColumn(db, "complaints", "assigned_to", "TEXT");
   ensureColumn(db, "complaint_responses", "photo_path", "TEXT");

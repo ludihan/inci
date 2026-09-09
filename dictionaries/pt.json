@@ -133,6 +133,8 @@
       "notesPlaceholder": "Informações adicionais que ajudem no atendimento...",
       "place": "Local",
       "placePlaceholder": "Selecione o local...",
+      "area": "Área / setor",
+      "areaPlaceholder": "Selecione a área ou setor...",
       "message": "Descrição do problema",
       "messagePlaceholder": "Descreva o problema com o máximo de detalhes...",
       "photo": "Foto do problema",
@@ -196,6 +198,9 @@
     "placeRequired": "Selecione um local para abrir o chamado.",
     "placeInvalid": "O local selecionado não é válido.",
     "noPlaces": "Nenhum local cadastrado ainda. Um administrador precisa cadastrar os locais antes de abrir chamados.",
+    "areaRequired": "Selecione a área ou setor para abrir o chamado.",
+    "areaInvalid": "A área selecionada não é válida.",
+    "noAreas": "Nenhuma área cadastrada ainda. Um administrador precisa cadastrar as áreas antes de abrir chamados.",
     "powRequired": "Verificação de segurança ausente. Atualize a página e tente novamente.",
     "powInvalid": "Verificação de segurança expirada ou inválida. Tente enviar novamente.",
     "powFailed": "Não foi possível concluir a verificação de segurança. Tente novamente.",
@@ -338,6 +343,19 @@
       "duplicate": "Já existe um local com este nome.",
       "cnpj": "CNPJ",
       "cnpjHelp": "Opcional. Aparece nas Ordens de Serviço em PDF."
+    },
+    "areas": {
+      "title": "Áreas / setores",
+      "subtitle": "Gerencie as áreas ou setores selecionáveis ao abrir um chamado.",
+      "newTitle": "Nova área",
+      "name": "Nome da área",
+      "namePlaceholder": "Ex.: TI, Recepção, Cozinha...",
+      "create": "Adicionar área",
+      "delete": "Excluir",
+      "rename": "Renomear",
+      "empty": "Nenhuma área cadastrada.",
+      "nameRequired": "Informe o nome da área.",
+      "duplicate": "Já existe uma área com este nome."
     },
     "items": {
       "title": "Itens / peças",

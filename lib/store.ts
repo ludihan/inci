@@ -4,6 +4,7 @@ import { hashPassword } from "./password";
 import { publishAdminEvent } from "./events";
 import type {
   Admin,
+  Area,
   Attachment,
   Company,
   Complaint,
@@ -93,6 +94,22 @@ function rowToPlace(row: Row): Place {
     cnpj: cnpj || undefined,
     createdAt: String(row.created_at),
   };
+}
+
+function rowToArea(row: Row): Area {
+  return {
+    id: String(row.id),
+    name: String(row.name),
+    createdAt: String(row.created_at),
+  };
+}
+
+function findArea(id: string): Area | null {
+  const db = getDb();
+  const row = db.prepare("SELECT * FROM areas WHERE id = ?").get(id) as
+    | Row
+    | undefined;
+  return row ? rowToArea(row) : null;
 }
 
 function rowToTicketMessage(row: Row): TicketMessage {
@@ -257,6 +274,10 @@ function rowToTicket(row: Row): Ticket {
     items: findTicketItems(String(row.id)),
     services: findTicketServices(String(row.id)),
     place,
+    area:
+      row.area_id !== null && row.area_id !== undefined
+        ? findArea(String(row.area_id))
+        : null,
     status:
       row.status === "closed"
         ? "closed"
@@ -341,6 +362,7 @@ export async function getDB(): Promise<DB> {
   const db = getDb();
   const admins = db.prepare("SELECT * FROM admins ORDER BY created_at ASC").all() as Row[];
   const places = db.prepare("SELECT * FROM places ORDER BY name ASC").all() as Row[];
+  const areas = db.prepare("SELECT * FROM areas ORDER BY name ASC").all() as Row[];
   const items = db.prepare("SELECT * FROM items ORDER BY name ASC").all() as Row[];
   const serviceTypes = db
     .prepare("SELECT * FROM service_types ORDER BY name ASC")
@@ -350,6 +372,7 @@ export async function getDB(): Promise<DB> {
   return {
     admins: admins.map(rowToAdmin),
     places: places.map(rowToPlace),
+    areas: areas.map(rowToArea),
     items: items.map(rowToItem),
     serviceTypes: serviceTypes.map(rowToServiceType),
     tickets: tickets.map(rowToTicket),
@@ -364,6 +387,7 @@ export async function createTicket(input: {
   cpf: string;
   subject: string;
   placeId: string;
+  areaId: string;
   message: string;
   attachments: AttachmentRef[];
   requesterName?: string;
@@ -382,16 +406,17 @@ export async function createTicket(input: {
   inTransaction(() => {
     db.prepare(
       `INSERT INTO tickets
-         (id, type, cpf, subject, place_id, status, created_at, updated_at,
+         (id, type, cpf, subject, place_id, area_id, status, created_at, updated_at,
           requester_name, requester_phone, role, equipment, equipment_brand,
           equipment_model, notes, criticality)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       ticketId,
       input.type,
       input.cpf,
       input.subject,
       input.placeId,
+      input.areaId,
       "open",
       now,
       now,
@@ -1190,6 +1215,71 @@ export async function renamePlace(
     id
   );
   return { ok: true };
+}
+
+// ---- Areas ----
+
+export async function listAreas(): Promise<Area[]> {
+  const db = getDb();
+  const rows = db.prepare("SELECT * FROM areas ORDER BY name ASC").all() as Row[];
+  return rows.map(rowToArea);
+}
+
+export async function getAreaById(id: string): Promise<Area | null> {
+  const db = getDb();
+  const row = db.prepare("SELECT * FROM areas WHERE id = ?").get(id) as
+    | Row
+    | undefined;
+  return row ? rowToArea(row) : null;
+}
+
+export async function getAreaByName(name: string): Promise<Area | null> {
+  const db = getDb();
+  const row = db
+    .prepare("SELECT * FROM areas WHERE LOWER(name) = LOWER(?)")
+    .get(name) as Row | undefined;
+  return row ? rowToArea(row) : null;
+}
+
+export async function createArea(name: string): Promise<Area> {
+  const db = getDb();
+  const area: Area = {
+    id: randomUUID(),
+    name,
+    createdAt: new Date().toISOString(),
+  };
+  db.prepare("INSERT INTO areas (id, name, created_at) VALUES (?, ?, ?)").run(
+    area.id,
+    area.name,
+    area.createdAt
+  );
+  return area;
+}
+
+export async function renameArea(
+  id: string,
+  name: string
+): Promise<{ ok: boolean; error?: string }> {
+  const db = getDb();
+  const area = db.prepare("SELECT * FROM areas WHERE id = ?").get(id) as
+    | Row
+    | undefined;
+  if (!area) return { ok: false, error: "not-found" };
+  const existing = db
+    .prepare("SELECT * FROM areas WHERE LOWER(name) = LOWER(?) AND id != ?")
+    .get(name, id) as Row | undefined;
+  if (existing) return { ok: false, error: "duplicate-area" };
+  db.prepare("UPDATE areas SET name = ? WHERE id = ?").run(name, id);
+  return { ok: true };
+}
+
+export async function deleteArea(id: string): Promise<boolean> {
+  const db = getDb();
+  return inTransaction(() => {
+    db.prepare("UPDATE tickets SET area_id = NULL WHERE area_id = ?").run(id);
+    const result = db.prepare("DELETE FROM areas WHERE id = ?").run(id);
+    return result.changes > 0;
+  });
 }
 
 // ---- Settings ----

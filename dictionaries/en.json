@@ -133,6 +133,8 @@
       "notesPlaceholder": "Any extra information that helps with the service...",
       "place": "Place",
       "placePlaceholder": "Select a place...",
+      "area": "Area / sector",
+      "areaPlaceholder": "Select the area or sector...",
       "message": "Problem description",
       "messagePlaceholder": "Describe the problem in as much detail as possible...",
       "photo": "Problem photo",
@@ -196,6 +198,9 @@
     "placeRequired": "Select a place to open the ticket.",
     "placeInvalid": "The selected place is not valid.",
     "noPlaces": "No places registered yet. An administrator must register places before opening tickets.",
+    "areaRequired": "Select the area or sector to open the ticket.",
+    "areaInvalid": "The selected area is not valid.",
+    "noAreas": "No areas registered yet. An administrator must register areas before opening tickets.",
     "powRequired": "Missing security check. Refresh the page and try again.",
     "powInvalid": "Security check expired or invalid. Please submit again.",
     "powFailed": "Could not complete the security check. Please try again.",
@@ -338,6 +343,19 @@
       "duplicate": "A place with this name already exists.",
       "cnpj": "CNPJ",
       "cnpjHelp": "Optional. Shown on the Service Order PDFs."
+    },
+    "areas": {
+      "title": "Areas / sectors",
+      "subtitle": "Manage the areas or sectors selectable when opening a ticket.",
+      "newTitle": "New area",
+      "name": "Area name",
+      "namePlaceholder": "e.g. IT, Reception, Kitchen...",
+      "create": "Add area",
+      "delete": "Delete",
+      "rename": "Rename",
+      "empty": "No areas registered.",
+      "nameRequired": "Area name is required.",
+      "duplicate": "An area with this name already exists."
     },
     "items": {
       "title": "Items / parts",

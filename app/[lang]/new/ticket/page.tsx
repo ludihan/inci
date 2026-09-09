@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getDict, getLocale } from "@/lib/i18n";
-import { listPlaces } from "@/lib/store";
+import { listAreas, listPlaces } from "@/lib/store";
 import { ticketsEnabled } from "@/lib/features";
 import { TicketForm } from "@/components/ticket-form";
 
@@ -13,7 +13,7 @@ export default async function NewTicketPage() {
     redirect(`/${locale}`);
   }
 
-  const places = await listPlaces();
+  const [places, areas] = await Promise.all([listPlaces(), listAreas()]);
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -37,7 +37,7 @@ export default async function NewTicketPage() {
       </div>
 
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8 dark:border-zinc-800 dark:bg-zinc-900">
-        <TicketForm dict={dict} lang={locale} places={places} />
+        <TicketForm dict={dict} lang={locale} places={places} areas={areas} />
       </div>
     </div>
   );
