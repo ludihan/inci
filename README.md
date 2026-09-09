@@ -88,3 +88,16 @@ data/                  db.sqlite + uploads (ignorado pelo git)
 - `npm run build` — build de produção
 - `npm run start` — serve o build de produção
 - `npm run lint` — ESLint
+
+### Popular o banco de desenvolvimento
+
+Scripts em `scripts/` preenchem `data/db.sqlite` com dados de exemplo (não use em
+produção). Rode com o resolvedor de tipos do Node:
+
+```
+node --experimental-strip-types --loader ./scripts/ts-resolve-hook.mjs scripts/seed-test-tickets.mjs
+node --experimental-strip-types --loader ./scripts/ts-resolve-hook.mjs scripts/seed-full-ticket.mjs
+```
+
+- `seed-test-tickets.mjs` — cria locais, áreas, serviços, técnicos e ~16 chamados.
+- `seed-full-ticket.mjs` — cria um chamado completo (com O.S.) e a empresa prestadora.
