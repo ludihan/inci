@@ -57,8 +57,7 @@ export function TicketForm({
         return false;
       }
       const images = data.getAll("images").filter((f) => f instanceof File && f.size > 0);
-      const videos = data.getAll("videos").filter((f) => f instanceof File && f.size > 0);
-      if (images.length === 0 && videos.length === 0) {
+      if (images.length === 0) {
         setClientError(dict.ticket.attachmentsRequired);
         return false;
       }

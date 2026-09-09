@@ -142,8 +142,7 @@ let photoIndex = 0;
 async function image(name) {
   const color = PHOTO_COLORS[photoIndex++ % PHOTO_COLORS.length];
   const res = await saveAttachment(
-    new File([solidPng(480, 640, color)], name, { type: "image/png" }),
-    "image"
+    new File([solidPng(480, 640, color)], name, { type: "image/png" })
   );
   if (!res.ok) throw new Error(`image ${name}: ${res.error}`);
   return { path: res.path, kind: "image" };

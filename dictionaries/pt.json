@@ -6,20 +6,15 @@
   "attachments": {
     "photos": "Fotos",
     "photosHelp": "JPG, PNG, WEBP ou GIF",
-    "videos": "Vídeos",
-    "videosHelp": "MP4, WEBM ou MOV",
     "upTo": "Até {max} {label}, {size}MB cada.",
     "tooManyImages": "Você pode enviar no máximo {max} imagens.",
-    "tooManyVideos": "Você pode enviar no máximo {max} vídeos.",
     "tooLargeImage": "Cada imagem deve ter no máximo {max}MB.",
-    "tooLargeVideo": "Cada vídeo deve ter no máximo {max}MB.",
     "enlarge": "Ampliar",
     "remove": "Remover",
     "close": "Fechar",
     "prev": "Anterior",
     "next": "Próximo",
-    "imagesLabel": "imagens",
-    "videosLabel": "vídeos"
+    "imagesLabel": "imagens"
   },
 
   "nav": {
@@ -93,10 +88,9 @@
     "textTooLong": "O texto excede o tamanho máximo permitido.",
     "invalidPhotoType": "O arquivo enviado não é uma imagem válida (JPG, PNG, WEBP ou GIF).",
     "photoTooLarge": "A imagem excede o tamanho máximo de 5MB.",
-    "invalidFileType": "Um dos arquivos enviados não é válido (imagens: JPG, PNG, WEBP ou GIF; vídeos: MP4, WEBM ou MOV).",
-    "fileTooLarge": "Um dos arquivos excede o tamanho máximo (5MB para imagens, 50MB para vídeos).",
+    "invalidFileType": "Um dos arquivos enviados não é uma imagem válida (JPG, PNG, WEBP ou GIF).",
+    "fileTooLarge": "Uma das imagens excede o tamanho máximo de 5MB.",
     "tooManyImages": "Você pode enviar no máximo 5 imagens.",
-    "tooManyVideos": "Você pode enviar no máximo 5 vídeos.",
     "sending": "Enviando...",
     "requester": "Solicitante",
     "admin": "Equipe",
@@ -191,7 +185,7 @@
       "serviceRequired": "Selecione um serviço existente ou informe o nome de um novo serviço.",
       "quantityInvalid": "Informe uma quantidade maior que zero."
     },
-    "attachmentsRequired": "Envie ao menos uma foto ou vídeo para abrir o chamado.",
+    "attachmentsRequired": "Envie ao menos uma foto para abrir o chamado.",
     "messageRequired": "A descrição do problema é obrigatória.",
     "subjectRequired": "O assunto é obrigatório.",
     "cpfRequired": "O CPF é obrigatório.",
@@ -604,7 +598,6 @@
     "noRecords": "Nenhum registro encontrado para os filtros selecionados.",
     "historyEmpty": "Sem histórico.",
     "photo": "Foto",
-    "video": "Vídeo",
     "signatures": "Assinatura de encerramento",
     "signaturesHelp": "Inclui a assinatura registrada ao encerrar o chamado.",
     "signatureUser": "Assinatura do solicitante",

@@ -57,7 +57,6 @@ import {
   saveSignature,
   deleteImage,
   MAX_IMAGES_PER_MESSAGE,
-  MAX_VIDEOS_PER_MESSAGE,
 } from "./uploads";
 import {
   isValidCpf,
@@ -109,7 +108,7 @@ function checkPow(formData: FormData): { error?: string } {
   return {};
 }
 
-type Attachment = { path: string; kind: "image" | "video" };
+type Attachment = { path: string; kind: "image" };
 
 async function attachmentsFromForm(
   formData: FormData
@@ -117,26 +116,17 @@ async function attachmentsFromForm(
   const imageFiles = formData
     .getAll("images")
     .filter((f): f is File => f instanceof File && f.size > 0);
-  const videoFiles = formData
-    .getAll("videos")
-    .filter((f): f is File => f instanceof File && f.size > 0);
 
   if (imageFiles.length > MAX_IMAGES_PER_MESSAGE) return { error: "tooManyImages" };
-  if (videoFiles.length > MAX_VIDEOS_PER_MESSAGE) return { error: "tooManyVideos" };
 
   const saved: Attachment[] = [];
-  const queue: { file: File; kind: "image" | "video" }[] = [
-    ...imageFiles.map((file) => ({ file, kind: "image" as const })),
-    ...videoFiles.map((file) => ({ file, kind: "video" as const })),
-  ];
-
-  for (const item of queue) {
-    const result = await saveAttachment(item.file, item.kind);
+  for (const file of imageFiles) {
+    const result = await saveAttachment(file);
     if (!result.ok) {
       for (const s of saved) await deleteImage(s.path);
       return { error: result.error };
     }
-    saved.push({ path: result.path, kind: item.kind });
+    saved.push({ path: result.path, kind: "image" });
   }
 
   return { attachments: saved };
@@ -202,7 +192,6 @@ export async function createTicket(
   if (attachmentsResult.error === "invalid-type") return { error: "invalidFileType" };
   if (attachmentsResult.error === "too-large") return { error: "fileTooLarge" };
   if (attachmentsResult.error === "tooManyImages") return { error: "tooManyImages" };
-  if (attachmentsResult.error === "tooManyVideos") return { error: "tooManyVideos" };
   if (!attachmentsResult.attachments || attachmentsResult.attachments.length === 0) {
     return { error: "attachmentsRequired" };
   }
@@ -284,7 +273,6 @@ export async function userTicketTransition(
   if (attachmentsResult.error === "invalid-type") return { error: "invalidFileType" };
   if (attachmentsResult.error === "too-large") return { error: "fileTooLarge" };
   if (attachmentsResult.error === "tooManyImages") return { error: "tooManyImages" };
-  if (attachmentsResult.error === "tooManyVideos") return { error: "tooManyVideos" };
 
   let signaturePath: string | undefined;
   let signatureClientPath: string | undefined;
@@ -332,7 +320,6 @@ export async function createComplaint(
   if (attachmentsResult.error === "invalid-type") return { error: "invalidFileType" };
   if (attachmentsResult.error === "too-large") return { error: "fileTooLarge" };
   if (attachmentsResult.error === "tooManyImages") return { error: "tooManyImages" };
-  if (attachmentsResult.error === "tooManyVideos") return { error: "tooManyVideos" };
 
   let code = generateComplaintCode();
   while (await getComplaintByCode(code)) {
@@ -459,7 +446,6 @@ export async function adminTicketTransition(
   if (attachmentsResult.error === "invalid-type") return { error: "invalidFileType" };
   if (attachmentsResult.error === "too-large") return { error: "fileTooLarge" };
   if (attachmentsResult.error === "tooManyImages") return { error: "tooManyImages" };
-  if (attachmentsResult.error === "tooManyVideos") return { error: "tooManyVideos" };
 
   let signaturePath: string | undefined;
   let signatureClientPath: string | undefined;
@@ -788,7 +774,6 @@ export async function adminSetComplaintStatus(
   if (attachmentsResult.error === "invalid-type") return { error: "invalidFileType" };
   if (attachmentsResult.error === "too-large") return { error: "fileTooLarge" };
   if (attachmentsResult.error === "tooManyImages") return { error: "tooManyImages" };
-  if (attachmentsResult.error === "tooManyVideos") return { error: "tooManyVideos" };
 
   await storeSetComplaintStatus(
     code,

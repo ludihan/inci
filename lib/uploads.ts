@@ -6,10 +6,8 @@ import { DATA_DIR } from "./data-dir";
 export const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 
 const IMAGE_MAX_SIZE = 5 * 1024 * 1024;
-const VIDEO_MAX_SIZE = 50 * 1024 * 1024;
 
 export const MAX_IMAGES_PER_MESSAGE = 5;
-export const MAX_VIDEOS_PER_MESSAGE = 5;
 
 const IMAGE_MIME_TO_EXT: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -18,12 +16,8 @@ const IMAGE_MIME_TO_EXT: Record<string, string> = {
   "image/gif": "gif",
 };
 
-const VIDEO_MIME_TO_EXT: Record<string, string> = {
-  "video/mp4": "mp4",
-  "video/webm": "webm",
-  "video/quicktime": "mov",
-};
-
+// Uploads are images only. The union is kept because legacy rows created before
+// this change may still carry kind "video", and those attachments keep rendering.
 export type AttachmentKind = "image" | "video";
 
 export type SaveImageResult =
@@ -53,19 +47,16 @@ export type SaveAttachmentResult =
   | { ok: false; error: string };
 
 export async function saveAttachment(
-  file: File,
-  kind: AttachmentKind
+  file: File
 ): Promise<SaveAttachmentResult> {
   if (file.size === 0) {
     return { ok: false, error: "required" };
   }
-  const mimeMap = kind === "image" ? IMAGE_MIME_TO_EXT : VIDEO_MIME_TO_EXT;
-  const maxSize = kind === "image" ? IMAGE_MAX_SIZE : VIDEO_MAX_SIZE;
-  const ext = mimeMap[file.type];
+  const ext = IMAGE_MIME_TO_EXT[file.type];
   if (!ext) {
     return { ok: false, error: "invalid-type" };
   }
-  if (file.size > maxSize) {
+  if (file.size > IMAGE_MAX_SIZE) {
     return { ok: false, error: "too-large" };
   }
   const buffer = Buffer.from(await file.arrayBuffer());

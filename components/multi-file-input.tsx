@@ -4,16 +4,10 @@ import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Dict } from "@/lib/i18n";
 
-type Kind = "image" | "video";
-
-const ACCEPT: Record<Kind, string> = {
-  image: "image/jpeg,image/png,image/webp,image/gif",
-  video: "video/mp4,video/webm,video/quicktime",
-};
+const ACCEPT = "image/jpeg,image/png,image/webp,image/gif";
 
 function MultiFilePicker({
   name,
-  kind,
   max,
   maxSizeMB,
   title,
@@ -21,7 +15,6 @@ function MultiFilePicker({
   a,
 }: {
   name: string;
-  kind: Kind;
   max: number;
   maxSizeMB: number;
   title: string;
@@ -80,19 +73,13 @@ function MultiFilePicker({
     let err: string | null = null;
 
     if (combined.length > max) {
-      err = (kind === "image" ? a.tooManyImages : a.tooManyVideos).replace(
-        "{max}",
-        String(max)
-      );
+      err = a.tooManyImages.replace("{max}", String(max));
       combined = combined.slice(0, max);
     }
 
     const maxBytes = maxSizeMB * 1024 * 1024;
     if (combined.some((f) => f.size > maxBytes)) {
-      err = (kind === "image" ? a.tooLargeImage : a.tooLargeVideo).replace(
-        "{max}",
-        String(maxSizeMB)
-      );
+      err = a.tooLargeImage.replace("{max}", String(maxSizeMB));
       combined = combined.filter((f) => f.size <= maxBytes);
     }
 
@@ -112,7 +99,7 @@ function MultiFilePicker({
 
   const upToLabel = a.upTo
     .replace("{max}", String(max))
-    .replace("{label}", kind === "image" ? a.imagesLabel : a.videosLabel)
+    .replace("{label}", a.imagesLabel)
     .replace("{size}", String(maxSizeMB));
 
   return (
@@ -123,7 +110,7 @@ function MultiFilePicker({
         type="file"
         name={name}
         multiple
-        accept={ACCEPT[kind]}
+        accept={ACCEPT}
         onChange={handleChange}
         className="mt-1 block w-full cursor-pointer rounded-lg border border-zinc-300 bg-white text-sm text-zinc-600 file:mr-3 file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-zinc-700 hover:file:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:file:bg-zinc-800 dark:file:text-zinc-200 dark:hover:file:bg-zinc-700"
       />
@@ -140,18 +127,14 @@ function MultiFilePicker({
                 className="relative block h-full w-full"
                 aria-label={a.enlarge}
               >
-                {kind === "image" ? (
-                  <Image
-                    src={previews[i]}
-                    alt=""
-                    fill
-                    unoptimized
-                    sizes="80px"
-                    className="object-cover"
-                  />
-                ) : (
-                  <video src={previews[i]} className="h-full w-full object-cover" muted />
-                )}
+                <Image
+                  src={previews[i]}
+                  alt=""
+                  fill
+                  unoptimized
+                  sizes="80px"
+                  className="object-cover"
+                />
               </button>
               <button
                 type="button"
@@ -211,31 +194,20 @@ function MultiFilePicker({
               </button>
             </>
           )}
-          {kind === "image" ? (
-            <div
-              key={previewIndex}
-              className="relative h-full max-h-[85vh] w-full max-w-4xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Image
-                src={previews[previewIndex]}
-                alt=""
-                fill
-                unoptimized
-                sizes="100vw"
-                className="object-contain"
-              />
-            </div>
-          ) : (
-            <video
-              key={previewIndex}
+          <div
+            key={previewIndex}
+            className="relative h-full max-h-[85vh] w-full max-w-4xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
               src={previews[previewIndex]}
-              controls
-              autoPlay
-              className="max-h-[85vh] max-w-4xl rounded-lg"
-              onClick={(e) => e.stopPropagation()}
+              alt=""
+              fill
+              unoptimized
+              sizes="100vw"
+              className="object-contain"
             />
-          )}
+          </div>
         </div>
       )}
     </div>
@@ -245,35 +217,21 @@ function MultiFilePicker({
 export function MultiFileInput({
   dict,
   imagesName = "images",
-  videosName = "videos",
   maxImages = 5,
-  maxVideos = 5,
 }: {
   dict: Dict;
   imagesName?: string;
-  videosName?: string;
   maxImages?: number;
-  maxVideos?: number;
 }) {
   const a = dict.attachments;
   return (
     <div className="space-y-4">
       <MultiFilePicker
         name={imagesName}
-        kind="image"
         max={maxImages}
         maxSizeMB={5}
         title={a.photos}
         help={a.photosHelp}
-        a={a}
-      />
-      <MultiFilePicker
-        name={videosName}
-        kind="video"
-        max={maxVideos}
-        maxSizeMB={50}
-        title={a.videos}
-        help={a.videosHelp}
         a={a}
       />
     </div>
