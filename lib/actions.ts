@@ -294,11 +294,14 @@ export async function userTicketTransition(
   if (attachmentsResult.error === "tooManyVideos") return { error: "tooManyVideos" };
 
   let signaturePath: string | undefined;
+  let signatureClientPath: string | undefined;
   let geoLat: number | undefined;
   let geoLng: number | undefined;
   if (transition === "close") {
     signaturePath = (await saveSignature(str(formData, "signature"))) ?? undefined;
     if (!signaturePath) return { error: "signatureRequired" };
+    signatureClientPath =
+      (await saveSignature(str(formData, "signatureClient"))) ?? undefined;
     geoLat = optionalNum(formData, "geoLat");
     geoLng = optionalNum(formData, "geoLng");
   }
@@ -309,6 +312,7 @@ export async function userTicketTransition(
     sender: "user",
     action: transition,
     signaturePath,
+    signatureClientPath,
     geoLat,
     geoLng,
   });
@@ -471,11 +475,14 @@ export async function adminTicketTransition(
   if (attachmentsResult.error === "tooManyVideos") return { error: "tooManyVideos" };
 
   let signaturePath: string | undefined;
+  let signatureClientPath: string | undefined;
   let geoLat: number | undefined;
   let geoLng: number | undefined;
   if (transition === "close") {
     signaturePath = (await saveSignature(str(formData, "signature"))) ?? undefined;
     if (!signaturePath) return { error: "signatureRequired" };
+    signatureClientPath =
+      (await saveSignature(str(formData, "signatureClient"))) ?? undefined;
     geoLat = optionalNum(formData, "geoLat");
     geoLng = optionalNum(formData, "geoLng");
   }
@@ -487,6 +494,7 @@ export async function adminTicketTransition(
     senderName: admin.name,
     action: transition,
     signaturePath,
+    signatureClientPath,
     geoLat,
     geoLng,
   });

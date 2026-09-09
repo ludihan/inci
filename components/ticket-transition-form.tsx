@@ -138,15 +138,25 @@ export function TicketTransitionForm({
       </div>
 
       {isClosing && (
-        <SignaturePad
-          name="signature"
-          label={dict.ticket.signature.label}
-          required
-          fullscreenLabel={dict.ticket.signature.fullscreen}
-          clearLabel={dict.ticket.signature.clear}
-          cancelLabel={dict.ticket.signature.cancel}
-          doneLabel={dict.ticket.signature.done}
-        />
+        <>
+          <SignaturePad
+            name="signature"
+            label={dict.ticket.signature.label}
+            required
+            fullscreenLabel={dict.ticket.signature.fullscreen}
+            clearLabel={dict.ticket.signature.clear}
+            cancelLabel={dict.ticket.signature.cancel}
+            doneLabel={dict.ticket.signature.done}
+          />
+          <SignaturePad
+            name="signatureClient"
+            label={dict.ticket.signature.clientLabel}
+            fullscreenLabel={dict.ticket.signature.fullscreen}
+            clearLabel={dict.ticket.signature.clear}
+            cancelLabel={dict.ticket.signature.cancel}
+            doneLabel={dict.ticket.signature.done}
+          />
+        </>
       )}
 
       {errorText && (

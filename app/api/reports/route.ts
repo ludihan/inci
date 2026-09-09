@@ -2,6 +2,7 @@ import { getCurrentAdmin, hasPermission, isSuperAdmin } from "@/lib/auth";
 import { features } from "@/lib/features";
 import { getReportDict, type ReportSections } from "@/lib/reports";
 import { getDB, getPlaceById, hasAssignedComplaints } from "@/lib/store";
+import { getCompany } from "@/lib/company";
 import { filterTicketList } from "@/lib/ticket-list-filter";
 import { formatDateTime } from "@/lib/utils";
 
@@ -166,6 +167,18 @@ export async function GET(request: Request) {
             },
             { canIT, canMaintenance }
           );
+
+    if (searchParams.get("view") === "os") {
+      const company = await getCompany();
+      const osBuffer = await (
+        await import("@/lib/reports")
+      ).buildTicketsOsReport(tickets, company, lang);
+      const osName =
+        tickets.length === 1
+          ? `${tickets[0].id}.pdf`
+          : `ordens-de-servico-${new Date().toISOString().slice(0, 10)}.pdf`;
+      return pdfResponse(osBuffer, osName);
+    }
 
     if (searchParams.get("view") === "table") {
       const tableBuffer = await (

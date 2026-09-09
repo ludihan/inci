@@ -8,10 +8,12 @@ export function ReportDownloadButton({
   url,
   filename,
   dict,
+  label,
 }: {
   url: string;
   filename: string;
   dict: Dict;
+  label?: string;
 }) {
   const { generate, generating, elapsedMs } = useReportGeneration();
 
@@ -23,7 +25,7 @@ export function ReportDownloadButton({
     <button
       type="button"
       onClick={() => generate(url, filename)}
-      title={dict.report.generate}
+      title={label ?? dict.report.generate}
       className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 px-2.5 py-1 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
     >
       <svg
@@ -39,6 +41,7 @@ export function ReportDownloadButton({
           d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
         />
       </svg>
+      {label}
     </button>
   );
 }

@@ -129,6 +129,9 @@ function rowToTicketMessage(row: Row): TicketMessage {
     senderName: row.sender_name ? String(row.sender_name) : undefined,
     action: row.action as TicketMessage["action"],
     signaturePath: row.signature_path ? String(row.signature_path) : undefined,
+    signatureClientPath: row.signature_client_path
+      ? String(row.signature_client_path)
+      : undefined,
     geoLat:
       row.geo_lat !== null && row.geo_lat !== undefined
         ? Number(row.geo_lat)
@@ -463,6 +466,7 @@ export async function addTicketMessage(
     senderName?: string;
     action: "message" | "close" | "open";
     signaturePath?: string;
+    signatureClientPath?: string;
     geoLat?: number;
     geoLng?: number;
   }
@@ -480,8 +484,8 @@ export async function addTicketMessage(
   const messageId = randomUUID();
   inTransaction(() => {
     db.prepare(
-      `INSERT INTO ticket_messages (id, ticket_id, content, photo_path, sender, sender_name, action, signature_path, geo_lat, geo_lng, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO ticket_messages (id, ticket_id, content, photo_path, sender, sender_name, action, signature_path, signature_client_path, geo_lat, geo_lng, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       messageId,
       id,
@@ -491,6 +495,7 @@ export async function addTicketMessage(
       input.senderName ?? null,
       input.action,
       input.signaturePath ?? null,
+      input.signatureClientPath ?? null,
       input.geoLat ?? null,
       input.geoLng ?? null,
       now

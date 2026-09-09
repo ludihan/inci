@@ -97,6 +97,7 @@ export interface TicketMessage {
   senderName?: string;
   action: TicketMessageAction;
   signaturePath?: string;
+  signatureClientPath?: string;
   geoLat?: number;
   geoLng?: number;
   createdAt: string;

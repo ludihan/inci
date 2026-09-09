@@ -93,6 +93,12 @@ export function TicketDetailPanel({
               filename={`${ticket.id}.pdf`}
               dict={dict}
             />
+            <ReportDownloadButton
+              url={`/api/reports?module=tickets&view=os&ids=${encodeURIComponent(ticket.id)}&lang=${locale}`}
+              filename={`${ticket.id}.pdf`}
+              dict={dict}
+              label={dict.report.os.number}
+            />
           </div>
         </div>
 

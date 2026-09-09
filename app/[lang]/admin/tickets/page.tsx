@@ -14,6 +14,7 @@ import { TicketCard } from "@/components/ticket-card";
 import { TicketsTable } from "@/components/tickets-table";
 import { TicketCodeJump } from "@/components/ticket-code-jump";
 import { TicketsReportButton } from "@/components/tickets-report-button";
+import { TicketsOsReportButton } from "@/components/tickets-os-report-button";
 
 const selectClass =
   "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
@@ -96,6 +97,7 @@ export default async function AdminTicketsPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <TicketsOsReportButton dict={dict} locale={locale} />
           <TicketsReportButton dict={dict} locale={locale} />
           <TicketCodeJump dict={dict} locale={locale} />
         </div>

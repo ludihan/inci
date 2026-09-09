@@ -16,6 +16,7 @@ import pt from "@/dictionaries/pt.json";
 import en from "@/dictionaries/en.json";
 import type { Dict } from "./i18n";
 import type {
+  Company,
   Complaint,
   ComplaintResponse,
   Ticket,
@@ -23,7 +24,13 @@ import type {
   TicketMessage,
   TicketServiceUsage,
 } from "./types";
-import { formatCpf, formatCurrency, formatDateTime, formatPhone } from "./utils";
+import {
+  formatCnpj,
+  formatCpf,
+  formatCurrency,
+  formatDateTime,
+  formatPhone,
+} from "./utils";
 
 export interface ReportSections {
   summary: boolean;
@@ -902,6 +909,447 @@ export async function buildTicketsTablePdf(
           </View>
         ))}
       </Page>
+    </Document>
+  );
+}
+
+// ---- Ordem de Serviço (Service Order) ----
+
+function osStatusLabel(d: Dict, status: string): string {
+  if (status === "closed") return d.report.os.finalized;
+  return statusLabel(d, status);
+}
+
+const OS_COLS: { key: string; width: string; align: "left" | "right" }[] = [
+  { key: "name", width: "44%", align: "left" },
+  { key: "qty", width: "12%", align: "right" },
+  { key: "price", width: "16%", align: "right" },
+  { key: "discount", width: "14%", align: "right" },
+  { key: "total", width: "14%", align: "right" },
+];
+
+function OsLineTable({
+  d,
+  title,
+  rows,
+}: {
+  d: Dict;
+  title: string;
+  rows: { name: string; quantity: number; unitPrice: number; discount: number; total: number }[];
+}) {
+  const headers = [
+    d.report.os.colName,
+    d.report.os.colQty,
+    d.report.os.colPrice,
+    d.report.os.colDiscount,
+    d.report.os.colTotal,
+  ];
+  const total = rows.reduce((s, r) => s + r.total, 0);
+  return (
+    <View style={{ marginBottom: 8 }}>
+      <SectionTitle>{title}</SectionTitle>
+      <View
+        style={{
+          flexDirection: "row",
+          borderWidth: 1,
+          borderColor: COLOR.zinc400,
+          backgroundColor: COLOR.zinc100,
+        }}
+      >
+        {headers.map((h, i) => (
+          <Text
+            key={i}
+            style={{
+              width: OS_COLS[i].width,
+              padding: 3,
+              fontSize: 8,
+              fontFamily: "Helvetica-Bold",
+              color: COLOR.zinc700,
+              textAlign: OS_COLS[i].align,
+              borderRightWidth: i < OS_COLS.length - 1 ? 1 : 0,
+              borderColor: COLOR.zinc400,
+            }}
+          >
+            {h}
+          </Text>
+        ))}
+      </View>
+      {rows.length === 0 ? (
+        <View
+          style={{
+            borderWidth: 1,
+            borderTopWidth: 0,
+            borderColor: COLOR.zinc400,
+            padding: 4,
+          }}
+        >
+          <Text style={{ fontSize: 8.5, color: COLOR.zinc500 }}>
+            {d.report.os.empty}
+          </Text>
+        </View>
+      ) : (
+        rows.map((r, i) => {
+          const values = [
+            r.name,
+            String(r.quantity),
+            formatCurrency(r.unitPrice),
+            formatCurrency(r.discount),
+            formatCurrency(r.total),
+          ];
+          return (
+            <View
+              key={i}
+              style={{
+                flexDirection: "row",
+                borderWidth: 1,
+                borderTopWidth: 0,
+                borderColor: COLOR.zinc400,
+              }}
+            >
+              {values.map((v, j) => (
+                <Text
+                  key={j}
+                  style={{
+                    width: OS_COLS[j].width,
+                    padding: 3,
+                    fontSize: 8.5,
+                    textAlign: OS_COLS[j].align,
+                    borderRightWidth: j < OS_COLS.length - 1 ? 1 : 0,
+                    borderColor: COLOR.zinc400,
+                  }}
+                >
+                  {v}
+                </Text>
+              ))}
+            </View>
+          );
+        })
+      )}
+      <Text
+        style={{
+          fontFamily: "Helvetica-Bold",
+          fontSize: 9,
+          textAlign: "right",
+          marginTop: 3,
+        }}
+      >
+        {title}: {formatCurrency(total)}
+      </Text>
+    </View>
+  );
+}
+
+function OsSignature({
+  label,
+  buf,
+}: {
+  label: string;
+  buf: Buffer | undefined;
+}) {
+  return (
+    <View style={{ width: 220 }}>
+      {buf ? (
+        <Image
+          src={buf}
+          style={{ height: 46, objectFit: "contain", alignSelf: "flex-start" }}
+        />
+      ) : (
+        <View style={{ height: 46 }} />
+      )}
+      <View
+        style={{ borderBottomWidth: 1, borderColor: COLOR.zinc400, marginTop: 4 }}
+      />
+      <Text
+        style={{
+          fontSize: 8.5,
+          color: COLOR.zinc700,
+          textAlign: "center",
+          marginTop: 2,
+        }}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function OsPage({
+  d,
+  lang,
+  ticket,
+  company,
+  images,
+  logo,
+}: {
+  d: Dict;
+  lang: "pt" | "en";
+  ticket: Ticket;
+  company: Company;
+  images: Map<string, Buffer>;
+  logo: Buffer | null;
+}) {
+  const o = d.report.os;
+  const close = [...ticket.messages].reverse().find((m) => m.action === "close");
+  const opening = ticket.messages.find((m) => m.action === "open");
+  const description = opening?.content ?? ticket.subject;
+  const created = formatDateTime(ticket.createdAt, lang);
+
+  const serviceRows = ticket.services.map((s) => ({
+    name: s.serviceType.name,
+    quantity: s.quantity,
+    unitPrice: s.unitPrice,
+    discount: s.discount,
+    total: s.total,
+  }));
+  const productRows = ticket.items.map((s) => ({
+    name: s.item.name,
+    quantity: s.quantity,
+    unitPrice: s.unitPrice,
+    discount: s.discount,
+    total: s.total,
+  }));
+  const grandTotal =
+    serviceRows.reduce((s, r) => s + r.total, 0) +
+    productRows.reduce((s, r) => s + r.total, 0);
+
+  const signaturePaths = new Set(
+    ticket.messages.flatMap((m) =>
+      [m.signaturePath, m.signatureClientPath].filter(Boolean)
+    ) as string[]
+  );
+  const photos = ticket.messages.flatMap((m) =>
+    m.attachments
+      .filter(
+        (a) =>
+          a.kind === "image" &&
+          images.has(a.path) &&
+          !signaturePaths.has(a.path)
+      )
+      .map((a) => images.get(a.path) as Buffer)
+  );
+
+  const field = (label: string, value: string) => (
+    <View style={{ flexDirection: "row", marginBottom: 2 }}>
+      <Text style={{ width: 110, fontSize: 9, color: COLOR.zinc500 }}>
+        {label}
+      </Text>
+      <Text style={{ flex: 1, fontSize: 9.5 }}>{value || o.empty}</Text>
+    </View>
+  );
+
+  return (
+    <Page size="A4" style={styles.page} wrap>
+      <PageNumber right={48} />
+
+      {/* header box */}
+      <View
+        style={{
+          flexDirection: "row",
+          borderWidth: 1,
+          borderColor: COLOR.zinc400,
+          marginBottom: 10,
+        }}
+      >
+        <View
+          style={{
+            flex: 1,
+            padding: 6,
+            borderRightWidth: 1,
+            borderColor: COLOR.zinc400,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          {logo ? (
+            <Image src={logo} style={{ width: 42, height: 42, objectFit: "contain" }} />
+          ) : null}
+          <View>
+            <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10 }}>
+              {company.name || o.docType}
+            </Text>
+            {company.cnpj ? (
+              <Text style={{ fontSize: 8, color: COLOR.zinc700 }}>
+                {o.cnpj}: {formatCnpj(company.cnpj)}
+              </Text>
+            ) : null}
+            {(company.addressStreet || company.addressNumber) && (
+              <Text style={{ fontSize: 8, color: COLOR.zinc700 }}>
+                {[company.addressStreet, company.addressNumber]
+                  .filter(Boolean)
+                  .join(", ")}
+                {company.addressNeighborhood
+                  ? ` — ${company.addressNeighborhood}`
+                  : ""}
+              </Text>
+            )}
+            {company.phone ? (
+              <Text style={{ fontSize: 8, color: COLOR.zinc700 }}>
+                {formatPhone(company.phone)}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+        <View style={{ width: 150, padding: 6 }}>
+          <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10 }}>
+            {o.number} {ticket.id}
+          </Text>
+          <Text style={{ fontSize: 8.5, color: COLOR.zinc700 }}>
+            {osStatusLabel(d, ticket.status)}
+          </Text>
+          <Text style={{ fontSize: 8.5, color: COLOR.zinc700 }}>{created}</Text>
+          {company.formCode ? (
+            <Text style={{ fontSize: 8, color: COLOR.zinc500, marginTop: 2 }}>
+              {company.formCode}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+
+      <View style={{ marginBottom: 8 }}>
+        {field(o.client, `${ticket.place?.name ?? o.empty}${ticket.place?.cnpj ? `   ${o.cnpj}: ${formatCnpj(ticket.place.cnpj)}` : ""}`)}
+        {field(o.area, ticket.area?.name ?? o.empty)}
+        {field(o.requester, ticket.requesterName || formatCpf(ticket.cpf))}
+        {field(o.phone, ticket.requesterPhone ? formatPhone(ticket.requesterPhone) : o.empty)}
+        {field(o.role, ticket.role)}
+        {field(o.equipment, equipmentText(ticket))}
+        {field(o.criticality, d.ticket.criticality[ticket.criticality])}
+        {field(o.opened, created)}
+        {close ? field(o.closed, formatDateTime(close.createdAt, lang)) : null}
+        {close
+          ? field(
+              o.duration,
+              formatDuration(ticket.createdAt, close.createdAt)
+            )
+          : null}
+      </View>
+
+      <View style={{ marginBottom: 8 }}>
+        <SectionTitle>{o.description}</SectionTitle>
+        <Text style={{ fontSize: 9.5 }}>{description}</Text>
+      </View>
+
+      <OsLineTable d={d} title={o.services} rows={serviceRows} />
+      <OsLineTable d={d} title={o.products} rows={productRows} />
+
+      <View
+        style={{
+          borderTopWidth: 1,
+          borderColor: COLOR.zinc700,
+          marginTop: 2,
+          marginBottom: 12,
+          paddingTop: 4,
+        }}
+      >
+        <Text
+          style={{ fontFamily: "Helvetica-Bold", fontSize: 11, textAlign: "right" }}
+        >
+          {o.grandTotal}: {formatCurrency(grandTotal)}
+        </Text>
+      </View>
+
+      <View style={{ marginBottom: 10 }}>
+        <SectionTitle>{o.term}</SectionTitle>
+        <Text style={{ fontSize: 8.5, color: COLOR.zinc700, marginBottom: 10 }}>
+          {o.termBody}
+        </Text>
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <OsSignature
+            label={o.signatureTech}
+            buf={
+              close?.signaturePath ? images.get(close.signaturePath) : undefined
+            }
+          />
+          <OsSignature
+            label={o.signatureClient}
+            buf={
+              close?.signatureClientPath
+                ? images.get(close.signatureClientPath)
+                : undefined
+            }
+          />
+        </View>
+      </View>
+
+      <Text
+        style={{
+          fontSize: 8,
+          color: COLOR.zinc500,
+          textAlign: "center",
+          marginBottom: 8,
+        }}
+      >
+        {o.notFiscal}
+      </Text>
+
+      {photos.length > 0 ? (
+        <View break>
+          <SectionTitle>{o.attachments}</SectionTitle>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+            {photos.map((buf, i) => (
+              <Image
+                key={i}
+                src={buf}
+                style={{ height: 200, objectFit: "contain" }}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
+    </Page>
+  );
+}
+
+async function preloadOsImages(
+  tickets: Ticket[]
+): Promise<Map<string, Buffer>> {
+  return preloadImages(
+    tickets.flatMap((t) => t.messages),
+    tickets.flatMap((t) =>
+      t.messages.flatMap((m) => [m.signaturePath, m.signatureClientPath])
+    ),
+    { signatures: true, history: true, photos: true } as ReportSections
+  );
+}
+
+export async function buildTicketOsReport(
+  ticket: Ticket,
+  company: Company,
+  lang: "pt" | "en" = "pt"
+): Promise<Buffer> {
+  return buildTicketsOsReport([ticket], company, lang);
+}
+
+export async function buildTicketsOsReport(
+  tickets: Ticket[],
+  company: Company,
+  lang: "pt" | "en" = "pt"
+): Promise<Buffer> {
+  const d = dict(lang);
+  const images = await preloadOsImages(tickets);
+  const logo = await loadImage(company.logoPath ?? undefined);
+
+  return renderToBuffer(
+    <Document>
+      {tickets.length === 0 ? (
+        <Page size="A4" style={styles.page}>
+          <Text style={{ fontSize: 10, color: COLOR.zinc500 }}>
+            {d.report.noRecords}
+          </Text>
+        </Page>
+      ) : (
+        tickets.map((ticket) => (
+          <OsPage
+            key={ticket.id}
+            d={d}
+            lang={lang}
+            ticket={ticket}
+            company={company}
+            images={images}
+            logo={logo}
+          />
+        ))
+      )}
     </Document>
   );
 }
