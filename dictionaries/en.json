@@ -611,7 +611,6 @@
     "signatureTech": "Technician's signature",
     "finalizedDate": "Closed on",
     "duration": "Duration",
-    "geoLocation": "Geographic location",
     "generating": "Generating PDF...",
     "tableTitle": "Tickets table",
     "generateTable": "Generate table (PDF)",

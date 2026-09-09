@@ -97,13 +97,6 @@ function lang(formData: FormData): string {
   return hasLocale(value) ? value : "pt";
 }
 
-function optionalNum(formData: FormData, key: string): number | undefined {
-  const raw = str(formData, key);
-  if (!raw) return undefined;
-  const value = Number(raw);
-  return Number.isFinite(value) ? value : undefined;
-}
-
 export async function getPowChallenge(): Promise<PowChallenge> {
   return createPowChallenge();
 }
@@ -295,15 +288,11 @@ export async function userTicketTransition(
 
   let signaturePath: string | undefined;
   let signatureClientPath: string | undefined;
-  let geoLat: number | undefined;
-  let geoLng: number | undefined;
   if (transition === "close") {
     signaturePath = (await saveSignature(str(formData, "signature"))) ?? undefined;
     if (!signaturePath) return { error: "signatureRequired" };
     signatureClientPath =
       (await saveSignature(str(formData, "signatureClient"))) ?? undefined;
-    geoLat = optionalNum(formData, "geoLat");
-    geoLng = optionalNum(formData, "geoLng");
   }
 
   await storeAddTicketMessage(ticketId, {
@@ -313,8 +302,6 @@ export async function userTicketTransition(
     action: transition,
     signaturePath,
     signatureClientPath,
-    geoLat,
-    geoLng,
   });
 
   redirect(`/${l}/track/ticket/${ticketId}?cpf=${encodeURIComponent(cpf)}`);
@@ -476,15 +463,11 @@ export async function adminTicketTransition(
 
   let signaturePath: string | undefined;
   let signatureClientPath: string | undefined;
-  let geoLat: number | undefined;
-  let geoLng: number | undefined;
   if (transition === "close") {
     signaturePath = (await saveSignature(str(formData, "signature"))) ?? undefined;
     if (!signaturePath) return { error: "signatureRequired" };
     signatureClientPath =
       (await saveSignature(str(formData, "signatureClient"))) ?? undefined;
-    geoLat = optionalNum(formData, "geoLat");
-    geoLng = optionalNum(formData, "geoLng");
   }
 
   await storeAddTicketMessage(ticketId, {
@@ -495,8 +478,6 @@ export async function adminTicketTransition(
     action: transition,
     signaturePath,
     signatureClientPath,
-    geoLat,
-    geoLng,
   });
 
   revalidatePath(`/${l}/admin/tickets/${ticketId}`);

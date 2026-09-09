@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState, type FormEvent } from "react";
+import { useActionState, useState, type FormEvent } from "react";
 import {
   userTicketTransition,
   adminTicketTransition,
@@ -35,18 +35,8 @@ export function TicketTransitionForm({
   );
   const pow = usePowGate();
   const [clientError, setClientError] = useState<string | null>(null);
-  const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null);
 
   const isClosing = transition === "close";
-
-  useEffect(() => {
-    if (!isClosing || !navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setGeo({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => undefined,
-      { timeout: 5000 }
-    );
-  }, [isClosing]);
 
   const errorText = (() => {
     if (clientError) return clientError;
@@ -91,12 +81,6 @@ export function TicketTransitionForm({
       <input type="hidden" name="ticketId" value={ticketId} />
       <input type="hidden" name="transition" value={transition} />
       {cpf && <input type="hidden" name="cpf" value={cpf} />}
-      {geo && (
-        <>
-          <input type="hidden" name="geoLat" value={geo.lat} />
-          <input type="hidden" name="geoLng" value={geo.lng} />
-        </>
-      )}
       {!admin && (
         <>
           <input type="hidden" name="powToken" ref={pow.tokenInputRef} />

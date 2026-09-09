@@ -98,8 +98,7 @@ export interface TicketMessage {
   action: TicketMessageAction;
   signaturePath?: string;
   signatureClientPath?: string;
-  geoLat?: number;
-  geoLng?: number;
+  // geoLat/geoLng were removed; existing DB columns are left in place but unused.
   createdAt: string;
 }
 

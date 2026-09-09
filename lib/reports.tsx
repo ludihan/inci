@@ -653,12 +653,6 @@ function TicketCard({
   if (closeMessage) {
     fields.push([d.report.finalizedDate, formatDateTime(closeMessage.createdAt, lang)]);
     fields.push([d.report.duration, formatDuration(ticket.createdAt, closeMessage.createdAt)]);
-    if (closeMessage.geoLat != null && closeMessage.geoLng != null) {
-      fields.push([
-        d.report.geoLocation,
-        `${closeMessage.geoLat.toFixed(4)}, ${closeMessage.geoLng.toFixed(4)}`,
-      ]);
-    }
   }
 
   return (
