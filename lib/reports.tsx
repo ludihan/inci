@@ -1117,6 +1117,8 @@ function OsPage({
       [m.signaturePath, m.signatureClientPath].filter(Boolean)
     ) as string[]
   );
+  // Only the photos actually sent on the ticket. Signatures live on their own
+  // fields (signaturePath / signatureClientPath), never in `attachments`.
   const photos = ticket.messages.flatMap((m) =>
     m.attachments
       .filter(
@@ -1125,7 +1127,7 @@ function OsPage({
           images.has(a.path) &&
           !signaturePaths.has(a.path)
       )
-      .map((a) => images.get(a.path) as Buffer)
+      .map((a) => ({ at: m.createdAt, buf: images.get(a.path) as Buffer }))
   );
 
   const field = (label: string, value: string) => (
@@ -1285,15 +1287,19 @@ function OsPage({
       {photos.length > 0 ? (
         <View break>
           <SectionTitle>{o.attachments}</SectionTitle>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            {photos.map((buf, i) => (
+          {photos.map((p, i) => (
+            <View key={i} wrap={false} style={{ marginBottom: 10 }}>
+              <Text
+                style={{ fontSize: 8, color: COLOR.zinc500, marginBottom: 2 }}
+              >
+                {formatDateTime(p.at, lang)}
+              </Text>
               <Image
-                key={i}
-                src={buf}
-                style={{ height: 200, objectFit: "contain" }}
+                src={p.buf}
+                style={{ height: 260, maxWidth: "62%", objectFit: "contain", alignSelf: "flex-start" }}
               />
-            ))}
-          </View>
+            </View>
+          ))}
         </View>
       ) : null}
     </Page>
