@@ -46,7 +46,13 @@ import {
   MAX_IMAGES_PER_MESSAGE,
   MAX_VIDEOS_PER_MESSAGE,
 } from "./uploads";
-import { isValidCpf, isValidPhone, onlyDigits, generateComplaintCode } from "./utils";
+import {
+  isValidCpf,
+  isValidCnpj,
+  isValidPhone,
+  onlyDigits,
+  generateComplaintCode,
+} from "./utils";
 import { createPowChallenge, verifyPowSolution, type PowChallenge } from "./pow";
 import { verifyPassword } from "./password";
 import { features, ticketsEnabled } from "./features";
@@ -784,10 +790,13 @@ export async function createPlace(
   const name = str(formData, "name");
   if (!name) return { error: "nameRequired" };
 
+  const cnpj = onlyDigits(str(formData, "cnpj"));
+  if (cnpj && !isValidCnpj(cnpj)) return { error: "cnpjInvalid" };
+
   const existing = await getPlaceByName(name);
   if (existing) return { error: "duplicate-place" };
 
-  await storeCreatePlace(name);
+  await storeCreatePlace(name, cnpj || undefined);
   redirect(`/${l}/admin/places`);
 }
 
@@ -816,7 +825,10 @@ export async function renamePlace(
   const name = str(formData, "name");
   if (!name) return { error: "nameRequired" };
 
-  const result = await storeRenamePlace(id, name);
+  const cnpj = onlyDigits(str(formData, "cnpj"));
+  if (cnpj && !isValidCnpj(cnpj)) return { error: "cnpjInvalid" };
+
+  const result = await storeRenamePlace(id, name, cnpj || undefined);
   if (!result.ok) {
     if (result.error === "not-found") return { error: "notFound" };
     return { error: "duplicate-place" };

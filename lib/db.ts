@@ -144,6 +144,7 @@ function initSchema(db: DatabaseSync): void {
   `);
 
   ensureColumn(db, "complaint_responses", "action", "TEXT NOT NULL DEFAULT 'message'");
+  ensureColumn(db, "places", "cnpj", "TEXT");
   ensureColumn(db, "tickets", "assigned_to", "TEXT");
   ensureColumn(db, "complaints", "assigned_to", "TEXT");
   ensureColumn(db, "complaint_responses", "photo_path", "TEXT");

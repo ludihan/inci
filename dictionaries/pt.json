@@ -315,7 +315,9 @@
       "rename": "Renomear",
       "empty": "Nenhum local cadastrado.",
       "nameRequired": "Informe o nome do local.",
-      "duplicate": "Já existe um local com este nome."
+      "duplicate": "Já existe um local com este nome.",
+      "cnpj": "CNPJ",
+      "cnpjHelp": "Opcional. Aparece nas Ordens de Serviço em PDF."
     },
     "items": {
       "title": "Itens / peças",

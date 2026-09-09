@@ -315,7 +315,9 @@
       "rename": "Rename",
       "empty": "No places registered.",
       "nameRequired": "Place name is required.",
-      "duplicate": "A place with this name already exists."
+      "duplicate": "A place with this name already exists.",
+      "cnpj": "CNPJ",
+      "cnpjHelp": "Optional. Shown on the Service Order PDFs."
     },
     "items": {
       "title": "Items / parts",

@@ -9,6 +9,8 @@ import {
 } from "@/lib/actions";
 import type { Place } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
+import { formatCnpj } from "@/lib/utils";
+import { CnpjInput } from "./cnpj-input";
 import { SubmitButton } from "./submit-button";
 
 const inputClass =
@@ -18,6 +20,7 @@ function errorText(state: ActionState, dict: Dict): string | null {
   if (!state?.error) return null;
   if (state.error === "nameRequired") return dict.admin.places.nameRequired;
   if (state.error === "duplicate-place") return dict.admin.places.duplicate;
+  if (state.error === "cnpjInvalid") return dict.common.cnpjInvalid;
   if (state.error === "notFound") return dict.common.notFound;
   return dict.common.generic;
 }
@@ -49,6 +52,21 @@ function PlaceForm({ dict, lang }: { dict: Dict; lang: Locale }) {
             placeholder={dict.admin.places.namePlaceholder}
             className={inputClass}
           />
+        </div>
+        <div>
+          <label
+            htmlFor="new-place-cnpj"
+            className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+          >
+            {dict.admin.places.cnpj}
+          </label>
+          <CnpjInput
+            id="new-place-cnpj"
+            errorMessage={dict.common.cnpjInvalid}
+          />
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            {dict.admin.places.cnpjHelp}
+          </p>
         </div>
         {errorText(state, dict) && (
           <p
@@ -92,6 +110,13 @@ function RenameForm({
           aria-label={dict.admin.places.name}
           className={`${inputClass} mt-0`}
         />
+        <div className="mt-2">
+          <CnpjInput
+            defaultValue={place.cnpj ?? ""}
+            ariaLabel={dict.admin.places.cnpj}
+            errorMessage={dict.common.cnpjInvalid}
+          />
+        </div>
         {errorText(state, dict) && (
           <p
             role="alert"
@@ -135,6 +160,11 @@ function PlaceRow({
           <p className="font-semibold text-zinc-900 dark:text-zinc-50">
             {place.name}
           </p>
+          {place.cnpj && (
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              {dict.admin.places.cnpj}: {formatCnpj(place.cnpj)}
+            </p>
+          )}
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
             {dict.common.createdAt}: {place.createdAt.slice(0, 10)}
           </p>

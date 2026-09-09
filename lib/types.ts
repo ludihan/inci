@@ -18,6 +18,7 @@ export interface Admin {
 export interface Place {
   id: string;
   name: string;
+  cnpj?: string;
   createdAt: string;
 }
 

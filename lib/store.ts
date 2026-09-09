@@ -83,9 +83,11 @@ function rowToAdmin(row: Row): Admin {
 }
 
 function rowToPlace(row: Row): Place {
+  const cnpj = row.cnpj == null ? "" : String(row.cnpj);
   return {
     id: String(row.id),
     name: String(row.name),
+    cnpj: cnpj || undefined,
     createdAt: String(row.created_at),
   };
 }
@@ -919,18 +921,20 @@ export async function getPlaceByName(name: string): Promise<Place | null> {
   return row ? rowToPlace(row) : null;
 }
 
-export async function createPlace(name: string): Promise<Place> {
+export async function createPlace(
+  name: string,
+  cnpj?: string
+): Promise<Place> {
   const db = getDb();
   const place: Place = {
     id: randomUUID(),
     name,
+    cnpj: cnpj || undefined,
     createdAt: new Date().toISOString(),
   };
-  db.prepare("INSERT INTO places (id, name, created_at) VALUES (?, ?, ?)").run(
-    place.id,
-    place.name,
-    place.createdAt
-  );
+  db.prepare(
+    "INSERT INTO places (id, name, cnpj, created_at) VALUES (?, ?, ?, ?)"
+  ).run(place.id, place.name, cnpj || null, place.createdAt);
   return place;
 }
 
@@ -946,7 +950,8 @@ export async function deletePlace(id: string): Promise<boolean> {
 
 export async function renamePlace(
   id: string,
-  name: string
+  name: string,
+  cnpj?: string
 ): Promise<{ ok: boolean; error?: string }> {
   const db = getDb();
   const place = db.prepare("SELECT * FROM places WHERE id = ?").get(id) as Row | undefined;
@@ -955,7 +960,11 @@ export async function renamePlace(
     .prepare("SELECT * FROM places WHERE LOWER(name) = LOWER(?) AND id != ?")
     .get(name, id) as Row | undefined;
   if (existing) return { ok: false, error: "duplicate-place" };
-  db.prepare("UPDATE places SET name = ? WHERE id = ?").run(name, id);
+  db.prepare("UPDATE places SET name = ?, cnpj = ? WHERE id = ?").run(
+    name,
+    cnpj || null,
+    id
+  );
   return { ok: true };
 }
 
