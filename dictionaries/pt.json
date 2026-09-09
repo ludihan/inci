@@ -87,6 +87,7 @@
     "today": "hoje",
     "yesterday": "ontem",
     "generic": "Ocorreu um erro. Tente novamente.",
+    "cnpjInvalid": "Informe um CNPJ válido.",
     "textTooLong": "O texto excede o tamanho máximo permitido.",
     "invalidPhotoType": "O arquivo enviado não é uma imagem válida (JPG, PNG, WEBP ou GIF).",
     "photoTooLarge": "A imagem excede o tamanho máximo de 5MB.",

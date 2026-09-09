@@ -46,6 +46,35 @@ export function formatCpf(value: string): string {
   );
 }
 
+export function isValidCnpj(value: string): boolean {
+  const cnpj = onlyDigits(value);
+  if (cnpj.length !== 14) return false;
+  if (/^(\d)\1{13}$/.test(cnpj)) return false;
+
+  const check = (len: number) => {
+    let sum = 0;
+    let weight = len - 7;
+    for (let i = 0; i < len; i++) {
+      sum += parseInt(cnpj[i], 10) * weight;
+      weight = weight === 2 ? 9 : weight - 1;
+    }
+    const rest = sum % 11;
+    return rest < 2 ? 0 : 11 - rest;
+  };
+
+  if (check(12) !== parseInt(cnpj[12], 10)) return false;
+  return check(13) === parseInt(cnpj[13], 10);
+}
+
+export function formatCnpj(value: string): string {
+  const digits = onlyDigits(value);
+  if (digits.length !== 14) return digits;
+  return digits.replace(
+    /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
+    "$1.$2.$3/$4-$5"
+  );
+}
+
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
