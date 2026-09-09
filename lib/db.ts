@@ -132,6 +132,19 @@ function initSchema(db: DatabaseSync): void {
       UNIQUE(ticket_id, item_id)
     );
 
+    CREATE TABLE IF NOT EXISTS company_settings (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL DEFAULT '',
+      cnpj TEXT NOT NULL DEFAULT '',
+      address_street TEXT NOT NULL DEFAULT '',
+      address_number TEXT NOT NULL DEFAULT '',
+      address_neighborhood TEXT NOT NULL DEFAULT '',
+      phone TEXT NOT NULL DEFAULT '',
+      form_code TEXT NOT NULL DEFAULT '',
+      logo_path TEXT,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_tickets_cpf ON tickets(cpf);
     CREATE INDEX IF NOT EXISTS idx_ticket_items_ticket ON ticket_items(ticket_id);
     CREATE INDEX IF NOT EXISTS idx_ticket_items_item ON ticket_items(item_id);
@@ -165,6 +178,28 @@ function initSchema(db: DatabaseSync): void {
     db.prepare("INSERT INTO settings (id, logo_path) VALUES (?, ?)").run(
       "main",
       null
+    );
+  }
+
+  const companyCount = db
+    .prepare("SELECT COUNT(*) AS n FROM company_settings")
+    .get() as { n: number };
+  if (companyCount.n === 0) {
+    db.prepare(
+      `INSERT INTO company_settings
+         (id, name, cnpj, address_street, address_number, address_neighborhood, phone, form_code, logo_path, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      "default",
+      process.env.COMPANY_NAME ?? "",
+      (process.env.COMPANY_CNPJ ?? "").replace(/\D/g, ""),
+      process.env.COMPANY_ADDRESS ?? "",
+      "",
+      "",
+      (process.env.COMPANY_PHONE ?? "").replace(/\D/g, ""),
+      "",
+      null,
+      new Date().toISOString()
     );
   }
 

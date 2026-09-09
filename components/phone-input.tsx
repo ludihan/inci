@@ -17,6 +17,8 @@ export function PhoneInput({
   required = false,
   placeholder,
   errorMessage,
+  defaultValue = "",
+  ariaLabel,
   autoComplete = "off",
 }: {
   name?: string;
@@ -24,13 +26,15 @@ export function PhoneInput({
   required?: boolean;
   placeholder?: string;
   errorMessage?: string;
+  defaultValue?: string;
+  ariaLabel?: string;
   autoComplete?: string;
 }) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
   const inputRef = useRef<HTMLInputElement>(null);
   const caretRef = useRef<number | null>(null);
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(() => formatPhone(defaultValue));
   const [touched, setTouched] = useState(false);
 
   const digits = onlyDigits(value);
@@ -65,6 +69,7 @@ export function PhoneInput({
         inputMode="tel"
         required={required}
         placeholder={placeholder}
+        aria-label={ariaLabel}
         autoComplete={autoComplete}
         maxLength={15}
         aria-invalid={invalid || undefined}

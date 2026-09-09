@@ -5,6 +5,7 @@ import { publishAdminEvent } from "./events";
 import type {
   Admin,
   Attachment,
+  Company,
   Complaint,
   ComplaintResponse,
   DB,
@@ -985,6 +986,75 @@ export async function setLogoPath(logoPath: string | null): Promise<void> {
   db.prepare("UPDATE settings SET logo_path = ? WHERE id = 'main'").run(
     logoPath
   );
+}
+
+// ---- Company (service provider) ----
+
+function rowToCompany(row: Row | undefined): Company {
+  const s = (v: unknown, fallback = ""): string =>
+    v == null || v === "" ? fallback : String(v);
+  return {
+    name: s(row?.name, process.env.COMPANY_NAME ?? ""),
+    cnpj: s(row?.cnpj, (process.env.COMPANY_CNPJ ?? "").replace(/\D/g, "")),
+    addressStreet: s(row?.address_street, process.env.COMPANY_ADDRESS ?? ""),
+    addressNumber: s(row?.address_number),
+    addressNeighborhood: s(row?.address_neighborhood),
+    phone: s(row?.phone, (process.env.COMPANY_PHONE ?? "").replace(/\D/g, "")),
+    formCode: s(row?.form_code),
+    logoPath: row?.logo_path ? String(row.logo_path) : null,
+  };
+}
+
+export async function getCompanySettings(): Promise<Company> {
+  const db = getDb();
+  const row = db
+    .prepare("SELECT * FROM company_settings WHERE id = 'default'")
+    .get() as Row | undefined;
+  return rowToCompany(row);
+}
+
+export interface UpdateCompanyInput {
+  name: string;
+  cnpj: string;
+  addressStreet: string;
+  addressNumber: string;
+  addressNeighborhood: string;
+  phone: string;
+  formCode: string;
+  logoPath?: string | null;
+}
+
+export async function updateCompanySettings(
+  input: UpdateCompanyInput
+): Promise<void> {
+  const db = getDb();
+  const setLogo = input.logoPath !== undefined;
+  db.prepare(
+    `INSERT INTO company_settings
+       (id, name, cnpj, address_street, address_number, address_neighborhood, phone, form_code, logo_path, updated_at)
+     VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       name = excluded.name,
+       cnpj = excluded.cnpj,
+       address_street = excluded.address_street,
+       address_number = excluded.address_number,
+       address_neighborhood = excluded.address_neighborhood,
+       phone = excluded.phone,
+       form_code = excluded.form_code,
+       ${setLogo ? "logo_path = excluded.logo_path," : ""}
+       updated_at = excluded.updated_at`
+  ).run(
+    input.name,
+    input.cnpj,
+    input.addressStreet,
+    input.addressNumber,
+    input.addressNeighborhood,
+    input.phone,
+    input.formCode,
+    setLogo ? input.logoPath ?? null : null,
+    new Date().toISOString()
+  );
+  publishAdminEvent("company");
 }
 
 // ---- Admins ----

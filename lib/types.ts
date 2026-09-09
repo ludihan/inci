@@ -42,6 +42,17 @@ export interface Settings {
   logoPath: string | null;
 }
 
+export interface Company {
+  name: string;
+  cnpj: string;
+  addressStreet: string;
+  addressNumber: string;
+  addressNeighborhood: string;
+  phone: string;
+  formCode: string;
+  logoPath: string | null;
+}
+
 export interface Attachment {
   id: string;
   path: string;

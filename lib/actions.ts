@@ -32,6 +32,8 @@ import {
   removeTicketItem as storeRemoveTicketItem,
   getSettings,
   setLogoPath,
+  getCompanySettings,
+  updateCompanySettings,
   getAdminByUsername,
   getAdminById,
   createAdmin as storeCreateAdmin,
@@ -879,6 +881,58 @@ export async function removeLogo(formData: FormData): Promise<void> {
   await deleteImage(settings.logoPath ?? undefined);
 
   redirect(`/${l}/admin/settings`);
+}
+
+// ---- Admin: company (service provider) ----
+
+export async function updateCompany(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) {
+    redirect(`/${l}/admin`);
+  }
+
+  const cnpj = onlyDigits(str(formData, "cnpj"));
+  if (cnpj && !isValidCnpj(cnpj)) return { error: "cnpjInvalid" };
+  const phone = onlyDigits(str(formData, "phone"));
+  if (phone && !isValidPhone(phone)) return { error: "phoneInvalid" };
+
+  const existing = await getCompanySettings();
+
+  let logoPath: string | null | undefined;
+  const removeLogoChecked = str(formData, "removeLogo") === "on";
+  const file = formData.get("logo");
+  if (file && typeof file !== "string" && file.size > 0) {
+    const result = await saveImage(file as File);
+    if (!result.ok) {
+      if (result.error === "invalid-type") return { error: "invalidPhotoType" };
+      if (result.error === "too-large") return { error: "photoTooLarge" };
+      return { error: "generic" };
+    }
+    logoPath = result.path;
+  } else if (removeLogoChecked) {
+    logoPath = null;
+  }
+
+  await updateCompanySettings({
+    name: str(formData, "name"),
+    cnpj,
+    addressStreet: str(formData, "addressStreet"),
+    addressNumber: str(formData, "addressNumber"),
+    addressNeighborhood: str(formData, "addressNeighborhood"),
+    phone,
+    formCode: str(formData, "formCode"),
+    logoPath,
+  });
+
+  if (logoPath !== undefined && existing.logoPath && existing.logoPath !== logoPath) {
+    await deleteImage(existing.logoPath);
+  }
+
+  redirect(`/${l}/admin/company?saved=1`);
 }
 
 // ---- Admin: user management ----
