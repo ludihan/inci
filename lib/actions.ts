@@ -30,6 +30,12 @@ import {
   addTicketItem as storeAddTicketItem,
   updateTicketItem as storeUpdateTicketItem,
   removeTicketItem as storeRemoveTicketItem,
+  createServiceType as storeCreateServiceType,
+  updateServiceType as storeUpdateServiceType,
+  deleteServiceType as storeDeleteServiceType,
+  addTicketService as storeAddTicketService,
+  updateTicketService as storeUpdateTicketService,
+  removeTicketService as storeRemoveTicketService,
   getSettings,
   setLogoPath,
   getCompanySettings,
@@ -615,6 +621,122 @@ export async function removeTicketItemAction(formData: FormData): Promise<void> 
   if (!ticket) return;
 
   await storeRemoveTicketItem(ticketId, str(formData, "itemId"));
+  revalidatePath(`/${l}/admin/tickets/${ticketId}`);
+}
+
+// ---- Admin: service type catalog ----
+
+export async function createServiceType(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) redirect(`/${l}/admin`);
+
+  const name = str(formData, "name");
+  if (!name) return { error: "nameRequired" };
+
+  const result = await storeCreateServiceType(
+    name,
+    Math.max(0, numField(formData, "defaultPrice"))
+  );
+  if (!result.ok) return { error: "duplicate-service-type" };
+  redirect(`/${l}/admin/service-types`);
+}
+
+export async function updateServiceType(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) redirect(`/${l}/admin`);
+
+  const id = str(formData, "id");
+  const name = str(formData, "name");
+  if (!name) return { error: "nameRequired" };
+
+  const result = await storeUpdateServiceType(
+    id,
+    name,
+    Math.max(0, numField(formData, "defaultPrice"))
+  );
+  if (!result.ok) {
+    if (result.error === "not-found") return { error: "notFound" };
+    return { error: "duplicate-service-type" };
+  }
+  redirect(`/${l}/admin/service-types`);
+}
+
+export async function deleteServiceType(formData: FormData): Promise<void> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) redirect(`/${l}/admin`);
+
+  const id = str(formData, "id");
+  await storeDeleteServiceType(id);
+  redirect(`/${l}/admin/service-types`);
+}
+
+// ---- Admin: ticket services ----
+
+export async function addTicketServiceAction(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const ticketId = str(formData, "ticketId");
+  const ticket = await requireTicketAdmin(ticketId);
+  if (!ticket) return { error: "notFound" };
+
+  const quantity = numField(formData, "quantity", 1);
+  if (!(quantity > 0)) return { error: "quantityInvalid" };
+
+  const result = await storeAddTicketService({
+    ticketId,
+    serviceTypeId: str(formData, "serviceTypeId") || undefined,
+    newServiceName: str(formData, "newServiceName") || undefined,
+    quantity,
+    unitPrice: Math.max(0, numField(formData, "unitPrice")),
+    discount: Math.max(0, numField(formData, "discount")),
+  });
+  if (!result.ok) return { error: result.error ?? "generic" };
+
+  revalidatePath(`/${l}/admin/tickets/${ticketId}`);
+}
+
+export async function updateTicketServiceAction(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const ticketId = str(formData, "ticketId");
+  const ticket = await requireTicketAdmin(ticketId);
+  if (!ticket) return { error: "notFound" };
+
+  const quantity = numField(formData, "quantity", 1);
+  if (!(quantity > 0)) return { error: "quantityInvalid" };
+
+  await storeUpdateTicketService(
+    ticketId,
+    str(formData, "serviceTypeId"),
+    quantity,
+    Math.max(0, numField(formData, "unitPrice")),
+    Math.max(0, numField(formData, "discount"))
+  );
+  revalidatePath(`/${l}/admin/tickets/${ticketId}`);
+}
+
+export async function removeTicketServiceAction(
+  formData: FormData
+): Promise<void> {
+  const l = lang(formData);
+  const ticketId = str(formData, "ticketId");
+  const ticket = await requireTicketAdmin(ticketId);
+  if (!ticket) return;
+
+  await storeRemoveTicketService(ticketId, str(formData, "serviceTypeId"));
   revalidatePath(`/${l}/admin/tickets/${ticketId}`);
 }
 

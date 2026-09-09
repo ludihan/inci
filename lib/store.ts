@@ -11,11 +11,13 @@ import type {
   DB,
   Item,
   Place,
+  ServiceType,
   Settings,
   Ticket,
   TicketCriticality,
   TicketItemUsage,
   TicketMessage,
+  TicketServiceUsage,
   TicketType,
 } from "./types";
 
@@ -165,6 +167,49 @@ function rowToTicketItemUsage(row: Row): TicketItemUsage {
   };
 }
 
+function rowToServiceType(row: Row): ServiceType {
+  return {
+    id: String(row.id),
+    name: String(row.name),
+    defaultPrice: Number(row.default_price ?? 0),
+    createdAt: String(row.created_at),
+  };
+}
+
+function rowToTicketServiceUsage(row: Row): TicketServiceUsage {
+  const quantity = Number(row.quantity ?? 0);
+  const unitPrice = Number(row.unit_price ?? 0);
+  const discount = Number(row.discount ?? 0);
+  return {
+    id: String(row.id),
+    serviceType: {
+      id: String(row.service_type_id),
+      name: String(row.service_type_name),
+      defaultPrice: Number(row.default_price ?? 0),
+      createdAt: String(row.service_type_created_at),
+    },
+    quantity,
+    unitPrice,
+    discount,
+    total: Math.max(0, quantity * unitPrice - discount),
+  };
+}
+
+function findTicketServices(ticketId: string): TicketServiceUsage[] {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT ts.*, s.name AS service_type_name, s.default_price AS default_price,
+              s.created_at AS service_type_created_at
+       FROM ticket_services ts
+       JOIN service_types s ON s.id = ts.service_type_id
+       WHERE ts.ticket_id = ?
+       ORDER BY ts.created_at ASC`
+    )
+    .all(ticketId) as Row[];
+  return rows.map(rowToTicketServiceUsage);
+}
+
 function findTicketItems(ticketId: string): TicketItemUsage[] {
   const db = getDb();
   const rows = db
@@ -210,6 +255,7 @@ function rowToTicket(row: Row): Ticket {
     notes: String(row.notes ?? ""),
     criticality: toCriticality(row.criticality),
     items: findTicketItems(String(row.id)),
+    services: findTicketServices(String(row.id)),
     place,
     status:
       row.status === "closed"
@@ -296,12 +342,16 @@ export async function getDB(): Promise<DB> {
   const admins = db.prepare("SELECT * FROM admins ORDER BY created_at ASC").all() as Row[];
   const places = db.prepare("SELECT * FROM places ORDER BY name ASC").all() as Row[];
   const items = db.prepare("SELECT * FROM items ORDER BY name ASC").all() as Row[];
+  const serviceTypes = db
+    .prepare("SELECT * FROM service_types ORDER BY name ASC")
+    .all() as Row[];
   const tickets = db.prepare("SELECT * FROM tickets").all() as Row[];
   const complaints = db.prepare("SELECT * FROM complaints").all() as Row[];
   return {
     admins: admins.map(rowToAdmin),
     places: places.map(rowToPlace),
     items: items.map(rowToItem),
+    serviceTypes: serviceTypes.map(rowToServiceType),
     tickets: tickets.map(rowToTicket),
     complaints: complaints.map(rowToComplaint),
   };
@@ -857,6 +907,179 @@ export async function removeTicketItem(
   const result = db
     .prepare("DELETE FROM ticket_items WHERE ticket_id = ? AND item_id = ?")
     .run(ticketId, itemId);
+  db.prepare("UPDATE tickets SET updated_at = ? WHERE id = ?").run(
+    new Date().toISOString(),
+    ticketId
+  );
+  publishAdminEvent(ticketId);
+  return { ok: result.changes > 0 };
+}
+
+// ---- Service types ----
+
+export async function listServiceTypes(): Promise<ServiceType[]> {
+  const db = getDb();
+  const rows = db
+    .prepare("SELECT * FROM service_types ORDER BY name ASC")
+    .all() as Row[];
+  return rows.map(rowToServiceType);
+}
+
+export async function createServiceType(
+  name: string,
+  defaultPrice = 0
+): Promise<{ ok: boolean; error?: string; serviceType?: ServiceType }> {
+  const db = getDb();
+  const existing = db
+    .prepare("SELECT id FROM service_types WHERE LOWER(name) = LOWER(?)")
+    .get(name) as Row | undefined;
+  if (existing) return { ok: false, error: "duplicate-service-type" };
+  const serviceType: ServiceType = {
+    id: randomUUID(),
+    name,
+    defaultPrice: Number.isFinite(defaultPrice) ? Math.max(0, defaultPrice) : 0,
+    createdAt: new Date().toISOString(),
+  };
+  db.prepare(
+    "INSERT INTO service_types (id, name, default_price, created_at) VALUES (?, ?, ?, ?)"
+  ).run(
+    serviceType.id,
+    serviceType.name,
+    serviceType.defaultPrice,
+    serviceType.createdAt
+  );
+  return { ok: true, serviceType };
+}
+
+export async function updateServiceType(
+  id: string,
+  name: string,
+  defaultPrice: number
+): Promise<{ ok: boolean; error?: string }> {
+  const db = getDb();
+  const row = db
+    .prepare("SELECT * FROM service_types WHERE id = ?")
+    .get(id) as Row | undefined;
+  if (!row) return { ok: false, error: "not-found" };
+  const clash = db
+    .prepare("SELECT id FROM service_types WHERE LOWER(name) = LOWER(?) AND id != ?")
+    .get(name, id) as Row | undefined;
+  if (clash) return { ok: false, error: "duplicate-service-type" };
+  db.prepare(
+    "UPDATE service_types SET name = ?, default_price = ? WHERE id = ?"
+  ).run(
+    name,
+    Number.isFinite(defaultPrice) ? Math.max(0, defaultPrice) : 0,
+    id
+  );
+  return { ok: true };
+}
+
+export async function deleteServiceType(
+  id: string
+): Promise<{ ok: boolean; error?: string }> {
+  const db = getDb();
+  const usage = db
+    .prepare("SELECT COUNT(*) AS n FROM ticket_services WHERE service_type_id = ?")
+    .get(id) as { n: number };
+  if (usage.n > 0) return { ok: false, error: "service-type-in-use" };
+  const result = db.prepare("DELETE FROM service_types WHERE id = ?").run(id);
+  return { ok: result.changes > 0 };
+}
+
+export async function addTicketService(input: {
+  ticketId: string;
+  serviceTypeId?: string;
+  newServiceName?: string;
+  quantity: number;
+  unitPrice: number;
+  discount: number;
+}): Promise<{ ok: boolean; error?: string }> {
+  const db = getDb();
+  const ticket = db
+    .prepare("SELECT id FROM tickets WHERE id = ?")
+    .get(input.ticketId);
+  if (!ticket) return { ok: false, error: "not-found" };
+
+  let serviceTypeId = input.serviceTypeId;
+  if (!serviceTypeId) {
+    const name = (input.newServiceName ?? "").trim();
+    if (!name) return { ok: false, error: "serviceRequired" };
+    const existing = db
+      .prepare("SELECT id FROM service_types WHERE LOWER(name) = LOWER(?)")
+      .get(name) as Row | undefined;
+    if (existing) {
+      serviceTypeId = String(existing.id);
+    } else {
+      const created = await createServiceType(name, input.unitPrice);
+      if (!created.ok || !created.serviceType) {
+        return { ok: false, error: "generic" };
+      }
+      serviceTypeId = created.serviceType.id;
+    }
+  } else {
+    const row = db
+      .prepare("SELECT id FROM service_types WHERE id = ?")
+      .get(serviceTypeId);
+    if (!row) return { ok: false, error: "serviceRequired" };
+  }
+
+  const now = new Date().toISOString();
+  db.prepare(
+    `INSERT INTO ticket_services (id, ticket_id, service_type_id, quantity, unit_price, discount, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(ticket_id, service_type_id) DO UPDATE SET
+       quantity = excluded.quantity,
+       unit_price = excluded.unit_price,
+       discount = excluded.discount`
+  ).run(
+    randomUUID(),
+    input.ticketId,
+    serviceTypeId,
+    input.quantity,
+    input.unitPrice,
+    input.discount,
+    now
+  );
+  db.prepare("UPDATE tickets SET updated_at = ? WHERE id = ?").run(
+    now,
+    input.ticketId
+  );
+  publishAdminEvent(input.ticketId);
+  return { ok: true };
+}
+
+export async function updateTicketService(
+  ticketId: string,
+  serviceTypeId: string,
+  quantity: number,
+  unitPrice: number,
+  discount: number
+): Promise<{ ok: boolean }> {
+  const db = getDb();
+  const result = db
+    .prepare(
+      "UPDATE ticket_services SET quantity = ?, unit_price = ?, discount = ? WHERE ticket_id = ? AND service_type_id = ?"
+    )
+    .run(quantity, unitPrice, discount, ticketId, serviceTypeId);
+  db.prepare("UPDATE tickets SET updated_at = ? WHERE id = ?").run(
+    new Date().toISOString(),
+    ticketId
+  );
+  publishAdminEvent(ticketId);
+  return { ok: result.changes > 0 };
+}
+
+export async function removeTicketService(
+  ticketId: string,
+  serviceTypeId: string
+): Promise<{ ok: boolean }> {
+  const db = getDb();
+  const result = db
+    .prepare(
+      "DELETE FROM ticket_services WHERE ticket_id = ? AND service_type_id = ?"
+    )
+    .run(ticketId, serviceTypeId);
   db.prepare("UPDATE tickets SET updated_at = ? WHERE id = ?").run(
     new Date().toISOString(),
     ticketId

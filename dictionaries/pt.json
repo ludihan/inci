@@ -167,6 +167,26 @@
       "itemRequired": "Selecione um item existente ou informe o nome de um novo item.",
       "quantityInvalid": "Informe uma quantidade maior que zero."
     },
+    "services": {
+      "title": "Serviços",
+      "add": "+ Adicionar serviço",
+      "cancelAdd": "Cancelar serviço",
+      "fromCatalog": "Serviço do catálogo",
+      "newItem": "Novo serviço...",
+      "newItemName": "Nome do novo serviço",
+      "newItemNamePlaceholder": "Ex.: Mão de obra — hora técnica",
+      "quantity": "Quantidade",
+      "quantityShort": "Qtd.",
+      "unitPrice": "Preço (R$)",
+      "discount": "Desconto (R$)",
+      "addButton": "Adicionar serviço",
+      "adding": "Adicionando...",
+      "edit": "Editar",
+      "remove": "Remover",
+      "total": "Total",
+      "serviceRequired": "Selecione um serviço existente ou informe o nome de um novo serviço.",
+      "quantityInvalid": "Informe uma quantidade maior que zero."
+    },
     "attachmentsRequired": "Envie ao menos uma foto ou vídeo para abrir o chamado.",
     "messageRequired": "A descrição do problema é obrigatória.",
     "subjectRequired": "O assunto é obrigatório.",
@@ -333,6 +353,21 @@
       "nameRequired": "Informe o nome do item.",
       "duplicate": "Já existe um item com este nome.",
       "inUse": "Este item está em uso em um ou mais chamados."
+    },
+    "serviceTypes": {
+      "title": "Serviços",
+      "subtitle": "Catálogo de serviços precificados que podem ser cobrados nos chamados.",
+      "newTitle": "Novo serviço",
+      "name": "Nome do serviço",
+      "namePlaceholder": "Ex.: Suporte técnico",
+      "price": "Preço padrão (R$)",
+      "create": "Adicionar serviço",
+      "delete": "Excluir",
+      "rename": "Editar",
+      "empty": "Nenhum serviço cadastrado.",
+      "nameRequired": "Informe o nome do serviço.",
+      "duplicate": "Já existe um serviço com este nome.",
+      "inUse": "Este serviço está em uso em um ou mais chamados."
     },
     "sql": {
       "title": "Console SQL",
@@ -544,6 +579,8 @@
     "generateTable": "Gerar tabela (PDF)",
     "rowColorNote": "Cor da linha = situação do chamado:",
     "itemsTitle": "Itens utilizados",
-    "itemsTotal": "Valor total dos itens"
+    "itemsTotal": "Valor total dos itens",
+    "servicesTitle": "Serviços prestados",
+    "servicesTotal": "Valor total dos serviços"
   }
 }

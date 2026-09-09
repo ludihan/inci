@@ -167,6 +167,26 @@
       "itemRequired": "Pick an existing item or enter a name for a new one.",
       "quantityInvalid": "Enter a quantity greater than zero."
     },
+    "services": {
+      "title": "Services",
+      "add": "+ Add service",
+      "cancelAdd": "Cancel service",
+      "fromCatalog": "Catalog service",
+      "newItem": "New service...",
+      "newItemName": "New service name",
+      "newItemNamePlaceholder": "e.g. Labor — technician hour",
+      "quantity": "Quantity",
+      "quantityShort": "Qty.",
+      "unitPrice": "Price (R$)",
+      "discount": "Discount (R$)",
+      "addButton": "Add service",
+      "adding": "Adding...",
+      "edit": "Edit",
+      "remove": "Remove",
+      "total": "Total",
+      "serviceRequired": "Pick an existing service or enter a name for a new one.",
+      "quantityInvalid": "Enter a quantity greater than zero."
+    },
     "attachmentsRequired": "Send at least one photo or video to open the ticket.",
     "messageRequired": "The problem description is required.",
     "subjectRequired": "The subject is required.",
@@ -333,6 +353,21 @@
       "nameRequired": "Item name is required.",
       "duplicate": "An item with this name already exists.",
       "inUse": "This item is in use on one or more tickets."
+    },
+    "serviceTypes": {
+      "title": "Services",
+      "subtitle": "Catalog of priced services that can be billed on tickets.",
+      "newTitle": "New service",
+      "name": "Service name",
+      "namePlaceholder": "e.g. Technical support",
+      "price": "Default price (R$)",
+      "create": "Add service",
+      "delete": "Delete",
+      "rename": "Edit",
+      "empty": "No services registered.",
+      "nameRequired": "Service name is required.",
+      "duplicate": "A service with this name already exists.",
+      "inUse": "This service is in use on one or more tickets."
     },
     "sql": {
       "title": "SQL Console",
@@ -544,6 +579,8 @@
     "generateTable": "Generate table (PDF)",
     "rowColorNote": "Row color = ticket status:",
     "itemsTitle": "Items used",
-    "itemsTotal": "Items total"
+    "itemsTotal": "Items total",
+    "servicesTitle": "Services performed",
+    "servicesTotal": "Services total"
   }
 }

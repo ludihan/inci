@@ -38,6 +38,22 @@ export interface TicketItemUsage {
   total: number;
 }
 
+export interface ServiceType {
+  id: string;
+  name: string;
+  defaultPrice: number;
+  createdAt: string;
+}
+
+export interface TicketServiceUsage {
+  id: string;
+  serviceType: ServiceType;
+  quantity: number;
+  unitPrice: number;
+  discount: number;
+  total: number;
+}
+
 export interface Settings {
   logoPath: string | null;
 }
@@ -94,6 +110,7 @@ export interface Ticket {
   notes: string;
   criticality: TicketCriticality;
   items: TicketItemUsage[];
+  services: TicketServiceUsage[];
   place: Place | null;
   status: TicketStatus;
   assignedToId?: string;
@@ -140,6 +157,7 @@ export interface DB {
   admins: Admin[];
   places: Place[];
   items: Item[];
+  serviceTypes: ServiceType[];
   tickets: Ticket[];
   complaints: Complaint[];
 }

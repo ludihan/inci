@@ -52,6 +52,11 @@ export function AdminNav({
       show: isSuperAdmin(admin),
     },
     {
+      href: `/${lang}/admin/service-types`,
+      label: dict.admin.serviceTypes.title,
+      show: isSuperAdmin(admin),
+    },
+    {
       href: `/${lang}/admin/company`,
       label: dict.admin.company.title,
       show: isSuperAdmin(admin),

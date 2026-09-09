@@ -145,7 +145,27 @@ function initSchema(db: DatabaseSync): void {
       updated_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS service_types (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,
+      default_price REAL NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_services (
+      id TEXT PRIMARY KEY,
+      ticket_id TEXT NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+      service_type_id TEXT NOT NULL REFERENCES service_types(id),
+      quantity REAL NOT NULL DEFAULT 1,
+      unit_price REAL NOT NULL DEFAULT 0,
+      discount REAL NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      UNIQUE(ticket_id, service_type_id)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_tickets_cpf ON tickets(cpf);
+    CREATE INDEX IF NOT EXISTS idx_ticket_services_ticket ON ticket_services(ticket_id);
+    CREATE INDEX IF NOT EXISTS idx_ticket_services_service ON ticket_services(service_type_id);
     CREATE INDEX IF NOT EXISTS idx_ticket_items_ticket ON ticket_items(ticket_id);
     CREATE INDEX IF NOT EXISTS idx_ticket_items_item ON ticket_items(item_id);
     CREATE INDEX IF NOT EXISTS idx_ticket_messages_ticket ON ticket_messages(ticket_id);

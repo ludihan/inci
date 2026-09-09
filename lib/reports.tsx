@@ -21,6 +21,7 @@ import type {
   Ticket,
   TicketItemUsage,
   TicketMessage,
+  TicketServiceUsage,
 } from "./types";
 import { formatCpf, formatCurrency, formatDateTime, formatPhone } from "./utils";
 
@@ -454,11 +455,23 @@ function Signatures({
   );
 }
 
-function ItemsTable({ d, items }: { d: Dict; items: TicketItemUsage[] }) {
-  if (items.length === 0) return null;
-  const total = items.reduce((sum, i) => sum + i.total, 0);
+function UsageTable({
+  d,
+  title,
+  totalLabel,
+  nameLabel,
+  rows,
+}: {
+  d: Dict;
+  title: string;
+  totalLabel: string;
+  nameLabel: string;
+  rows: { id: string; name: string; quantity: number; unitPrice: number; discount: number; total: number }[];
+}) {
+  if (rows.length === 0) return null;
+  const total = rows.reduce((sum, i) => sum + i.total, 0);
   const cols: { label: string; width: string; align: "left" | "right" }[] = [
-    { label: d.ticket.items.newItem.replace("...", ""), width: "40%", align: "left" },
+    { label: nameLabel, width: "40%", align: "left" },
     { label: d.ticket.items.quantityShort, width: "15%", align: "right" },
     { label: d.ticket.items.unitPrice, width: "15%", align: "right" },
     { label: d.ticket.items.discount, width: "15%", align: "right" },
@@ -466,7 +479,7 @@ function ItemsTable({ d, items }: { d: Dict; items: TicketItemUsage[] }) {
   ];
   return (
     <View style={{ marginBottom: 8 }}>
-      <SectionTitle>{d.report.itemsTitle}</SectionTitle>
+      <SectionTitle>{title}</SectionTitle>
       <View
         style={{
           flexDirection: "row",
@@ -490,9 +503,9 @@ function ItemsTable({ d, items }: { d: Dict; items: TicketItemUsage[] }) {
           </Text>
         ))}
       </View>
-      {items.map((usage, i) => {
+      {rows.map((usage, i) => {
         const values = [
-          usage.item.name,
+          usage.name,
           String(usage.quantity),
           formatCurrency(usage.unitPrice),
           formatCurrency(usage.discount),
@@ -526,9 +539,47 @@ function ItemsTable({ d, items }: { d: Dict; items: TicketItemUsage[] }) {
           marginTop: 4,
         }}
       >
-        {d.report.itemsTotal}: {formatCurrency(total)}
+        {totalLabel}: {formatCurrency(total)}
       </Text>
     </View>
+  );
+}
+
+function ItemsTable({ d, items }: { d: Dict; items: TicketItemUsage[] }) {
+  return (
+    <UsageTable
+      d={d}
+      title={d.report.itemsTitle}
+      totalLabel={d.report.itemsTotal}
+      nameLabel={d.ticket.items.newItem.replace("...", "")}
+      rows={items.map((u) => ({
+        id: u.id,
+        name: u.item.name,
+        quantity: u.quantity,
+        unitPrice: u.unitPrice,
+        discount: u.discount,
+        total: u.total,
+      }))}
+    />
+  );
+}
+
+function ServicesTable({ d, services }: { d: Dict; services: TicketServiceUsage[] }) {
+  return (
+    <UsageTable
+      d={d}
+      title={d.report.servicesTitle}
+      totalLabel={d.report.servicesTotal}
+      nameLabel={d.ticket.services.newItem.replace("...", "")}
+      rows={services.map((u) => ({
+        id: u.id,
+        name: u.serviceType.name,
+        quantity: u.quantity,
+        unitPrice: u.unitPrice,
+        discount: u.discount,
+        total: u.total,
+      }))}
+    />
   );
 }
 
@@ -641,6 +692,10 @@ function TicketCard({
         <View style={{ marginBottom: 12 }}>
           <FieldRows rows={fields} />
         </View>
+      ) : null}
+
+      {sections.details && ticket.services.length > 0 ? (
+        <ServicesTable d={d} services={ticket.services} />
       ) : null}
 
       {sections.details && ticket.items.length > 0 ? (
