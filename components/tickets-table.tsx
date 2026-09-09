@@ -1,11 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   createColumnHelper,
-  createSortedRowModel,
-  rowSortingFeature,
-  sortFns,
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
@@ -15,11 +12,10 @@ import { formatCpf, formatDateTime } from "@/lib/utils";
 import { StatusBadge, TicketTypeBadge } from "./badges";
 import { CopyButton } from "./copy-button";
 
-const features = tableFeatures({
-  rowSortingFeature,
-  sortedRowModel: createSortedRowModel(),
-  sortFns,
-});
+const features = tableFeatures({});
+
+// Column ids that the shared ticket-list-filter knows how to sort by.
+const SORTABLE = new Set(["assignee", "id", "createdAt", "place", "subject"]);
 
 const ROW_STATUS_CLASS: Record<TicketStatus, string> = {
   open: "bg-red-100 hover:bg-red-200/70 dark:bg-red-950/50 dark:hover:bg-red-950/80",
@@ -58,12 +54,36 @@ export function TicketsTable({
   tickets,
   dict,
   locale,
+  sort,
+  dir,
 }: {
   tickets: Ticket[];
   dict: Dict;
   locale: Locale;
+  sort?: string;
+  dir?: string;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const activeColumn = sort ?? "createdAt";
+  const activeDir = dir ?? "desc";
+
+  const toggleSort = (columnId: string) => {
+    if (!SORTABLE.has(columnId)) return;
+    const next = new URLSearchParams(searchParams.toString());
+    if (activeColumn !== columnId) {
+      next.set("sort", columnId);
+      next.set("dir", "asc");
+    } else if (activeDir === "asc") {
+      next.set("sort", columnId);
+      next.set("dir", "desc");
+    } else {
+      next.delete("sort");
+      next.delete("dir");
+    }
+    router.push(`?${next.toString()}`);
+  };
 
   const columns = helper.columns([
     helper.accessor("status", {
@@ -160,21 +180,32 @@ export function TicketsTable({
                 key={headerGroup.id}
                 className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950"
               >
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    onClick={header.column.getToggleSortingHandler()}
-                    className="cursor-pointer select-none border-r border-zinc-200 px-3 py-2 text-left text-xs font-semibold text-zinc-600 last:border-r-0 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900"
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      <table.FlexRender header={header} />
-                      {{
-                        asc: <span className="text-zinc-400">▲</span>,
-                        desc: <span className="text-zinc-400">▼</span>,
-                      }[header.column.getIsSorted() as string] ?? null}
-                    </span>
-                  </th>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const sortable = SORTABLE.has(header.column.id);
+                  const isActive = sortable && activeColumn === header.column.id;
+                  return (
+                    <th
+                      key={header.id}
+                      onClick={
+                        sortable ? () => toggleSort(header.column.id) : undefined
+                      }
+                      className={`select-none border-r border-zinc-200 px-3 py-2 text-left text-xs font-semibold text-zinc-600 last:border-r-0 dark:border-zinc-800 dark:text-zinc-400 ${
+                        sortable
+                          ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                          : ""
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        <table.FlexRender header={header} />
+                        {isActive && (
+                          <span className="text-zinc-400">
+                            {activeDir === "asc" ? "▲" : "▼"}
+                          </span>
+                        )}
+                      </span>
+                    </th>
+                  );
+                })}
               </tr>
             ))}
           </thead>

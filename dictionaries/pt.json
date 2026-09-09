@@ -452,7 +452,24 @@
       "allTypes": "Todos os tipos",
       "openOnly": "Somente abertos",
       "closedOnly": "Somente fechados",
-      "noPermission": "Você não tem permissão para visualizar chamados deste tipo."
+      "noPermission": "Você não tem permissão para visualizar chamados deste tipo.",
+      "filters": {
+        "title": "Filtros",
+        "all": "Todos",
+        "allStatuses": "Abertos e em andamento",
+        "type": "Tipo",
+        "status": "Situação",
+        "criticality": "Criticidade",
+        "place": "Local",
+        "assignee": "Assumido por",
+        "unassigned": "Não atribuído",
+        "from": "De",
+        "to": "Até",
+        "apply": "Aplicar filtros",
+        "clear": "Limpar",
+        "active": "filtro(s) ativo(s)",
+        "showing": "Exibindo {count} chamado(s)."
+      }
     },
     "complaints": {
       "title": "Denúncias",

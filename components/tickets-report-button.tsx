@@ -22,14 +22,10 @@ export function TicketsReportButton({
   }
 
   const handleClick = () => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
     params.set("module", "tickets");
     params.set("view", "table");
     params.set("lang", locale);
-    const type = searchParams.get("type");
-    const status = searchParams.get("status");
-    if (type) params.set("type", type);
-    if (status) params.set("status", status);
     generate(
       `/api/reports?${params.toString()}`,
       `chamados-tabela-${new Date().toISOString().slice(0, 10)}.pdf`

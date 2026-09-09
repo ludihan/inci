@@ -452,7 +452,24 @@
       "allTypes": "All types",
       "openOnly": "Open only",
       "closedOnly": "Closed only",
-      "noPermission": "You do not have permission to view tickets of this type."
+      "noPermission": "You do not have permission to view tickets of this type.",
+      "filters": {
+        "title": "Filters",
+        "all": "All",
+        "allStatuses": "Open and in progress",
+        "type": "Type",
+        "status": "Status",
+        "criticality": "Criticality",
+        "place": "Place",
+        "assignee": "Assigned to",
+        "unassigned": "Unassigned",
+        "from": "From",
+        "to": "To",
+        "apply": "Apply filters",
+        "clear": "Clear",
+        "active": "active filter(s)",
+        "showing": "Showing {count} ticket(s)."
+      }
     },
     "complaints": {
       "title": "Complaints",

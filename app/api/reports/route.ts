@@ -2,6 +2,7 @@ import { getCurrentAdmin, hasPermission, isSuperAdmin } from "@/lib/auth";
 import { features } from "@/lib/features";
 import { getReportDict, type ReportSections } from "@/lib/reports";
 import { getDB, getPlaceById, hasAssignedComplaints } from "@/lib/store";
+import { filterTicketList } from "@/lib/ticket-list-filter";
 import { formatDateTime } from "@/lib/utils";
 
 const DEFAULT_SECTIONS: ReportSections = {
@@ -58,7 +59,8 @@ export async function GET(request: Request) {
     ? searchParams.get("to")!
     : undefined;
 
-  const placeId = searchParams.get("placeId") || undefined;
+  const placeId =
+    searchParams.get("placeId") || searchParams.get("place") || undefined;
   const ids = (searchParams.get("ids") ?? "")
     .split(",")
     .map((s) => s.trim())
@@ -142,18 +144,28 @@ export async function GET(request: Request) {
     }
     const filters = filterParts.join("  ·  ");
 
-    const tickets = db.tickets
-      .filter((t) => {
-        if (typeFilter && t.type !== typeFilter) return false;
-        if (!typeFilter && !hasPermission(admin, t.type)) return false;
-        if (statusFilter && t.status !== statusFilter) return false;
-        if (from && t.createdAt.slice(0, 10) < from) return false;
-        if (to && t.createdAt.slice(0, 10) > to) return false;
-        if (placeId && t.place?.id !== placeId) return false;
-        if (ids.length > 0 && !ids.includes(t.id)) return false;
-        return true;
-      })
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const tickets =
+      ids.length > 0
+        ? db.tickets
+            .filter(
+              (t) => ids.includes(t.id) && hasPermission(admin, t.type)
+            )
+            .sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id))
+        : filterTicketList(
+            db.tickets,
+            {
+              type: searchParams.get("type") ?? undefined,
+              status: searchParams.get("status") ?? undefined,
+              criticality: searchParams.get("criticality") ?? undefined,
+              place: searchParams.get("place") ?? undefined,
+              assignee: searchParams.get("assignee") ?? undefined,
+              from: searchParams.get("from") ?? undefined,
+              to: searchParams.get("to") ?? undefined,
+              sort: searchParams.get("sort") ?? undefined,
+              dir: searchParams.get("dir") ?? undefined,
+            },
+            { canIT, canMaintenance }
+          );
 
     if (searchParams.get("view") === "table") {
       const tableBuffer = await (
