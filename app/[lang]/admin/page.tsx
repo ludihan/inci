@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getDict, getLocale, type Dict } from "@/lib/i18n";
 import { getCurrentAdmin, hasPermission, isSuperAdmin } from "@/lib/auth";
-import { getDB, listPlaces } from "@/lib/store";
+import { getDB, listUnits } from "@/lib/store";
 import { features } from "@/lib/features";
 import type { Admin, Complaint, Ticket, TicketStatus } from "@/lib/types";
 import { StatusBadge, TicketTypeBadge } from "@/components/badges";
@@ -35,14 +35,14 @@ function StatCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-6 ${
+      className={`rounded-lg border p-6 ${
         accent
           ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-50 dark:text-zinc-900"
-          : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+          : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
       }`}
     >
       <p
-        className={`text-sm ${
+        className={`text-xs font-medium tracking-wide uppercase ${
           accent
             ? "text-zinc-300 dark:text-zinc-600"
             : "text-zinc-500 dark:text-zinc-400"
@@ -50,7 +50,9 @@ function StatCard({
       >
         {label}
       </p>
-      <p className="mt-2 text-3xl font-bold">{value}</p>
+      <p className="mt-2 font-mono text-3xl font-semibold tabular-nums">
+        {value}
+      </p>
     </div>
   );
 }
@@ -117,7 +119,7 @@ export default async function AdminDashboardPage({
 }: {
   searchParams: Promise<{
     period?: string;
-    placeId?: string;
+    unitId?: string;
     type?: string;
     from?: string;
     to?: string;
@@ -132,7 +134,7 @@ export default async function AdminDashboardPage({
   }
 
   const db = await getDB();
-  const places = await listPlaces();
+  const units = await listUnits();
   const allTickets = visibleTicketsFor(admin, db);
 
   const canIT = hasPermission(admin, "it") && features.itTicketsEnabled;
@@ -146,7 +148,7 @@ export default async function AdminDashboardPage({
 
   const {
     period: rawPeriod,
-    placeId: rawPlaceId,
+    unitId: rawUnitId,
     type: rawType,
     from: rawFrom,
     to: rawTo,
@@ -154,7 +156,7 @@ export default async function AdminDashboardPage({
   const periodKey: PeriodKey = PERIOD_KEYS.includes(rawPeriod as PeriodKey)
     ? (rawPeriod as PeriodKey)
     : "30";
-  const placeId = places.some((p) => p.id === rawPlaceId) ? rawPlaceId : undefined;
+  const unitId = units.some((p) => p.id === rawUnitId) ? rawUnitId : undefined;
   const typeFilter =
     showType && (rawType === "it" || rawType === "maintenance") ? rawType : undefined;
 
@@ -189,13 +191,13 @@ export default async function AdminDashboardPage({
 
   const tickets = allTickets.filter((t) => {
     if (!inRange(t.createdAt)) return false;
-    if (placeId && t.place?.id !== placeId) return false;
+    if (unitId && t.unit?.id !== unitId) return false;
     if (typeFilter && t.type !== typeFilter) return false;
     return true;
   });
   const complaints = allComplaints.filter((c) => {
     if (!inRange(c.createdAt)) return false;
-    if (placeId && c.place?.id !== placeId) return false;
+    if (unitId && c.unit?.id !== unitId) return false;
     return true;
   });
 
@@ -215,12 +217,12 @@ export default async function AdminDashboardPage({
     })
   );
 
-  const placeCounts = new Map<string, number>();
+  const unitCounts = new Map<string, number>();
   for (const t of tickets) {
-    if (!t.place) continue;
-    placeCounts.set(t.place.name, (placeCounts.get(t.place.name) ?? 0) + 1);
+    if (!t.unit) continue;
+    unitCounts.set(t.unit.name, (unitCounts.get(t.unit.name) ?? 0) + 1);
   }
-  const placeData = Array.from(placeCounts.entries())
+  const unitData = Array.from(unitCounts.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6)
     .map(([label, value]) => ({ label, value, colorClass: "bg-sky-500" }));
@@ -236,16 +238,16 @@ export default async function AdminDashboardPage({
 
   const hasAnyModule = canIT || canMaintenance || canComplaints;
 
-  const qs = (overrides: { period?: string; placeId?: string; type?: string }) => {
+  const qs = (overrides: { period?: string; unitId?: string; type?: string }) => {
     const params = new URLSearchParams();
     const nextPeriod = "period" in overrides ? overrides.period : periodKey;
-    const nextPlaceId = "placeId" in overrides ? overrides.placeId : placeId;
+    const nextUnitId = "unitId" in overrides ? overrides.unitId : unitId;
     const nextType = "type" in overrides ? overrides.type : typeFilter;
     // Choosing a preset period drops any custom range; other filter links
     // keep the range in place.
     const keepRange = !("period" in overrides);
     if (nextPeriod && nextPeriod !== "30") params.set("period", nextPeriod);
-    if (nextPlaceId) params.set("placeId", nextPlaceId);
+    if (nextUnitId) params.set("unitId", nextUnitId);
     if (nextType) params.set("type", nextType);
     if (keepRange && fromStr) params.set("from", fromStr);
     if (keepRange && toStr) params.set("to", toStr);
@@ -271,12 +273,12 @@ export default async function AdminDashboardPage({
       </div>
 
       {!hasAnyModule ? (
-        <p className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+        <p className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
           {dict.admin.dashboard.permissionWarning}
         </p>
       ) : (
         <div className="space-y-8">
-          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950">
             <span className="mr-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
               {dict.admin.dashboard.periodLabel}
             </span>
@@ -324,19 +326,19 @@ export default async function AdminDashboardPage({
               to={toStr}
             />
 
-            {places.length > 0 && (
+            {units.length > 0 && (
               <>
                 <span className="ml-3 mr-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                  {dict.admin.dashboard.placeLabel}
+                  {dict.admin.dashboard.unitLabel}
                 </span>
-                <FilterLink href={qs({ placeId: undefined })} active={!placeId}>
-                  {dict.admin.dashboard.allPlaces}
+                <FilterLink href={qs({ unitId: undefined })} active={!unitId}>
+                  {dict.admin.dashboard.allUnits}
                 </FilterLink>
-                {places.map((p) => (
+                {units.map((p) => (
                   <FilterLink
                     key={p.id}
-                    href={qs({ placeId: p.id })}
-                    active={placeId === p.id}
+                    href={qs({ unitId: p.id })}
+                    active={unitId === p.id}
                   >
                     {p.name}
                   </FilterLink>
@@ -380,7 +382,7 @@ export default async function AdminDashboardPage({
           </div>
 
           {openComplaints.length > 0 && canComplaints && (
-            <p className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+            <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
               <span className="font-semibold">{openComplaints.length}</span>{" "}
               {dict.admin.dashboard.openComplaints}
             </p>
@@ -399,9 +401,9 @@ export default async function AdminDashboardPage({
               emptyLabel={dict.admin.dashboard.noDataInPeriod}
             />
             <BarList
-              title={dict.admin.dashboard.byPlaceTitle}
-              data={placeData}
-              emptyLabel={dict.admin.dashboard.byPlaceEmpty}
+              title={dict.admin.dashboard.byUnitTitle}
+              data={unitData}
+              emptyLabel={dict.admin.dashboard.byUnitEmpty}
             />
           </div>
 
@@ -462,7 +464,7 @@ function RecentTickets({
   href: string;
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           {dict.admin.dashboard.recentTickets}
@@ -483,7 +485,7 @@ function RecentTickets({
           {tickets.map((t) => (
             <li
               key={t.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-zinc-100 p-3 dark:border-zinc-800"
+              className="flex items-center justify-between gap-3 rounded-lg border border-zinc-100 p-3 dark:border-zinc-800"
             >
               <div className="min-w-0">
                 <Link
@@ -520,7 +522,7 @@ function RecentComplaints({
   href: string;
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           {dict.admin.dashboard.recentComplaints}
@@ -541,7 +543,7 @@ function RecentComplaints({
           {complaints.map((c) => (
             <li
               key={c.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-zinc-100 p-3 dark:border-zinc-800"
+              className="flex items-center justify-between gap-3 rounded-lg border border-zinc-100 p-3 dark:border-zinc-800"
             >
               <div className="min-w-0">
                 <Link

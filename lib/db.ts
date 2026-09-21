@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { DatabaseSync } from "node:sqlite";
 import { hashPassword } from "./password";
 import { DATA_DIR } from "./data-dir";
+import { hashMatricula } from "./matricula";
 
 const DB_PATH = path.join(DATA_DIR, "db.sqlite");
 
@@ -20,7 +21,43 @@ function createDb(): DatabaseSync {
   return db;
 }
 
+function renameTableIfNeeded(db: DatabaseSync, from: string, to: string): void {
+  const exists = (name: string) =>
+    db
+      .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get(name) !== undefined;
+  if (exists(from) && !exists(to)) {
+    db.exec(`ALTER TABLE ${from} RENAME TO ${to}`);
+  }
+}
+
+function renameColumnIfNeeded(
+  db: DatabaseSync,
+  table: string,
+  from: string,
+  to: string
+): void {
+  const exists = (name: string) =>
+    db
+      .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get(name) !== undefined;
+  if (!exists(table)) return;
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as {
+    name: string;
+  }[];
+  if (cols.some((c) => c.name === from) && !cols.some((c) => c.name === to)) {
+    db.exec(`ALTER TABLE ${table} RENAME COLUMN ${from} TO ${to}`);
+  }
+}
+
 function initSchema(db: DatabaseSync): void {
+  // Place -> Unit rename predates the CREATE TABLE IF NOT EXISTS block below so
+  // existing databases get migrated in place instead of ending up with both an
+  // old `places` table and a fresh, empty `units` table.
+  renameTableIfNeeded(db, "places", "units");
+  renameColumnIfNeeded(db, "tickets", "place_id", "unit_id");
+  renameColumnIfNeeded(db, "complaints", "place_id", "unit_id");
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS settings (
       id TEXT PRIMARY KEY,
@@ -37,18 +74,23 @@ function initSchema(db: DatabaseSync): void {
       created_at TEXT NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS places (
+    CREATE TABLE IF NOT EXISTS units (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL UNIQUE,
+      cnpj TEXT,
+      company_id TEXT,
       created_at TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS tickets (
       id TEXT PRIMARY KEY,
       type TEXT NOT NULL,
-      cpf TEXT NOT NULL,
+      -- Unused going forward; kept only so legacy rows (created before the
+      -- matrícula switch) still have their original value. See matricula_hash.
+      cpf TEXT NOT NULL DEFAULT '',
+      matricula_hash TEXT,
       subject TEXT NOT NULL,
-      place_id TEXT,
+      unit_id TEXT,
       status TEXT NOT NULL,
       assigned_to TEXT,
       created_at TEXT NOT NULL,
@@ -72,7 +114,7 @@ function initSchema(db: DatabaseSync): void {
       subject TEXT NOT NULL,
       content TEXT NOT NULL,
       photo_path TEXT,
-      place_id TEXT,
+      unit_id TEXT,
       status TEXT NOT NULL,
       assigned_to TEXT,
       created_at TEXT NOT NULL,
@@ -145,6 +187,19 @@ function initSchema(db: DatabaseSync): void {
       updated_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS companies (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL DEFAULT '',
+      cnpj TEXT NOT NULL DEFAULT '',
+      address_street TEXT NOT NULL DEFAULT '',
+      address_number TEXT NOT NULL DEFAULT '',
+      address_neighborhood TEXT NOT NULL DEFAULT '',
+      phone TEXT NOT NULL DEFAULT '',
+      form_code TEXT NOT NULL DEFAULT '',
+      logo_path TEXT,
+      created_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS areas (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL UNIQUE,
@@ -169,7 +224,7 @@ function initSchema(db: DatabaseSync): void {
       UNIQUE(ticket_id, service_type_id)
     );
 
-    CREATE INDEX IF NOT EXISTS idx_tickets_cpf ON tickets(cpf);
+    CREATE INDEX IF NOT EXISTS idx_units_company ON units(company_id);
     CREATE INDEX IF NOT EXISTS idx_ticket_services_ticket ON ticket_services(ticket_id);
     CREATE INDEX IF NOT EXISTS idx_ticket_services_service ON ticket_services(service_type_id);
     CREATE INDEX IF NOT EXISTS idx_ticket_items_ticket ON ticket_items(ticket_id);
@@ -183,7 +238,8 @@ function initSchema(db: DatabaseSync): void {
   `);
 
   ensureColumn(db, "complaint_responses", "action", "TEXT NOT NULL DEFAULT 'message'");
-  ensureColumn(db, "places", "cnpj", "TEXT");
+  ensureColumn(db, "units", "cnpj", "TEXT");
+  ensureColumn(db, "units", "company_id", "TEXT");
   ensureColumn(db, "tickets", "area_id", "TEXT");
   ensureColumn(db, "tickets", "assigned_to", "TEXT");
   ensureColumn(db, "complaints", "assigned_to", "TEXT");
@@ -198,6 +254,25 @@ function initSchema(db: DatabaseSync): void {
   ensureColumn(db, "tickets", "criticality", "TEXT NOT NULL DEFAULT 'medio'");
   ensureColumn(db, "ticket_messages", "signature_path", "TEXT");
   ensureColumn(db, "ticket_messages", "signature_client_path", "TEXT");
+  ensureColumn(db, "tickets", "client_timezone", "TEXT");
+  ensureColumn(db, "tickets", "matricula_hash", "TEXT");
+  ensureColumn(db, "settings", "matricula_digits", "INTEGER NOT NULL DEFAULT 4");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_tickets_matricula_hash ON tickets(matricula_hash);");
+
+  // matrícula replaces plaintext CPF as the public identifier. Existing rows
+  // only have the old `cpf` column filled in — backfill matricula_hash from it
+  // so those tickets stay searchable (via the CPF-length fallback in
+  // isValidRequesterCode). New tickets never touch `cpf` again; the column is
+  // left in place but unused, same precedent as the removed geoLat/geoLng columns.
+  const unhashed = db
+    .prepare("SELECT id, cpf FROM tickets WHERE matricula_hash IS NULL")
+    .all() as { id: string; cpf: string }[];
+  if (unhashed.length > 0) {
+    const update = db.prepare("UPDATE tickets SET matricula_hash = ? WHERE id = ?");
+    for (const row of unhashed) {
+      update.run(hashMatricula(row.cpf), row.id);
+    }
+  }
 
   const settingsCount = db.prepare("SELECT COUNT(*) AS n FROM settings").get() as { n: number };
   if (settingsCount.n === 0) {
@@ -207,26 +282,63 @@ function initSchema(db: DatabaseSync): void {
     );
   }
 
-  const companyCount = db
-    .prepare("SELECT COUNT(*) AS n FROM company_settings")
+  // `companies` is the multi-row successor to the old singleton
+  // `company_settings`. The legacy table is left in place, unused, so a
+  // downgrade or a stray read of it doesn't lose data (same precedent as the
+  // unused geoLat/geoLng ticket-message columns).
+  const companiesCount = db
+    .prepare("SELECT COUNT(*) AS n FROM companies")
     .get() as { n: number };
-  if (companyCount.n === 0) {
-    db.prepare(
-      `INSERT INTO company_settings
-         (id, name, cnpj, address_street, address_number, address_neighborhood, phone, form_code, logo_path, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      "default",
-      process.env.COMPANY_NAME ?? "",
-      (process.env.COMPANY_CNPJ ?? "").replace(/\D/g, ""),
-      process.env.COMPANY_ADDRESS ?? "",
-      "",
-      "",
-      (process.env.COMPANY_PHONE ?? "").replace(/\D/g, ""),
-      "",
-      null,
-      new Date().toISOString()
-    );
+  if (companiesCount.n === 0) {
+    const legacy = db
+      .prepare("SELECT * FROM company_settings WHERE id = 'default'")
+      .get() as
+      | {
+          name: string;
+          cnpj: string;
+          address_street: string;
+          address_number: string;
+          address_neighborhood: string;
+          phone: string;
+          form_code: string;
+          logo_path: string | null;
+        }
+      | undefined;
+    if (legacy) {
+      db.prepare(
+        `INSERT INTO companies
+           (id, name, cnpj, address_street, address_number, address_neighborhood, phone, form_code, logo_path, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        randomUUID(),
+        legacy.name,
+        legacy.cnpj,
+        legacy.address_street,
+        legacy.address_number,
+        legacy.address_neighborhood,
+        legacy.phone,
+        legacy.form_code,
+        legacy.logo_path,
+        new Date().toISOString()
+      );
+    } else {
+      db.prepare(
+        `INSERT INTO companies
+           (id, name, cnpj, address_street, address_number, address_neighborhood, phone, form_code, logo_path, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        randomUUID(),
+        process.env.COMPANY_NAME ?? "",
+        (process.env.COMPANY_CNPJ ?? "").replace(/\D/g, ""),
+        process.env.COMPANY_ADDRESS ?? "",
+        "",
+        "",
+        (process.env.COMPANY_PHONE ?? "").replace(/\D/g, ""),
+        "",
+        null,
+        new Date().toISOString()
+      );
+    }
   }
 
   const count = db.prepare("SELECT COUNT(*) AS n FROM admins").get() as { n: number };

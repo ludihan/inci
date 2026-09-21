@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getDict, getLocale } from "@/lib/i18n";
 import { getCurrentAdmin, hasPermission, isSuperAdmin } from "@/lib/auth";
 import { features } from "@/lib/features";
-import { listPlaces, hasAssignedComplaints } from "@/lib/store";
+import { listUnits, hasAssignedComplaints } from "@/lib/store";
 import { ReportBuilder } from "@/components/report-builder";
 
 export default async function AdminReportsPage() {
@@ -25,7 +25,7 @@ export default async function AdminReportsPage() {
     redirect(`/${locale}/admin`);
   }
 
-  const places = await listPlaces();
+  const units = await listUnits();
 
   return (
     <div>
@@ -41,7 +41,7 @@ export default async function AdminReportsPage() {
       <ReportBuilder
         dict={dict}
         lang={locale}
-        places={places}
+        units={units}
         canIT={canIT}
         canMaintenance={canMaintenance}
         canComplaints={canViewComplaints}

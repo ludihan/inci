@@ -19,14 +19,14 @@ export function TicketTransitionForm({
   lang,
   ticketId,
   transition,
-  cpf,
+  matricula,
   admin = false,
 }: {
   dict: Dict;
   lang: Locale;
   ticketId: string;
   transition: "open" | "close";
-  cpf?: string;
+  matricula?: string;
   admin?: boolean;
 }) {
   const [state, action] = useActionState<ActionState, FormData>(
@@ -80,7 +80,7 @@ export function TicketTransitionForm({
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="ticketId" value={ticketId} />
       <input type="hidden" name="transition" value={transition} />
-      {cpf && <input type="hidden" name="cpf" value={cpf} />}
+      {matricula && <input type="hidden" name="matricula" value={matricula} />}
       {!admin && (
         <>
           <input type="hidden" name="powToken" ref={pow.tokenInputRef} />
@@ -107,7 +107,7 @@ export function TicketTransitionForm({
               ? dict.ticket.fields.closePlaceholder
               : dict.ticket.fields.reopenPlaceholder
           }
-          className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400"
+          className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-accent"
         />
       </div>
 

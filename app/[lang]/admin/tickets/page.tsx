@@ -51,7 +51,7 @@ export default async function AdminTicketsPage({
     type: one(sp.type),
     status: one(sp.status),
     criticality: one(sp.criticality),
-    place: one(sp.place),
+    unit: one(sp.unit),
     assignee: one(sp.assignee),
     from: one(sp.from),
     to: one(sp.to),
@@ -68,7 +68,7 @@ export default async function AdminTicketsPage({
   const period = resolvePeriod(params);
   const t = dict.admin.tickets.filters;
 
-  const places = [...db.places].sort((a, b) => a.name.localeCompare(b.name));
+  const units = [...db.units].sort((a, b) => a.name.localeCompare(b.name));
   const assignableAdmins = db.admins
     .filter((a) =>
       db.tickets.some((tk) => tk.assignedToId === a.id)
@@ -79,7 +79,7 @@ export default async function AdminTicketsPage({
     params.type,
     params.status,
     params.criticality,
-    params.place,
+    params.unit,
     params.assignee,
     sp.from !== undefined ? params.from : undefined,
     sp.to !== undefined ? params.to : undefined,
@@ -165,14 +165,14 @@ export default async function AdminTicketsPage({
           </label>
 
           <label className="block">
-            <span className={labelClass}>{t.place}</span>
+            <span className={labelClass}>{t.unit}</span>
             <select
-              name="place"
-              defaultValue={params.place ?? ""}
+              name="unit"
+              defaultValue={params.unit ?? ""}
               className={selectClass}
             >
               <option value="">{t.all}</option>
-              {places.map((p) => (
+              {units.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>

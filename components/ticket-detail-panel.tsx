@@ -1,19 +1,22 @@
 import type { Admin, Item, ServiceType, Ticket } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
-import { formatCpf, formatDateTime, formatPhone } from "@/lib/utils";
-import { assumeTicket, releaseTicket } from "@/lib/actions";
+import { formatDateTime, formatPhone } from "@/lib/utils";
+import { adminDeleteTicket, assumeTicket, releaseTicket } from "@/lib/actions";
 import { CriticalityBadge, StatusBadge, TicketTypeBadge } from "@/components/badges";
 import { TicketMessages } from "@/components/ticket-messages";
 import { TicketCriticalitySelect } from "@/components/ticket-criticality-select";
+import { TicketTypeSelect } from "@/components/ticket-type-select";
 import { TicketItemsForm } from "@/components/ticket-items-form";
 import { TicketServicesForm } from "@/components/ticket-services-form";
 import { TicketReplyForm } from "@/components/ticket-reply-form";
 import { TicketTransitionForm } from "@/components/ticket-transition-form";
 import { CopyButton } from "@/components/copy-button";
 import { ReportDownloadButton } from "@/components/report-download-button";
+import { DeleteButton } from "@/components/delete-button";
+import { AddItemOpenProvider, AddItemToggleButton } from "@/components/ticket-add-item-toggle";
 
 const cardClass =
-  "rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900";
+  "rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950";
 
 function InfoField({ label, value }: { label: string; value: string }) {
   return (
@@ -43,6 +46,7 @@ export function TicketDetailPanel({
 }) {
   const isClosed = ticket.status === "closed";
   const isAssignee = ticket.assignedToId === admin.id;
+  const isSuperAdmin = admin.role === "superadmin";
 
   const assignButton =
     ticket.assignedToId === admin.id ? (
@@ -72,6 +76,7 @@ export function TicketDetailPanel({
     );
 
   return (
+    <AddItemOpenProvider>
     <div className="space-y-4">
       <div className={cardClass}>
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -80,13 +85,17 @@ export function TicketDetailPanel({
               {ticket.id}
               <CopyButton value={ticket.id} dict={dict} stopPropagation />
             </span>
-            <TicketTypeBadge type={ticket.type} dict={dict} />
+            {isSuperAdmin ? (
+              <TicketTypeSelect dict={dict} lang={locale} ticketId={ticket.id} type={ticket.type} />
+            ) : (
+              <TicketTypeBadge type={ticket.type} dict={dict} />
+            )}
             <StatusBadge status={ticket.status} dict={dict} />
             <CriticalityBadge criticality={ticket.criticality} dict={dict} />
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
-              {dict.common.createdAt}: {formatDateTime(ticket.createdAt, locale)}
+              {dict.common.createdAt}: {formatDateTime(ticket.createdAt, locale, ticket.clientTimezone)}
             </span>
             <ReportDownloadButton
               url={`/api/reports?module=tickets&ids=${encodeURIComponent(ticket.id)}&lang=${locale}`}
@@ -99,6 +108,18 @@ export function TicketDetailPanel({
               dict={dict}
               label={dict.report.os.number}
             />
+            {isSuperAdmin && (
+              <form action={adminDeleteTicket}>
+                <input type="hidden" name="lang" value={locale} />
+                <input type="hidden" name="ticketId" value={ticket.id} />
+                <DeleteButton
+                  confirmMessage={dict.ticket.delete.confirm}
+                  className="rounded-lg px-3 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/50"
+                >
+                  {dict.ticket.delete.button}
+                </DeleteButton>
+              </form>
+            )}
           </div>
         </div>
 
@@ -107,9 +128,12 @@ export function TicketDetailPanel({
         </h1>
 
         <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs sm:grid-cols-3">
-          <InfoField label={dict.ticket.fields.cpf} value={formatCpf(ticket.cpf)} />
-          {ticket.place && (
-            <InfoField label={dict.ticket.fields.place} value={ticket.place.name} />
+          <InfoField
+            label={dict.ticket.fields.matricula}
+            value={`#${ticket.matriculaHash.slice(0, 8)}`}
+          />
+          {ticket.unit && (
+            <InfoField label={dict.ticket.fields.unit} value={ticket.unit.name} />
           )}
           {ticket.requesterName && (
             <InfoField label={dict.ticket.fields.requesterName} value={ticket.requesterName} />
@@ -152,7 +176,15 @@ export function TicketDetailPanel({
               {ticket.assignedToName ?? dict.admin.unassigned}
             </span>
           </p>
-          <div className="flex items-center gap-2">{assignButton}</div>
+          <div className="flex items-center gap-2">
+            {assignButton}
+            {isAssignee && !isClosed && (
+              <AddItemToggleButton
+                openLabel={dict.ticket.addItemToggle.open}
+                closeLabel={dict.ticket.addItemToggle.close}
+              />
+            )}
+          </div>
         </div>
 
         {isAssignee && !isClosed && (
@@ -212,7 +244,7 @@ export function TicketDetailPanel({
             </div>
           </>
         ) : (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
             {ticket.assignedToId
               ? dict.admin.notAssigneeWithName.replace(
                   "{name}",
@@ -223,5 +255,6 @@ export function TicketDetailPanel({
         )}
       </div>
     </div>
+    </AddItemOpenProvider>
   );
 }

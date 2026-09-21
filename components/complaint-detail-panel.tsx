@@ -12,7 +12,7 @@ import { ComplaintStatusForm } from "@/components/complaint-status-form";
 import { ReportDownloadButton } from "@/components/report-download-button";
 
 const cardClass =
-  "rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900";
+  "rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950";
 
 export async function ComplaintDetailPanel({
   complaint,
@@ -56,9 +56,9 @@ export async function ComplaintDetailPanel({
         <h2 className="mt-3 text-base font-bold text-zinc-900 dark:text-zinc-50">
           {complaint.subject}
         </h2>
-        {complaint.place && (
+        {complaint.unit && (
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            {dict.complaint.fields.place}: {complaint.place.name}
+            {dict.complaint.fields.unit}: {complaint.unit.name}
           </p>
         )}
         {complaint.attachments.length > 0 && (
@@ -122,7 +122,7 @@ export async function ComplaintDetailPanel({
                 id={`forward-${complaint.code}`}
                 name="adminId"
                 required
-                className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
               >
                 {admins
                   .filter((a) => a.id !== admin.id)

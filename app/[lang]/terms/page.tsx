@@ -47,8 +47,8 @@ export default async function TermsPage() {
 
       <Section title={pt ? "2. Uso permitido" : "2. Acceptable use"}>
         {pt
-          ? "É proibido usar automação, varredura de CPFs ou qualquer tentativa de acessar chamados de terceiros. As informações prestadas devem ser verdadeiras."
-          : "Automation, scanning of taxpayer IDs, or any attempt to access other people's tickets is prohibited. The information you provide must be truthful."}
+          ? "É proibido usar automação, varredura de matrículas ou qualquer tentativa de acessar chamados de terceiros. As informações prestadas devem ser verdadeiras."
+          : "Automation, scanning of registration numbers, or any attempt to access other people's tickets is prohibited. The information you provide must be truthful."}
       </Section>
 
       <Section title={pt ? "3. Área administrativa" : "3. Administrative area"}>

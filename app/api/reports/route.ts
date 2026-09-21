@@ -1,7 +1,7 @@
 import { getCurrentAdmin, hasPermission, isSuperAdmin } from "@/lib/auth";
 import { features } from "@/lib/features";
 import { getReportDict, type ReportSections } from "@/lib/reports";
-import { getDB, getPlaceById, hasAssignedComplaints } from "@/lib/store";
+import { getDB, getUnitById, hasAssignedComplaints } from "@/lib/store";
 import { getCompany } from "@/lib/company";
 import { filterTicketList } from "@/lib/ticket-list-filter";
 import { formatDateTime } from "@/lib/utils";
@@ -60,8 +60,8 @@ export async function GET(request: Request) {
     ? searchParams.get("to")!
     : undefined;
 
-  const placeId =
-    searchParams.get("placeId") || searchParams.get("place") || undefined;
+  const unitId =
+    searchParams.get("unitId") || searchParams.get("unit") || undefined;
   const ids = (searchParams.get("ids") ?? "")
     .split(",")
     .map((s) => s.trim())
@@ -119,9 +119,9 @@ export async function GET(request: Request) {
             : d.complaint.closed;
     filterParts.push(`${d.report.statusLabel}: ${statusLabel}`);
   }
-  if (placeId) {
-    const place = await getPlaceById(placeId);
-    if (place) filterParts.push(`${d.report.placeLabel}: ${place.name}`);
+  if (unitId) {
+    const unit = await getUnitById(unitId);
+    if (unit) filterParts.push(`${d.report.unitLabel}: ${unit.name}`);
   }
 
   if (reportModule === "tickets") {
@@ -158,7 +158,7 @@ export async function GET(request: Request) {
               type: searchParams.get("type") ?? undefined,
               status: searchParams.get("status") ?? undefined,
               criticality: searchParams.get("criticality") ?? undefined,
-              place: searchParams.get("place") ?? undefined,
+              unit: searchParams.get("unit") ?? undefined,
               assignee: searchParams.get("assignee") ?? undefined,
               from: searchParams.get("from") ?? undefined,
               to: searchParams.get("to") ?? undefined,
@@ -229,7 +229,7 @@ export async function GET(request: Request) {
       if (statusFilter && c.status !== statusFilter) return false;
       if (from && c.createdAt.slice(0, 10) < from) return false;
       if (to && c.createdAt.slice(0, 10) > to) return false;
-      if (placeId && c.place?.id !== placeId) return false;
+      if (unitId && c.unit?.id !== unitId) return false;
       if (ids.length > 0 && !ids.includes(c.id) && !ids.includes(c.code)) return false;
       return true;
     })

@@ -1,26 +1,27 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDict, getLocale, type Dict } from "@/lib/i18n";
-import { getTicketById } from "@/lib/store";
-import { isValidCpf, onlyDigits, formatCpf, formatPhone } from "@/lib/utils";
+import { getTicketById, getSettings } from "@/lib/store";
+import { matriculaMatches } from "@/lib/matricula";
+import { isValidRequesterCode, onlyDigits, formatPhone } from "@/lib/utils";
 import type { Ticket } from "@/lib/types";
 import { CriticalityBadge, StatusBadge, TicketTypeBadge } from "@/components/badges";
 import { TicketMessages } from "@/components/ticket-messages";
 import { TicketReplyForm } from "@/components/ticket-reply-form";
 import { TicketTransitionForm } from "@/components/ticket-transition-form";
-import { NeedCpf } from "@/components/need-cpf";
+import { NeedMatricula } from "@/components/need-matricula";
 
 function BackLink({
   locale,
   dict,
-  cpf,
+  matricula,
 }: {
   locale: string;
   dict: Dict;
-  cpf?: string;
+  matricula?: string;
 }) {
-  const href = cpf
-    ? `/${locale}/track/ticket?cpf=${encodeURIComponent(cpf)}`
+  const href = matricula
+    ? `/${locale}/track/ticket?matricula=${encodeURIComponent(matricula)}`
     : `/${locale}/track`;
   return (
     <Link
@@ -39,16 +40,18 @@ function TicketDetail({
   ticket,
   dict,
   locale,
+  matricula,
 }: {
   ticket: Ticket;
   dict: Dict;
   locale: "pt" | "en";
+  matricula: string;
 }) {
   const isOpen = ticket.status !== "closed";
 
   return (
     <div className="space-y-8">
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-lg font-bold text-zinc-900 dark:text-zinc-50">
@@ -65,13 +68,13 @@ function TicketDetail({
         <h1 className="mt-4 text-xl font-bold text-zinc-900 dark:text-zinc-50">
           {ticket.subject}
         </h1>
-        {ticket.place && (
+        {ticket.unit && (
           <p className="mt-2 flex items-center gap-1 text-sm text-zinc-500 dark:text-zinc-400">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
             </svg>
-            {ticket.place.name}
+            {ticket.unit.name}
           </p>
         )}
         {(ticket.requesterName ||
@@ -124,7 +127,7 @@ function TicketDetail({
           dict={dict}
           lang={locale}
           ticketId={ticket.id}
-          cpf={ticket.cpf}
+          matricula={matricula}
         />
 
         <TicketTransitionForm
@@ -132,7 +135,7 @@ function TicketDetail({
           lang={locale}
           ticketId={ticket.id}
           transition={isOpen ? "close" : "open"}
-          cpf={ticket.cpf}
+          matricula={matricula}
         />
       </div>
     </div>
@@ -144,38 +147,46 @@ export default async function TrackTicketDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ cpf?: string }>;
+  searchParams: Promise<{ matricula?: string }>;
 }) {
   const dict = await getDict();
   const locale = await getLocale();
   const { id } = await params;
-  const { cpf: rawCpf } = await searchParams;
-  const cpf = rawCpf ? onlyDigits(rawCpf) : "";
+  const { matricula: rawMatricula } = await searchParams;
+  const matricula = rawMatricula ? onlyDigits(rawMatricula) : "";
 
   const ticket = await getTicketById(id);
   if (!ticket) notFound();
 
-  if (!cpf || !isValidCpf(cpf)) {
+  const settings = await getSettings();
+
+  if (!matricula || !isValidRequesterCode(matricula, settings.matriculaDigits)) {
     return (
       <div className="mx-auto max-w-3xl">
         <BackLink locale={locale} dict={dict} />
         <div className="mt-8">
-          <NeedCpf dict={dict} lang={locale} ticketId={ticket.id} />
+          <NeedMatricula
+            dict={dict}
+            lang={locale}
+            ticketId={ticket.id}
+            matriculaDigits={settings.matriculaDigits}
+          />
         </div>
       </div>
     );
   }
 
-  if (ticket.cpf !== cpf) {
+  if (!matriculaMatches(matricula, ticket.matriculaHash)) {
     return (
       <div className="mx-auto max-w-3xl">
         <BackLink locale={locale} dict={dict} />
         <div className="mt-8">
-          <NeedCpf
+          <NeedMatricula
             dict={dict}
             lang={locale}
             ticketId={ticket.id}
-            initialError={dict.ticket.wrongCpf}
+            matriculaDigits={settings.matriculaDigits}
+            initialError={dict.ticket.wrongMatricula}
           />
         </div>
       </div>
@@ -184,12 +195,12 @@ export default async function TrackTicketDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl">
-      <BackLink locale={locale} dict={dict} cpf={cpf} />
+      <BackLink locale={locale} dict={dict} matricula={matricula} />
       <p className="mt-6 text-sm text-zinc-500 dark:text-zinc-400">
-        {dict.ticket.fields.cpf}: {formatCpf(ticket.cpf)}
+        {dict.ticket.fields.matricula}: {matricula}
       </p>
       <div className="mt-4">
-        <TicketDetail ticket={ticket} dict={dict} locale={locale} />
+        <TicketDetail ticket={ticket} dict={dict} locale={locale} matricula={matricula} />
       </div>
     </div>
   );

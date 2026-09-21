@@ -1,17 +1,14 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { getAdminById } from "./store";
+import { sessionSecret } from "./secret";
 import type { Admin, Module, TicketType } from "./types";
 
 const COOKIE_NAME = "admin_session";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-function secret(): string {
-  return process.env.SESSION_SECRET || "dev-inci-secret-change-me";
-}
-
 function sign(body: string): string {
-  return createHmac("sha256", secret()).update(body).digest("base64url");
+  return createHmac("sha256", sessionSecret()).update(body).digest("base64url");
 }
 
 function safeEqual(a: string, b: string): boolean {

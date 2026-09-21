@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useActionState } from "react";
-import { updateCompany, type ActionState } from "@/lib/actions";
+import { saveCompany, type ActionState } from "@/lib/actions";
 import type { Company } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
 import { CnpjInput } from "./cnpj-input";
@@ -10,7 +10,7 @@ import { PhoneInput } from "./phone-input";
 import { SubmitButton } from "./submit-button";
 
 const inputClass =
-  "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400";
+  "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-accent";
 const labelClass = "text-sm font-medium text-zinc-700 dark:text-zinc-300";
 
 function errorText(state: ActionState, dict: Dict): string | null {
@@ -28,23 +28,34 @@ export function AdminCompanyForm({
   lang,
   saved,
 }: {
-  company: Company;
+  company?: Company;
   dict: Dict;
   lang: Locale;
   saved: boolean;
 }) {
   const [state, action] = useActionState<ActionState, FormData>(
-    updateCompany,
+    saveCompany,
     undefined
   );
   const c = dict.admin.company;
+  const values = {
+    name: company?.name ?? "",
+    cnpj: company?.cnpj ?? "",
+    addressStreet: company?.addressStreet ?? "",
+    addressNumber: company?.addressNumber ?? "",
+    addressNeighborhood: company?.addressNeighborhood ?? "",
+    phone: company?.phone ?? "",
+    formCode: company?.formCode ?? "",
+    logoPath: company?.logoPath ?? null,
+  };
 
   return (
     <form
       action={action}
-      className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900"
+      className="space-y-6 rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"
     >
       <input type="hidden" name="lang" value={lang} />
+      {company?.id && <input type="hidden" name="id" value={company.id} />}
 
       {saved && !state?.error && (
         <p className="rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-700 dark:bg-green-950/50 dark:text-green-300">
@@ -59,7 +70,7 @@ export function AdminCompanyForm({
         <input
           id="company-name"
           name="name"
-          defaultValue={company.name}
+          defaultValue={values.name}
           placeholder={c.namePlaceholder}
           className={inputClass}
         />
@@ -72,7 +83,7 @@ export function AdminCompanyForm({
         <CnpjInput
           id="company-cnpj"
           name="cnpj"
-          defaultValue={company.cnpj}
+          defaultValue={values.cnpj}
           errorMessage={dict.common.cnpjInvalid}
         />
       </div>
@@ -85,7 +96,7 @@ export function AdminCompanyForm({
           <input
             id="company-street"
             name="addressStreet"
-            defaultValue={company.addressStreet}
+            defaultValue={values.addressStreet}
             className={inputClass}
           />
         </div>
@@ -96,7 +107,7 @@ export function AdminCompanyForm({
           <input
             id="company-number"
             name="addressNumber"
-            defaultValue={company.addressNumber}
+            defaultValue={values.addressNumber}
             className={inputClass}
           />
         </div>
@@ -109,7 +120,7 @@ export function AdminCompanyForm({
         <input
           id="company-neighborhood"
           name="addressNeighborhood"
-          defaultValue={company.addressNeighborhood}
+          defaultValue={values.addressNeighborhood}
           className={inputClass}
         />
       </div>
@@ -121,7 +132,7 @@ export function AdminCompanyForm({
         <PhoneInput
           id="company-phone"
           name="phone"
-          defaultValue={company.phone}
+          defaultValue={values.phone}
           errorMessage={dict.ticket.phoneInvalid}
         />
       </div>
@@ -133,7 +144,7 @@ export function AdminCompanyForm({
         <input
           id="company-form-code"
           name="formCode"
-          defaultValue={company.formCode}
+          defaultValue={values.formCode}
           placeholder={c.formCodePlaceholder}
           className={inputClass}
         />
@@ -141,10 +152,10 @@ export function AdminCompanyForm({
 
       <div>
         <p className={`${labelClass} mb-2`}>{c.logoTitle}</p>
-        {company.logoPath ? (
-          <span className="relative mb-3 block h-20 w-20 overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-800">
+        {values.logoPath ? (
+          <span className="relative mb-3 block h-20 w-20 overflow-hidden rounded-lg bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-800">
             <Image
-              src={company.logoPath}
+              src={values.logoPath}
               alt={c.currentLogo}
               fill
               sizes="80px"
@@ -166,7 +177,7 @@ export function AdminCompanyForm({
         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
           {c.logoHelp}
         </p>
-        {company.logoPath && (
+        {values.logoPath && (
           <label className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
             <input type="checkbox" name="removeLogo" />
             {c.removeLogo}

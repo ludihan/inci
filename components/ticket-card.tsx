@@ -30,7 +30,7 @@ export function TicketCard({
           <StatusBadge status={ticket.status} dict={dict} />
         </div>
         <span className="text-xs text-zinc-500 dark:text-zinc-400">
-          {formatDate(ticket.updatedAt, locale)}
+          {formatDate(ticket.updatedAt, locale, ticket.clientTimezone)}
         </span>
       </div>
       <h3 className="mt-3 font-semibold text-zinc-900 group-hover:underline dark:text-zinc-50">
@@ -51,13 +51,13 @@ export function TicketCard({
             {ticket.assignedToName}
           </span>
         )}
-        {ticket.place && (
+        {ticket.unit && (
           <span className="inline-flex items-center gap-1">
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
             </svg>
-            {ticket.place.name}
+            {ticket.unit.name}
           </span>
         )}
       </div>

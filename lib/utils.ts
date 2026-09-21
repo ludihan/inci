@@ -38,12 +38,32 @@ export function isValidCpf(value: string): boolean {
 }
 
 export function formatCpf(value: string): string {
-  const digits = onlyDigits(value);
-  if (digits.length !== 11) return digits;
-  return digits.replace(
-    /^(\d{3})(\d{3})(\d{3})(\d{2})$/,
-    "$1.$2.$3-$4"
-  );
+  const d = onlyDigits(value).slice(0, 11);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
+// A matrícula's digit length is admin-configurable (Settings.matriculaDigits,
+// default 4) — pass the current setting down; this only defaults to 4 for
+// call sites that don't have it handy (e.g. quick validation before settings load).
+export function isValidMatricula(value: string, digits = 4): boolean {
+  return new RegExp(`^\\d{${digits}}$`).test(onlyDigits(value));
+}
+
+// Accepts a matrícula (at the given digit length) OR a legacy 11-digit CPF.
+// Used everywhere a requester identifies an existing ticket (search, confirm,
+// PDF link) so tickets opened before the matrícula switch stay reachable.
+// Opening a new ticket uses isValidMatricula only — CPF is no longer accepted there.
+export function isValidRequesterCode(value: string, digits = 4): boolean {
+  return isValidMatricula(value, digits) || isValidCpf(value);
+}
+
+// Renders a legacy 11-digit value as a formatted CPF; a matrícula stays as-is.
+export function formatRequesterCode(value: string): string {
+  const d = onlyDigits(value);
+  return d.length === 11 ? formatCpf(d) : d;
 }
 
 export function isValidCnpj(value: string): boolean {
@@ -127,39 +147,101 @@ const MONTHS_EN = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
+function offsetLabel(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    timeZoneName: "shortOffset",
+  }).formatToParts(date);
+  const raw = parts.find((p) => p.type === "timeZoneName")?.value ?? "GMT+0";
+  return raw.replace("GMT", "UTC");
+}
+
+function zonedParts(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return {
+    day: get("day"),
+    month: get("month"),
+    year: get("year"),
+    hour: get("hour"),
+    minute: get("minute"),
+  };
+}
+
+function dayNumber(p: { year: string; month: string; day: string }): number {
+  return Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day)) / 86400000;
+}
+
 export function formatDate(
   value: string,
-  locale: "pt" | "en"
+  locale: "pt" | "en",
+  timeZone?: string
 ): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  const now = new Date();
-  const startOfDay = (d: Date) =>
-    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const diffDays = Math.round(
-    (startOfDay(now) - startOfDay(date)) / (1000 * 60 * 60 * 24)
-  );
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const time = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  if (diffDays === 0) {
-    return locale === "pt" ? `hoje, ${time}` : `today, ${time}`;
+
+  if (!timeZone) {
+    const now = new Date();
+    const startOfDay = (d: Date) =>
+      new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const diffDays = Math.round(
+      (startOfDay(now) - startOfDay(date)) / (1000 * 60 * 60 * 24)
+    );
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const time = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    if (diffDays === 0) {
+      return locale === "pt" ? `hoje, ${time}` : `today, ${time}`;
+    }
+    if (diffDays === 1) {
+      return locale === "pt" ? `ontem, ${time}` : `yesterday, ${time}`;
+    }
+
+    if (locale === "pt") {
+      return `${pad(date.getDate())} ${MONTHS_PT[date.getMonth()]} ${date.getFullYear()} ${time}`;
+    }
+    return `${MONTHS_EN[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}, ${time}`;
   }
-  if (diffDays === 1) {
-    return locale === "pt" ? `ontem, ${time}` : `yesterday, ${time}`;
-  }
+
+  const p = zonedParts(date, timeZone);
+  const diffDays = dayNumber(zonedParts(new Date(), timeZone)) - dayNumber(p);
+  const time = `${p.hour}:${p.minute} (${offsetLabel(date, timeZone)})`;
+  if (diffDays === 0) return locale === "pt" ? `hoje, ${time}` : `today, ${time}`;
+  if (diffDays === 1) return locale === "pt" ? `ontem, ${time}` : `yesterday, ${time}`;
 
   if (locale === "pt") {
-    return `${pad(date.getDate())} ${MONTHS_PT[date.getMonth()]} ${date.getFullYear()} ${time}`;
+    return `${p.day} ${MONTHS_PT[Number(p.month) - 1]} ${p.year} ${time}`;
   }
-  return `${MONTHS_EN[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}, ${time}`;
+  return `${MONTHS_EN[Number(p.month) - 1]} ${Number(p.day)}, ${p.year}, ${time}`;
 }
 
-export function formatDateTime(value: string, locale?: "pt" | "en"): string {
+export function formatDateTime(
+  value: string,
+  locale?: "pt" | "en",
+  timeZone?: string
+): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   const pad = (n: number) => String(n).padStart(2, "0");
-  if (locale === "en") {
-    return `${MONTHS_EN[date.getMonth()]} ${pad(date.getDate())}, ${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+
+  if (!timeZone) {
+    if (locale === "en") {
+      return `${MONTHS_EN[date.getMonth()]} ${pad(date.getDate())}, ${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+    return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
-  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+
+  const p = zonedParts(date, timeZone);
+  const suffix = `(${offsetLabel(date, timeZone)})`;
+  if (locale === "en") {
+    return `${MONTHS_EN[Number(p.month) - 1]} ${p.day}, ${p.year} ${p.hour}:${p.minute} ${suffix}`;
+  }
+  return `${p.day}/${p.month}/${p.year} ${p.hour}:${p.minute} ${suffix}`;
 }

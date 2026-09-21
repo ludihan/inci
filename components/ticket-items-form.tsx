@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   addTicketItemAction,
   removeTicketItemAction,
@@ -11,9 +11,10 @@ import type { Item, TicketItemUsage } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
 import { formatCurrency } from "@/lib/utils";
 import { SubmitButton } from "./submit-button";
+import { useAddItemOpen } from "./ticket-add-item-toggle";
 
 const inputClass =
-  "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400";
+  "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-accent";
 
 function errorText(state: ActionState, dict: Dict): string | null {
   if (!state?.error) return null;
@@ -215,22 +216,31 @@ export function TicketItemsForm({
   items: TicketItemUsage[];
   catalog: Item[];
 }) {
-  const [adding, setAdding] = useState(false);
   const total = items.reduce((sum, i) => sum + i.total, 0);
+  const addItemCtx = useAddItemOpen();
+  const [localAdding, setLocalAdding] = useState(false);
+  const adding = addItemCtx ? addItemCtx.open : localAdding;
+  const addFormRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (adding) addFormRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [adding]);
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
       <div className="mb-2 flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
           {dict.ticket.items.title}
         </h2>
-        <button
-          type="button"
-          onClick={() => setAdding((v) => !v)}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
-        >
-          {adding ? dict.ticket.items.cancelAdd : dict.ticket.items.add}
-        </button>
+        {!addItemCtx && (
+          <button
+            type="button"
+            onClick={() => setLocalAdding((v) => !v)}
+            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+          >
+            {localAdding ? dict.ticket.items.cancelAdd : dict.ticket.items.add}
+          </button>
+        )}
       </div>
       <div className="space-y-4">
         {items.length > 0 && (
@@ -246,7 +256,9 @@ export function TicketItemsForm({
           </>
         )}
         {adding && (
-          <AddItemForm dict={dict} lang={lang} ticketId={ticketId} catalog={catalog} />
+          <div ref={addFormRef}>
+            <AddItemForm dict={dict} lang={lang} ticketId={ticketId} catalog={catalog} />
+          </div>
         )}
       </div>
     </div>

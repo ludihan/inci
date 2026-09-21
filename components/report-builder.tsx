@@ -1,19 +1,19 @@
 "use client";
 
-import type { Place } from "@/lib/types";
+import type { Unit } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
 
 export function ReportBuilder({
   dict,
   lang,
-  places,
+  units,
   canIT,
   canMaintenance,
   canComplaints,
 }: {
   dict: Dict;
   lang: Locale;
-  places: Place[];
+  units: Unit[];
   canIT: boolean;
   canMaintenance: boolean;
   canComplaints: boolean;
@@ -25,7 +25,7 @@ export function ReportBuilder({
           key="tickets"
           dict={dict}
           lang={lang}
-          places={places}
+          units={units}
           module="tickets"
           title={dict.report.ticketsTitle}
           showType={canIT && canMaintenance}
@@ -36,7 +36,7 @@ export function ReportBuilder({
           key="complaints"
           dict={dict}
           lang={lang}
-          places={places}
+          units={units}
           module="complaints"
           title={dict.report.complaintsTitle}
           showType={false}
@@ -49,20 +49,20 @@ export function ReportBuilder({
 function ReportPanel({
   dict,
   lang,
-  places,
+  units,
   module,
   title,
   showType,
 }: {
   dict: Dict;
   lang: Locale;
-  places: Place[];
+  units: Unit[];
   module: "tickets" | "complaints";
   title: string;
   showType: boolean;
 }) {
   const inputClass =
-    "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
+    "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
   const labelClass = "text-sm font-medium text-zinc-700 dark:text-zinc-300";
   const fieldClass = "min-w-0";
 
@@ -95,7 +95,7 @@ function ReportPanel({
     <form
       action="/api/reports"
       method="get"
-      className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900"
+      className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950"
     >
       <input type="hidden" name="module" value={module} />
       <input type="hidden" name="lang" value={lang} />
@@ -187,17 +187,17 @@ function ReportPanel({
           </div>
 
           <div className={fieldClass}>
-            <label htmlFor={`${module}-place`} className={labelClass}>
-              {dict.report.placeLabel}
+            <label htmlFor={`${module}-unit`} className={labelClass}>
+              {dict.report.unitLabel}
             </label>
             <select
-              id={`${module}-place`}
-              name="placeId"
+              id={`${module}-unit`}
+              name="unitId"
               defaultValue=""
               className={inputClass}
             >
-              <option value="">{dict.report.placeAll}</option>
-              {places.map((p) => (
+              <option value="">{dict.report.unitAll}</option>
+              {units.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>

@@ -15,10 +15,12 @@ export interface Admin {
   createdAt: string;
 }
 
-export interface Place {
+export interface Unit {
   id: string;
   name: string;
   cnpj?: string;
+  companyId?: string;
+  company?: Company | null;
   createdAt: string;
 }
 
@@ -62,9 +64,18 @@ export interface TicketServiceUsage {
 
 export interface Settings {
   logoPath: string | null;
+  // Digit length required for a matrícula on new tickets. Superadmin-configurable
+  // at /[lang]/admin/settings; existing tickets keep whatever length they were
+  // created with (their hash isn't reversible, so changing this never breaks them).
+  matriculaDigits: number;
 }
 
+// A service-provider company shown on the Ordem de Serviço (Service Order) PDF
+// header, resolved from the ticket's unit when the unit has one, falling back to
+// the primary company otherwise. Multiple companies can exist; units optionally
+// point at one. Manageable at /[lang]/admin/company.
 export interface Company {
+  id: string;
   name: string;
   cnpj: string;
   addressStreet: string;
@@ -73,6 +84,8 @@ export interface Company {
   phone: string;
   formCode: string;
   logoPath: string | null;
+  createdAt: string;
+  unitCount?: number;
 }
 
 export interface Attachment {
@@ -105,7 +118,10 @@ export interface TicketMessage {
 export interface Ticket {
   id: string;
   type: TicketType;
-  cpf: string;
+  // Keyed hash of the requester's code (a matrícula, or an 11-digit CPF on
+  // legacy tickets). The raw code is never stored — compare with
+  // matriculaMatches() / hashMatricula() from lib/matricula.
+  matriculaHash: string;
   subject: string;
   requesterName: string;
   requesterPhone: string;
@@ -117,13 +133,14 @@ export interface Ticket {
   criticality: TicketCriticality;
   items: TicketItemUsage[];
   services: TicketServiceUsage[];
-  place: Place | null;
+  unit: Unit | null;
   area: Area | null;
   status: TicketStatus;
   assignedToId?: string;
   assignedToName?: string;
   messages: TicketMessage[];
   createdAt: string;
+  clientTimezone?: string;
   updatedAt: string;
 }
 
@@ -151,7 +168,7 @@ export interface Complaint {
   subject: string;
   content: string;
   attachments: Attachment[];
-  place: Place | null;
+  unit: Unit | null;
   status: ComplaintStatus;
   assignedToId?: string;
   assignedToName?: string;
@@ -162,7 +179,8 @@ export interface Complaint {
 
 export interface DB {
   admins: Admin[];
-  places: Place[];
+  units: Unit[];
+  companies: Company[];
   areas: Area[];
   items: Item[];
   serviceTypes: ServiceType[];

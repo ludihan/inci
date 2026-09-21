@@ -42,8 +42,8 @@ export function AdminNav({
           features.maintenanceTicketsEnabled),
     },
     {
-      href: `/${lang}/admin/places`,
-      label: dict.admin.places.title,
+      href: `/${lang}/admin/units`,
+      label: dict.admin.units.title,
       show: isSuperAdmin(admin),
     },
     {

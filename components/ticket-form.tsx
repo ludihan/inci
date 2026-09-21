@@ -3,13 +3,13 @@
 import { useActionState, useRef, useState, type FormEvent } from "react";
 import { createTicket, type ActionState } from "@/lib/actions";
 import type { Dict, Locale } from "@/lib/i18n";
-import type { Area, Place } from "@/lib/types";
-import { isValidCpf, onlyDigits } from "@/lib/utils";
+import type { Area, Unit } from "@/lib/types";
+import { isValidMatricula, onlyDigits } from "@/lib/utils";
 import { features } from "@/lib/features";
 import { NAME_MAX_LENGTH, MESSAGE_MAX_LENGTH } from "@/lib/limits";
 import { SubmitButton } from "./submit-button";
 import { MultiFileInput } from "./multi-file-input";
-import { CpfInput } from "./cpf-input";
+import { MatriculaInput } from "./matricula-input";
 import { PhoneInput } from "./phone-input";
 import { usePowGate } from "./use-pow-gate";
 import { PowProgress } from "./pow-progress";
@@ -17,13 +17,15 @@ import { PowProgress } from "./pow-progress";
 export function TicketForm({
   dict,
   lang,
-  places,
+  units,
   areas,
+  matriculaDigits,
 }: {
   dict: Dict;
   lang: Locale;
-  places: Place[];
+  units: Unit[];
   areas: Area[];
+  matriculaDigits: number;
 }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(
     createTicket,
@@ -46,14 +48,14 @@ export function TicketForm({
   })();
 
   const inputClass =
-    "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400";
+    "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-accent";
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     pow.guardSubmit(e, () => {
       const data = new FormData(e.currentTarget);
-      const cpf = onlyDigits(String(data.get("cpf") ?? ""));
-      if (!isValidCpf(cpf)) {
-        setClientError(dict.ticket.cpfInvalid);
+      const matricula = onlyDigits(String(data.get("matricula") ?? ""));
+      if (!isValidMatricula(matricula, matriculaDigits)) {
+        setClientError(dict.ticket.matriculaInvalid);
         return false;
       }
       const images = data.getAll("images").filter((f) => f instanceof File && f.size > 0);
@@ -79,6 +81,15 @@ export function TicketForm({
   return (
     <form ref={formRef} action={action} onSubmit={handleSubmit} className="space-y-5">
       <input type="hidden" name="lang" value={lang} />
+      <input
+        type="hidden"
+        name="clientTimezone"
+        defaultValue={
+          typeof window !== "undefined"
+            ? Intl.DateTimeFormat().resolvedOptions().timeZone
+            : ""
+        }
+      />
 
       <div>
         <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -88,7 +99,7 @@ export function TicketForm({
           {types.map((type) => (
             <label
               key={type}
-              className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition-colors ${
+              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition-colors ${
                 pending
                   ? ""
                   : "has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-50 dark:has-[:checked]:border-zinc-400 dark:has-[:checked]:bg-zinc-800"
@@ -112,14 +123,15 @@ export function TicketForm({
       </div>
 
       <div>
-        <label htmlFor="cpf" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          {dict.ticket.fields.cpf} <span className="text-zinc-400">*</span>
+        <label htmlFor="matricula" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          {dict.ticket.fields.matricula} <span className="text-zinc-400">*</span>
         </label>
-        <CpfInput
-          id="cpf"
+        <MatriculaInput
+          id="matricula"
           required
-          placeholder={dict.ticket.fields.cpfPlaceholder}
-          errorMessage={dict.ticket.cpfInvalid}
+          placeholder={dict.ticket.fields.matriculaPlaceholder}
+          errorMessage={dict.ticket.matriculaInvalid}
+          maxDigits={matriculaDigits}
         />
         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
           {dict.ticket.trackSubtitle}
@@ -158,7 +170,7 @@ export function TicketForm({
         </select>
       </div>
 
-      <fieldset className="space-y-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
+      <fieldset className="space-y-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
         <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
           {dict.ticket.fields.requesterSection}{" "}
           <span className="font-normal normal-case text-zinc-400">
@@ -203,7 +215,7 @@ export function TicketForm({
         </div>
       </fieldset>
 
-      <fieldset className="space-y-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
+      <fieldset className="space-y-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
         <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
           {dict.ticket.fields.equipmentSection}{" "}
           <span className="font-normal normal-case text-zinc-400">
@@ -251,27 +263,27 @@ export function TicketForm({
       </fieldset>
 
       <div>
-        <label htmlFor="place" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          {dict.ticket.fields.place} <span className="text-zinc-400">*</span>
+        <label htmlFor="unit" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          {dict.ticket.fields.unit} <span className="text-zinc-400">*</span>
         </label>
-        {places.length === 0 ? (
+        {units.length === 0 ? (
           <p className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-            {dict.ticket.noPlaces}
+            {dict.ticket.noUnits}
           </p>
         ) : (
           <select
-            id="place"
-            name="placeId"
+            id="unit"
+            name="unitId"
             required
             defaultValue=""
             className={inputClass}
           >
             <option value="" disabled>
-              {dict.ticket.fields.placePlaceholder}
+              {dict.ticket.fields.unitPlaceholder}
             </option>
-            {places.map((place) => (
-              <option key={place.id} value={place.id}>
-                {place.name}
+            {units.map((unit) => (
+              <option key={unit.id} value={unit.id}>
+                {unit.name}
               </option>
             ))}
           </select>

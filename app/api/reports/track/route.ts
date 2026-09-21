@@ -1,10 +1,11 @@
-import { getTicketById } from "@/lib/store";
+import { getTicketById, getSettings } from "@/lib/store";
 import { getCompany } from "@/lib/company";
+import { matriculaMatches } from "@/lib/matricula";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
-import { onlyDigits } from "@/lib/utils";
+import { isValidRequesterCode, onlyDigits } from "@/lib/utils";
 
 // Public per-ticket Ordem de Serviço download for the requester. Guarded by a
-// matching CPF and rate-limited by IP.
+// matching matrícula and rate-limited by IP.
 export async function GET(request: Request) {
   const ip = clientIp(request);
   if (!rateLimit(`report-track:${ip}`, 20, 60_000)) {
@@ -13,15 +14,16 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const id = (searchParams.get("id") ?? "").trim();
-  const cpf = onlyDigits(searchParams.get("cpf") ?? "");
+  const matricula = onlyDigits(searchParams.get("matricula") ?? "");
   const lang = searchParams.get("lang") === "en" ? "en" : "pt";
 
-  if (!id || cpf.length !== 11) {
+  const settings = await getSettings();
+  if (!id || !isValidRequesterCode(matricula, settings.matriculaDigits)) {
     return Response.json({ error: "invalid-request" }, { status: 400 });
   }
 
   const ticket = await getTicketById(id);
-  if (!ticket || onlyDigits(ticket.cpf) !== cpf) {
+  if (!ticket || !matriculaMatches(matricula, ticket.matriculaHash)) {
     return Response.json({ error: "not-found" }, { status: 404 });
   }
 

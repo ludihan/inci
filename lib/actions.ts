@@ -14,16 +14,21 @@ import {
   assignTicket as storeAssignTicket,
   releaseTicket as storeReleaseTicket,
   updateTicketCriticality as storeUpdateTicketCriticality,
+  updateTicketType as storeUpdateTicketType,
+  deleteTicket as storeDeleteTicket,
   TICKET_CRITICALITIES,
   assignComplaint as storeAssignComplaint,
   releaseComplaint as storeReleaseComplaint,
   addTicketAssignment as storeAddTicketAssignment,
   addComplaintAssignment as storeAddComplaintAssignment,
-  getPlaceById,
-  getPlaceByName,
-  createPlace as storeCreatePlace,
-  deletePlace as storeDeletePlace,
-  renamePlace as storeRenamePlace,
+  getUnitById,
+  getUnitByName,
+  createUnit as storeCreateUnit,
+  deleteUnit as storeDeleteUnit,
+  renameUnit as storeRenameUnit,
+  getCompanyById,
+  saveCompany as storeSaveCompany,
+  deleteCompany as storeDeleteCompany,
   getAreaById,
   getAreaByName,
   createArea as storeCreateArea,
@@ -43,8 +48,7 @@ import {
   removeTicketService as storeRemoveTicketService,
   getSettings,
   setLogoPath,
-  getCompanySettings,
-  updateCompanySettings,
+  setMatriculaDigits,
   getAdminByUsername,
   getAdminById,
   createAdmin as storeCreateAdmin,
@@ -59,12 +63,13 @@ import {
   MAX_IMAGES_PER_MESSAGE,
 } from "./uploads";
 import {
-  isValidCpf,
   isValidCnpj,
   isValidPhone,
+  isValidMatricula,
   onlyDigits,
   generateComplaintCode,
 } from "./utils";
+import { matriculaMatches } from "./matricula";
 import { createPowChallenge, verifyPowSolution, type PowChallenge } from "./pow";
 import { verifyPassword } from "./password";
 import { features, ticketsEnabled } from "./features";
@@ -82,7 +87,7 @@ import {
   isSuperAdmin,
   moduleForTicketType,
 } from "./auth";
-import type { Admin, ComplaintStatus, Module } from "./types";
+import type { Admin, ComplaintStatus, Module, TicketType } from "./types";
 
 export type ActionState = { error?: string } | undefined;
 
@@ -140,10 +145,10 @@ export async function createTicket(
 ): Promise<ActionState> {
   const l = lang(formData);
   const type = str(formData, "type");
-  const cpf = onlyDigits(str(formData, "cpf"));
+  const matricula = onlyDigits(str(formData, "matricula"));
   const subject = str(formData, "subject");
   const message = str(formData, "message");
-  const placeId = str(formData, "placeId");
+  const unitId = str(formData, "unitId");
   const requesterName = str(formData, "requesterName");
   const requesterPhone = onlyDigits(str(formData, "requesterPhone"));
   const role = str(formData, "role");
@@ -157,9 +162,11 @@ export async function createTicket(
   )
     ? (criticalityRaw as (typeof TICKET_CRITICALITIES)[number])
     : "medio";
+  const clientTimezone = str(formData, "clientTimezone").slice(0, 64) || undefined;
 
-  if (cpf.length === 0) return { error: "cpfRequired" };
-  if (!isValidCpf(cpf)) return { error: "cpfInvalid" };
+  const matriculaDigits = (await getSettings()).matriculaDigits;
+  if (matricula.length === 0) return { error: "matriculaRequired" };
+  if (!isValidMatricula(matricula, matriculaDigits)) return { error: "matriculaInvalid" };
   if (!subject) return { error: "subjectRequired" };
   if (subject.length > NAME_MAX_LENGTH) return { error: "textTooLong" };
   if (requesterName.length > NAME_MAX_LENGTH) return { error: "textTooLong" };
@@ -176,9 +183,9 @@ export async function createTicket(
   ) {
     return { error: "generic" };
   }
-  if (!placeId) return { error: "placeRequired" };
-  const place = await getPlaceById(placeId);
-  if (!place) return { error: "placeInvalid" };
+  if (!unitId) return { error: "unitRequired" };
+  const unit = await getUnitById(unitId);
+  if (!unit) return { error: "unitInvalid" };
 
   const areaId = str(formData, "areaId");
   if (!areaId) return { error: "areaRequired" };
@@ -198,10 +205,10 @@ export async function createTicket(
 
   const ticket = await storeCreateTicket({
     type,
-    cpf,
+    matricula,
     subject,
     message,
-    placeId,
+    unitId,
     areaId,
     attachments: attachmentsResult.attachments,
     requesterName,
@@ -212,9 +219,10 @@ export async function createTicket(
     equipmentModel,
     notes,
     criticality,
+    clientTimezone,
   });
 
-  redirect(`/${l}/track/ticket/${ticket.id}?cpf=${encodeURIComponent(cpf)}`);
+  redirect(`/${l}/track/ticket/${ticket.id}?matricula=${encodeURIComponent(matricula)}`);
 }
 
 export async function addTicketMessage(
@@ -223,12 +231,12 @@ export async function addTicketMessage(
 ): Promise<ActionState> {
   const l = lang(formData);
   const ticketId = str(formData, "ticketId");
-  const cpf = onlyDigits(str(formData, "cpf"));
+  const matricula = onlyDigits(str(formData, "matricula"));
   const content = str(formData, "content");
 
   const ticket = await getTicketById(ticketId);
   if (!ticket) return { error: "notFound" };
-  if (ticket.cpf !== cpf) return { error: "wrongCpf" };
+  if (!matriculaMatches(matricula, ticket.matriculaHash)) return { error: "wrongMatricula" };
   if (!content) return { error: "messageRequired" };
   if (content.length > MESSAGE_MAX_LENGTH) return { error: "textTooLong" };
 
@@ -245,7 +253,7 @@ export async function addTicketMessage(
     action: "message",
   });
 
-  redirect(`/${l}/track/ticket/${ticketId}?cpf=${encodeURIComponent(cpf)}`);
+  redirect(`/${l}/track/ticket/${ticketId}?matricula=${encodeURIComponent(matricula)}`);
 }
 
 export async function userTicketTransition(
@@ -254,13 +262,13 @@ export async function userTicketTransition(
 ): Promise<ActionState> {
   const l = lang(formData);
   const ticketId = str(formData, "ticketId");
-  const cpf = onlyDigits(str(formData, "cpf"));
+  const matricula = onlyDigits(str(formData, "matricula"));
   const transition = str(formData, "transition") as "close" | "open";
   const content = str(formData, "content");
 
   const ticket = await getTicketById(ticketId);
   if (!ticket) return { error: "notFound" };
-  if (ticket.cpf !== cpf) return { error: "wrongCpf" };
+  if (!matriculaMatches(matricula, ticket.matriculaHash)) return { error: "wrongMatricula" };
   if (transition !== "close" && transition !== "open")
     return { error: "generic" };
   if (!content) return { error: "messageRequired" };
@@ -292,7 +300,7 @@ export async function userTicketTransition(
     signatureClientPath,
   });
 
-  redirect(`/${l}/track/ticket/${ticketId}?cpf=${encodeURIComponent(cpf)}`);
+  redirect(`/${l}/track/ticket/${ticketId}?matricula=${encodeURIComponent(matricula)}`);
 }
 
 // ---- User: complaints ----
@@ -304,14 +312,14 @@ export async function createComplaint(
   const l = lang(formData);
   const subject = str(formData, "subject");
   const content = str(formData, "content");
-  const placeId = str(formData, "placeId");
+  const unitId = str(formData, "unitId");
 
   if (!features.complaintsEnabled) return { error: "generic" };
   if (!subject) return { error: "subjectRequired" };
   if (!content) return { error: "messageRequired" };
-  if (!placeId) return { error: "placeRequired" };
-  const place = await getPlaceById(placeId);
-  if (!place) return { error: "placeInvalid" };
+  if (!unitId) return { error: "unitRequired" };
+  const unit = await getUnitById(unitId);
+  if (!unit) return { error: "unitInvalid" };
 
   const powResult = checkPow(formData);
   if (powResult.error) return { error: powResult.error };
@@ -331,7 +339,7 @@ export async function createComplaint(
     content,
     attachments: attachmentsResult.attachments,
     code,
-    placeId,
+    unitId,
   });
 
   redirect(`/${l}/track/complaint/${complaint.code}`);
@@ -489,6 +497,56 @@ export async function adminUpdateTicketCriticality(
 
   revalidatePath(`/${l}/admin/tickets/${ticketId}`);
   revalidatePath(`/${l}/admin/tickets`);
+}
+
+// Moves a ticket between TI and Manutenção (superadmin only) — for when a
+// user opens a chamado under the wrong área by mistake. Releases any
+// current assignee, since they may not have permission over the new module.
+export async function adminUpdateTicketType(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current) redirect(`/${l}/admin/login`);
+  if (!isSuperAdmin(current)) return { error: "generic" };
+
+  const ticketId = str(formData, "ticketId");
+  const type = str(formData, "type") as TicketType;
+  if (type !== "it" && type !== "maintenance") return { error: "generic" };
+
+  const ticket = await getTicketById(ticketId);
+  if (!ticket) return { error: "notFound" };
+  if (ticket.type === type) return undefined;
+
+  await storeUpdateTicketType(ticketId, type);
+
+  revalidatePath(`/${l}/admin/tickets/${ticketId}`);
+  revalidatePath(`/${l}/admin/tickets`);
+}
+
+// Permanently deletes a ticket (superadmin only) — as opposed to closing it,
+// this removes the record and its messages/attachments entirely and cannot
+// be undone.
+export async function adminDeleteTicket(formData: FormData): Promise<void> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) {
+    redirect(`/${l}/admin`);
+  }
+
+  const ticketId = str(formData, "ticketId");
+  const ticket = await storeDeleteTicket(ticketId);
+  if (ticket) {
+    for (const message of ticket.messages) {
+      for (const attachment of message.attachments) await deleteImage(attachment.path);
+      if (message.signaturePath) await deleteImage(message.signaturePath);
+      if (message.signatureClientPath) await deleteImage(message.signatureClientPath);
+    }
+  }
+
+  revalidatePath(`/${l}/admin/tickets`);
+  redirect(`/${l}/admin/tickets`);
 }
 
 // ---- Admin: item catalog ----
@@ -884,9 +942,9 @@ export async function logout(formData: FormData): Promise<void> {
   redirect(`/${l}`);
 }
 
-// ---- Admin: places ----
+// ---- Admin: units ----
 
-export async function createPlace(
+export async function createUnit(
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> {
@@ -902,25 +960,30 @@ export async function createPlace(
   const cnpj = onlyDigits(str(formData, "cnpj"));
   if (cnpj && !isValidCnpj(cnpj)) return { error: "cnpjInvalid" };
 
-  const existing = await getPlaceByName(name);
-  if (existing) return { error: "duplicate-place" };
+  const companyId = str(formData, "companyId") || undefined;
+  if (companyId && !(await getCompanyById(companyId))) {
+    return { error: "companyInvalid" };
+  }
 
-  await storeCreatePlace(name, cnpj || undefined);
-  redirect(`/${l}/admin/places`);
+  const existing = await getUnitByName(name);
+  if (existing) return { error: "duplicate-unit" };
+
+  await storeCreateUnit(name, cnpj || undefined, companyId);
+  redirect(`/${l}/admin/units`);
 }
 
-export async function deletePlace(formData: FormData): Promise<void> {
+export async function deleteUnit(formData: FormData): Promise<void> {
   const l = lang(formData);
   const current = await getCurrentAdmin();
   if (!current || !isSuperAdmin(current)) {
     redirect(`/${l}/admin`);
   }
   const id = str(formData, "id");
-  await storeDeletePlace(id);
-  redirect(`/${l}/admin/places`);
+  await storeDeleteUnit(id);
+  redirect(`/${l}/admin/units`);
 }
 
-export async function renamePlace(
+export async function renameUnit(
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> {
@@ -937,13 +1000,18 @@ export async function renamePlace(
   const cnpj = onlyDigits(str(formData, "cnpj"));
   if (cnpj && !isValidCnpj(cnpj)) return { error: "cnpjInvalid" };
 
-  const result = await storeRenamePlace(id, name, cnpj || undefined);
+  const companyId = str(formData, "companyId") || undefined;
+  if (companyId && !(await getCompanyById(companyId))) {
+    return { error: "companyInvalid" };
+  }
+
+  const result = await storeRenameUnit(id, name, cnpj || undefined, companyId);
   if (!result.ok) {
     if (result.error === "not-found") return { error: "notFound" };
-    return { error: "duplicate-place" };
+    return { error: "duplicate-unit" };
   }
 
-  redirect(`/${l}/admin/places`);
+  redirect(`/${l}/admin/units`);
 }
 
 // ---- Admin: areas ----
@@ -1046,9 +1114,7 @@ export async function removeLogo(formData: FormData): Promise<void> {
   redirect(`/${l}/admin/settings`);
 }
 
-// ---- Admin: company (service provider) ----
-
-export async function updateCompany(
+export async function updateMatriculaDigits(
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> {
@@ -1058,12 +1124,39 @@ export async function updateCompany(
     redirect(`/${l}/admin`);
   }
 
+  const digits = Number(str(formData, "matriculaDigits"));
+  if (!Number.isInteger(digits) || digits < 1 || digits > 14) {
+    return { error: "matriculaDigitsInvalid" };
+  }
+
+  await setMatriculaDigits(digits);
+  revalidatePath(`/${l}/admin/settings`);
+  redirect(`/${l}/admin/settings`);
+}
+
+// ---- Admin: companies (service providers) ----
+
+export async function saveCompany(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) {
+    redirect(`/${l}/admin`);
+  }
+
+  const name = str(formData, "name");
+  if (!name) return { error: "nameRequired" };
+
   const cnpj = onlyDigits(str(formData, "cnpj"));
   if (cnpj && !isValidCnpj(cnpj)) return { error: "cnpjInvalid" };
   const phone = onlyDigits(str(formData, "phone"));
   if (phone && !isValidPhone(phone)) return { error: "phoneInvalid" };
 
-  const existing = await getCompanySettings();
+  const id = str(formData, "id") || undefined;
+  const existing = id ? await getCompanyById(id) : undefined;
+  if (id && !existing) return { error: "notFound" };
 
   let logoPath: string | null | undefined;
   const removeLogoChecked = str(formData, "removeLogo") === "on";
@@ -1080,8 +1173,9 @@ export async function updateCompany(
     logoPath = null;
   }
 
-  await updateCompanySettings({
-    name: str(formData, "name"),
+  await storeSaveCompany({
+    id,
+    name,
     cnpj,
     addressStreet: str(formData, "addressStreet"),
     addressNumber: str(formData, "addressNumber"),
@@ -1091,11 +1185,22 @@ export async function updateCompany(
     logoPath,
   });
 
-  if (logoPath !== undefined && existing.logoPath && existing.logoPath !== logoPath) {
+  if (logoPath !== undefined && existing?.logoPath && existing.logoPath !== logoPath) {
     await deleteImage(existing.logoPath);
   }
 
   redirect(`/${l}/admin/company?saved=1`);
+}
+
+export async function deleteCompany(formData: FormData): Promise<void> {
+  const l = lang(formData);
+  const current = await getCurrentAdmin();
+  if (!current || !isSuperAdmin(current)) {
+    redirect(`/${l}/admin`);
+  }
+  const id = str(formData, "id");
+  await storeDeleteCompany(id);
+  redirect(`/${l}/admin/company`);
 }
 
 // ---- Admin: user management ----

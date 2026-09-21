@@ -1,12 +1,14 @@
-import { getCompanySettings } from "./store";
+import { getPrimaryCompany } from "./store";
 import type { Company } from "./types";
 
 /**
- * Service-provider company shown on the Ordem de Serviço (Service Order) PDFs.
- * Thin alias over the store so report code has a stable entry point.
+ * The primary service-provider company, used as the fallback O.S. header when
+ * a ticket's unit has no company of its own, and on public pages (/privacy,
+ * /terms). Thin alias over the store so report/page code has a stable entry
+ * point regardless of how many companies are registered.
  */
 export function getCompany(): Promise<Company> {
-  return getCompanySettings();
+  return getPrimaryCompany();
 }
 
 export type { Company };

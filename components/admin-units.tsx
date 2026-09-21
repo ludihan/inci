@@ -2,71 +2,118 @@
 
 import { useActionState, useState } from "react";
 import {
-  createPlace,
-  deletePlace,
-  renamePlace,
+  createUnit,
+  deleteUnit,
+  renameUnit,
   type ActionState,
 } from "@/lib/actions";
-import type { Place } from "@/lib/types";
+import type { Company, Unit } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
 import { formatCnpj } from "@/lib/utils";
 import { CnpjInput } from "./cnpj-input";
 import { SubmitButton } from "./submit-button";
 
 const inputClass =
-  "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400";
+  "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-accent";
+
+function CompanySelect({
+  companies,
+  dict,
+  defaultValue,
+  id,
+}: {
+  companies: Company[];
+  dict: Dict;
+  defaultValue?: string;
+  id?: string;
+}) {
+  return (
+    <select
+      id={id}
+      name="companyId"
+      defaultValue={defaultValue ?? ""}
+      aria-label={dict.admin.units.company}
+      className={inputClass}
+    >
+      <option value="">{dict.admin.units.noCompany}</option>
+      {companies.map((company) => (
+        <option key={company.id} value={company.id}>
+          {company.name || dict.admin.units.unnamedCompany}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 function errorText(state: ActionState, dict: Dict): string | null {
   if (!state?.error) return null;
-  if (state.error === "nameRequired") return dict.admin.places.nameRequired;
-  if (state.error === "duplicate-place") return dict.admin.places.duplicate;
+  if (state.error === "nameRequired") return dict.admin.units.nameRequired;
+  if (state.error === "duplicate-unit") return dict.admin.units.duplicate;
+  if (state.error === "companyInvalid") return dict.admin.units.companyInvalid;
   if (state.error === "cnpjInvalid") return dict.common.cnpjInvalid;
   if (state.error === "notFound") return dict.common.notFound;
   return dict.common.generic;
 }
 
-function PlaceForm({ dict, lang }: { dict: Dict; lang: Locale }) {
+function UnitForm({
+  companies,
+  dict,
+  lang,
+}: {
+  companies: Company[];
+  dict: Dict;
+  lang: Locale;
+}) {
   const [state, action] = useActionState<ActionState, FormData>(
-    createPlace,
+    createUnit,
     undefined
   );
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
       <h2 className="mb-5 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-        {dict.admin.places.newTitle}
+        {dict.admin.units.newTitle}
       </h2>
       <form action={action} className="space-y-4">
         <input type="hidden" name="lang" value={lang} />
         <div>
           <label
-            htmlFor="new-place-name"
+            htmlFor="new-unit-name"
             className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
           >
-            {dict.admin.places.name}
+            {dict.admin.units.name}
           </label>
           <input
-            id="new-place-name"
+            id="new-unit-name"
             name="name"
             required
-            placeholder={dict.admin.places.namePlaceholder}
+            placeholder={dict.admin.units.namePlaceholder}
             className={inputClass}
           />
         </div>
         <div>
           <label
-            htmlFor="new-place-cnpj"
+            htmlFor="new-unit-cnpj"
             className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
           >
-            {dict.admin.places.cnpj}
+            {dict.admin.units.cnpj}
           </label>
           <CnpjInput
-            id="new-place-cnpj"
+            id="new-unit-cnpj"
             errorMessage={dict.common.cnpjInvalid}
           />
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            {dict.admin.places.cnpjHelp}
+            {dict.admin.units.cnpjHelp}
           </p>
+        </div>
+        <div>
+          <label
+            htmlFor="new-unit-company"
+            className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+          >
+            {dict.admin.units.company}
+          </label>
+          <CompanySelect id="new-unit-company" companies={companies} dict={dict} />
         </div>
         {errorText(state, dict) && (
           <p
@@ -77,7 +124,7 @@ function PlaceForm({ dict, lang }: { dict: Dict; lang: Locale }) {
           </p>
         )}
         <SubmitButton pendingLabel={dict.common.loading}>
-          {dict.admin.places.create}
+          {dict.admin.units.create}
         </SubmitButton>
       </form>
     </div>
@@ -85,36 +132,45 @@ function PlaceForm({ dict, lang }: { dict: Dict; lang: Locale }) {
 }
 
 function RenameForm({
-  place,
+  unit,
+  companies,
   dict,
   lang,
 }: {
-  place: Place;
+  unit: Unit;
+  companies: Company[];
   dict: Dict;
   lang: Locale;
 }) {
   const [state, action] = useActionState<ActionState, FormData>(
-    renamePlace,
+    renameUnit,
     undefined
   );
 
   return (
     <form action={action} className="flex items-start gap-3">
       <input type="hidden" name="lang" value={lang} />
-      <input type="hidden" name="id" value={place.id} />
+      <input type="hidden" name="id" value={unit.id} />
       <div className="min-w-0 flex-1">
         <input
           name="name"
           required
-          defaultValue={place.name}
-          aria-label={dict.admin.places.name}
+          defaultValue={unit.name}
+          aria-label={dict.admin.units.name}
           className={`${inputClass} mt-0`}
         />
         <div className="mt-2">
           <CnpjInput
-            defaultValue={place.cnpj ?? ""}
-            ariaLabel={dict.admin.places.cnpj}
+            defaultValue={unit.cnpj ?? ""}
+            ariaLabel={dict.admin.units.cnpj}
             errorMessage={dict.common.cnpjInvalid}
+          />
+        </div>
+        <div className="mt-2">
+          <CompanySelect
+            companies={companies}
+            dict={dict}
+            defaultValue={unit.companyId}
           />
         </div>
         {errorText(state, dict) && (
@@ -136,12 +192,14 @@ function RenameForm({
   );
 }
 
-function PlaceRow({
-  place,
+function UnitRow({
+  unit,
+  companies,
   dict,
   lang,
 }: {
-  place: Place;
+  unit: Unit;
+  companies: Company[];
   dict: Dict;
   lang: Locale;
 }) {
@@ -149,24 +207,29 @@ function PlaceRow({
 
   return (
     <li
-      className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
+      className="flex items-center justify-between gap-4 rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950"
     >
       {editing ? (
         <div className="min-w-0 flex-1">
-          <RenameForm place={place} dict={dict} lang={lang} />
+          <RenameForm unit={unit} companies={companies} dict={dict} lang={lang} />
         </div>
       ) : (
         <div className="min-w-0">
           <p className="font-semibold text-zinc-900 dark:text-zinc-50">
-            {place.name}
+            {unit.name}
           </p>
-          {place.cnpj && (
+          {unit.cnpj && (
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              {dict.admin.places.cnpj}: {formatCnpj(place.cnpj)}
+              {dict.admin.units.cnpj}: {formatCnpj(unit.cnpj)}
+            </p>
+          )}
+          {unit.company && (
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              {dict.admin.units.company}: {unit.company.name || dict.admin.units.unnamedCompany}
             </p>
           )}
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            {dict.common.createdAt}: {place.createdAt.slice(0, 10)}
+            {dict.common.createdAt}: {unit.createdAt.slice(0, 10)}
           </p>
         </div>
       )}
@@ -176,17 +239,17 @@ function PlaceRow({
           onClick={() => setEditing((v) => !v)}
           className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
-          {editing ? dict.common.cancel : dict.admin.places.rename}
+          {editing ? dict.common.cancel : dict.admin.units.rename}
         </button>
         {!editing && (
-          <form action={deletePlace}>
+          <form action={deleteUnit}>
             <input type="hidden" name="lang" value={lang} />
-            <input type="hidden" name="id" value={place.id} />
+            <input type="hidden" name="id" value={unit.id} />
             <button
               type="submit"
               className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
             >
-              {dict.admin.places.delete}
+              {dict.admin.units.delete}
             </button>
           </form>
         )}
@@ -195,27 +258,29 @@ function PlaceRow({
   );
 }
 
-export function AdminPlacesManager({
-  places,
+export function AdminUnitsManager({
+  units,
+  companies,
   dict,
   lang,
 }: {
-  places: Place[];
+  units: Unit[];
+  companies: Company[];
   dict: Dict;
   lang: Locale;
 }) {
   return (
     <div className="space-y-6">
-      <PlaceForm dict={dict} lang={lang} />
+      <UnitForm companies={companies} dict={dict} lang={lang} />
 
-      {places.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-zinc-300 p-10 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-          {dict.admin.places.empty}
+      {units.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-zinc-300 p-10 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+          {dict.admin.units.empty}
         </p>
       ) : (
         <ul className="space-y-3">
-          {places.map((place) => (
-            <PlaceRow key={place.id} place={place} dict={dict} lang={lang} />
+          {units.map((unit) => (
+            <UnitRow key={unit.id} unit={unit} companies={companies} dict={dict} lang={lang} />
           ))}
         </ul>
       )}

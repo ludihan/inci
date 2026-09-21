@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { createComplaint, type ActionState } from "@/lib/actions";
 import type { Dict, Locale } from "@/lib/i18n";
-import type { Place } from "@/lib/types";
+import type { Unit } from "@/lib/types";
 import { SubmitButton } from "./submit-button";
 import { MultiFileInput } from "./multi-file-input";
 import { usePowGate } from "./use-pow-gate";
@@ -12,11 +12,11 @@ import { PowProgress } from "./pow-progress";
 export function ComplaintForm({
   dict,
   lang,
-  places,
+  units,
 }: {
   dict: Dict;
   lang: Locale;
-  places: Place[];
+  units: Unit[];
 }) {
   const [state, action] = useActionState<ActionState, FormData>(
     createComplaint,
@@ -37,7 +37,7 @@ export function ComplaintForm({
   })();
 
   const inputClass =
-    "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400";
+    "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-accent";
 
   // pow.* accessors below are plain state/ref-object reads returned from the
   // usePowGate hook, not `.current` reads; eslint-plugin-react-hooks can't
@@ -63,27 +63,27 @@ export function ComplaintForm({
       </div>
 
       <div>
-        <label htmlFor="place" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          {dict.complaint.fields.place} <span className="text-zinc-400">*</span>
+        <label htmlFor="unit" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          {dict.complaint.fields.unit} <span className="text-zinc-400">*</span>
         </label>
-        {places.length === 0 ? (
+        {units.length === 0 ? (
           <p className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-            {dict.complaint.noPlaces}
+            {dict.complaint.noUnits}
           </p>
         ) : (
           <select
-            id="place"
-            name="placeId"
+            id="unit"
+            name="unitId"
             required
             defaultValue=""
             className={inputClass}
           >
             <option value="" disabled>
-              {dict.complaint.fields.placePlaceholder}
+              {dict.complaint.fields.unitPlaceholder}
             </option>
-            {places.map((place) => (
-              <option key={place.id} value={place.id}>
-                {place.name}
+            {units.map((unit) => (
+              <option key={unit.id} value={unit.id}>
+                {unit.name}
               </option>
             ))}
           </select>

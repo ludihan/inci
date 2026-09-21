@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getDict, getLocale } from "@/lib/i18n";
-import { listPlaces } from "@/lib/store";
+import { listUnits } from "@/lib/store";
 import { features } from "@/lib/features";
 import { ComplaintForm } from "@/components/complaint-form";
 
@@ -13,7 +13,7 @@ export default async function NewComplaintPage() {
     redirect(`/${locale}`);
   }
 
-  const places = await listPlaces();
+  const units = await listUnits();
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -36,8 +36,8 @@ export default async function NewComplaintPage() {
         </p>
       </div>
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8 dark:border-zinc-800 dark:bg-zinc-900">
-        <ComplaintForm dict={dict} lang={locale} places={places} />
+      <div className="rounded-lg border border-zinc-200 bg-white p-6 sm:p-8 dark:border-zinc-800 dark:bg-zinc-950">
+        <ComplaintForm dict={dict} lang={locale} units={units} />
       </div>
     </div>
   );

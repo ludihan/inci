@@ -17,7 +17,7 @@ export function ComplaintCard({
   return (
     <Link
       href={href}
-      className="group block rounded-2xl border border-zinc-200 bg-white p-5 transition-all hover:border-zinc-900 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600"
+      className="group block rounded-lg border border-zinc-200 bg-white p-5 transition-all hover:border-zinc-900 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-600"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -57,13 +57,13 @@ export function ComplaintCard({
             {complaint.assignedToName}
           </span>
         )}
-        {complaint.place && (
+        {complaint.unit && (
           <span className="inline-flex items-center gap-1">
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
             </svg>
-            {complaint.place.name}
+            {complaint.unit.name}
           </span>
         )}
       </p>

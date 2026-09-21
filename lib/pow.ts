@@ -1,4 +1,5 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
+import { sessionSecret } from "./secret";
 
 // Proof-of-work gate for public forms (no admin session), inspired by
 // Anubis: the client must find a `solution` such that
@@ -13,12 +14,8 @@ function difficulty(): number {
   return Number.isInteger(raw) && raw > 0 ? raw : DEFAULT_DIFFICULTY;
 }
 
-function secret(): string {
-  return process.env.SESSION_SECRET || "dev-inci-secret-change-me";
-}
-
 function sign(body: string): string {
-  return createHmac("sha256", secret()).update(body).digest("base64url");
+  return createHmac("sha256", sessionSecret()).update(body).digest("base64url");
 }
 
 function safeEqual(a: string, b: string): boolean {

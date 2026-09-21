@@ -8,14 +8,14 @@
 
 import {
   createTicket,
-  createPlace,
+  createUnit,
   createArea,
   createServiceType,
   createAdmin,
   assignTicket,
   updateTicketCriticality,
   addTicketMessage,
-  listPlaces,
+  listUnits,
   listAreas,
   listServiceTypes,
   getDB,
@@ -45,7 +45,7 @@ async function ensureTech(name, username, permissions) {
   return res.admin;
 }
 
-const places = await ensure(listPlaces, createPlace, [
+const units = await ensure(listUnits, createUnit, [
   "Matriz",
   "Filial Centro",
   "Filial Norte",
@@ -129,9 +129,9 @@ for (let i = already; i < TARGET; i++) {
 
   const ticket = await createTicket({
     type,
-    cpf: String(10000000000 + i).padStart(11, "0"),
+    matricula: String(1000 + (i % 9000)).padStart(4, "0"),
     subject: SUBJECTS[i % SUBJECTS.length],
-    placeId: places[i % places.length].id,
+    unitId: units[i % units.length].id,
     areaId: areas[i % areas.length].id,
     requesterName: NAMES[i % NAMES.length],
     requesterPhone: `1198${String(700000 + i * 137).slice(0, 6)}`,

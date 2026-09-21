@@ -8,26 +8,27 @@ import {
 } from "@tanstack/react-table";
 import type { Ticket, TicketStatus } from "@/lib/types";
 import type { Dict, Locale } from "@/lib/i18n";
-import { formatCpf, formatDateTime } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
 import { StatusBadge, TicketTypeBadge } from "./badges";
 import { CopyButton } from "./copy-button";
 
 const features = tableFeatures({});
 
 // Column ids that the shared ticket-list-filter knows how to sort by.
-const SORTABLE = new Set(["assignee", "id", "createdAt", "place", "subject"]);
+const SORTABLE = new Set(["assignee", "id", "createdAt", "unit", "subject"]);
 
-const ROW_STATUS_CLASS: Record<TicketStatus, string> = {
-  open: "bg-red-100 hover:bg-red-200/70 dark:bg-red-950/50 dark:hover:bg-red-950/80",
-  in_progress:
-    "bg-orange-100 hover:bg-orange-200/70 dark:bg-orange-950/50 dark:hover:bg-orange-950/80",
-  closed: "bg-blue-100 hover:bg-blue-200/70 dark:bg-blue-950/40 dark:hover:bg-blue-950/70",
+// A thin left-edge rail communicates status per-row without washing the whole
+// row in a saturated color — the StatusBadge cell already carries the label.
+const ROW_RAIL_CLASS: Record<TicketStatus, string> = {
+  open: "before:bg-red-500",
+  in_progress: "before:bg-amber-500",
+  closed: "before:bg-zinc-300 dark:before:bg-zinc-700",
 };
 
 const LEGEND_SWATCH: Record<TicketStatus, string> = {
-  open: "bg-red-200 dark:bg-red-900",
-  in_progress: "bg-orange-200 dark:bg-orange-900",
-  closed: "bg-blue-200 dark:bg-blue-900",
+  open: "bg-red-500",
+  in_progress: "bg-amber-500",
+  closed: "bg-zinc-300 dark:bg-zinc-700",
 };
 
 const helper = createColumnHelper<typeof features, Ticket>();
@@ -99,18 +100,18 @@ export function TicketsTable({
       cell: (ctx) => (
         <span
           onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center gap-1 font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100"
+          className="inline-flex items-center gap-1 font-mono text-xs font-medium whitespace-nowrap text-zinc-900 dark:text-zinc-100"
         >
           {ctx.getValue()}
-          <CopyButton value={ctx.getValue()} dict={dict} stopPropagation />
+          <CopyButton value={ctx.getValue()} dict={dict} stopPropagation iconOnly />
         </span>
       ),
     }),
     helper.accessor("createdAt", {
       header: dict.admin.table.createdAt,
       cell: (ctx) => (
-        <span className="whitespace-nowrap text-zinc-500 dark:text-zinc-400">
-          {formatDateTime(ctx.getValue(), locale)}
+        <span className="font-mono text-xs whitespace-nowrap text-zinc-500 tabular-nums dark:text-zinc-400">
+          {formatDateTime(ctx.getValue(), locale, ctx.row.original.clientTimezone)}
         </span>
       ),
     }),
@@ -121,7 +122,7 @@ export function TicketsTable({
         const t = ctx.row.original;
         if (!t.assignedToName) {
           return t.status !== "closed" ? (
-            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+            <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
               {dict.admin.unassigned}
             </span>
           ) : (
@@ -131,20 +132,20 @@ export function TicketsTable({
         return <TruncatedCell value={t.assignedToName} className="max-w-[140px]" />;
       },
     }),
-    helper.accessor((t) => t.place?.name ?? "", {
-      id: "place",
-      header: dict.admin.table.place,
+    helper.accessor((t) => t.unit?.name ?? "", {
+      id: "unit",
+      header: dict.admin.table.unit,
       cell: (ctx) => <TruncatedCell value={ctx.getValue()} />,
     }),
     helper.accessor("subject", {
       header: dict.admin.table.subject,
       cell: (ctx) => <TruncatedCell value={ctx.getValue()} className="max-w-[240px]" />,
     }),
-    helper.accessor((t) => formatCpf(t.cpf), {
-      id: "cpf",
-      header: dict.admin.table.cpf,
+    helper.accessor((t) => `#${t.matriculaHash.slice(0, 8)}`, {
+      id: "matricula",
+      header: dict.admin.table.matricula,
       cell: (ctx) => (
-        <span className="whitespace-nowrap text-zinc-500 dark:text-zinc-400">
+        <span className="font-mono text-xs whitespace-nowrap text-zinc-500 dark:text-zinc-400">
           {ctx.getValue()}
         </span>
       ),
@@ -155,30 +156,30 @@ export function TicketsTable({
 
   return (
     <div className="hidden lg:block">
-      <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-zinc-600 dark:text-zinc-400">
-        <span className="font-medium text-zinc-500 dark:text-zinc-400">
+      <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-zinc-500 dark:text-zinc-400">
+        <span className="font-medium tracking-wide text-zinc-400 uppercase dark:text-zinc-500">
           {dict.admin.table.legendLabel}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className={`h-3 w-3 rounded-sm ${LEGEND_SWATCH.open}`} />
+          <span className={`h-1.5 w-1.5 rounded-full ${LEGEND_SWATCH.open}`} />
           {dict.common.open}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className={`h-3 w-3 rounded-sm ${LEGEND_SWATCH.in_progress}`} />
+          <span className={`h-1.5 w-1.5 rounded-full ${LEGEND_SWATCH.in_progress}`} />
           {dict.common.inProgress}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className={`h-3 w-3 rounded-sm ${LEGEND_SWATCH.closed}`} />
+          <span className={`h-1.5 w-1.5 rounded-full ${LEGEND_SWATCH.closed}`} />
           {dict.common.closed}
         </span>
       </div>
-      <div className="overflow-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
-        <table className="w-full min-w-[1000px] border-collapse bg-white text-sm dark:bg-zinc-900">
+      <div className="overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <table className="w-full min-w-[1000px] border-collapse bg-white text-sm dark:bg-zinc-950">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
                 key={headerGroup.id}
-                className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950"
+                className="border-b border-zinc-200 dark:border-zinc-800"
               >
                 {headerGroup.headers.map((header) => {
                   const sortable = SORTABLE.has(header.column.id);
@@ -189,9 +190,9 @@ export function TicketsTable({
                       onClick={
                         sortable ? () => toggleSort(header.column.id) : undefined
                       }
-                      className={`select-none border-r border-zinc-200 px-3 py-2 text-left text-xs font-semibold text-zinc-600 last:border-r-0 dark:border-zinc-800 dark:text-zinc-400 ${
+                      className={`px-3 py-2 text-left text-xs font-medium whitespace-nowrap tracking-wide text-zinc-500 uppercase select-none dark:text-zinc-400 ${
                         sortable
-                          ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                          ? "cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100"
                           : ""
                       }`}
                     >
@@ -216,15 +217,12 @@ export function TicketsTable({
                 onClick={() =>
                   router.push(`/${locale}/admin/tickets/${row.original.id}`)
                 }
-                className={`cursor-pointer border-b border-zinc-100 last:border-b-0 dark:border-zinc-800 ${
-                  ROW_STATUS_CLASS[row.original.status]
+                className={`relative cursor-pointer border-b border-zinc-100 last:border-b-0 before:absolute before:inset-y-0 before:left-0 before:w-0.5 hover:bg-zinc-50 dark:border-zinc-900 dark:hover:bg-zinc-900/60 ${
+                  ROW_RAIL_CLASS[row.original.status]
                 }`}
               >
                 {row.getAllCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className="border-r border-zinc-100 px-3 py-2 align-middle last:border-r-0 dark:border-zinc-800"
-                  >
+                  <td key={cell.id} className="px-3 py-2.5 align-middle">
                     <table.FlexRender cell={cell} />
                   </td>
                 ))}

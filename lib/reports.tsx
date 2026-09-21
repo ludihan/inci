@@ -26,7 +26,6 @@ import type {
 } from "./types";
 import {
   formatCnpj,
-  formatCpf,
   formatCurrency,
   formatDateTime,
   formatPhone,
@@ -630,14 +629,14 @@ function TicketCard({
 
   const fields: [string, string][] = [
     [d.report.subject, ticket.subject],
-    [d.report.placeLabel, ticket.place?.name ?? "—"],
+    [d.report.unitLabel, ticket.unit?.name ?? "—"],
     [d.report.statusLabel, statusLabel(d, ticket.status)],
     [d.ticket.criticality.label, d.ticket.criticality[ticket.criticality]],
     [d.report.created, formatDateTime(ticket.createdAt, lang)],
     [d.report.updated, formatDateTime(ticket.updatedAt, lang)],
   ];
   if (sections.requester) {
-    fields.push([d.report.requester, formatCpf(ticket.cpf)]);
+    fields.push([d.report.requester, `#${ticket.matriculaHash.slice(0, 8)}`]);
     if (ticket.requesterName)
       fields.push([d.ticket.fields.requesterName, ticket.requesterName]);
     if (ticket.requesterPhone)
@@ -784,7 +783,7 @@ function tableColumns(d: Dict): {
     { header: d.report.created, weight: 1.1, value: (t) => t.createdAt.slice(0, 10) },
     { header: d.ticket.fields.requesterName, weight: 1.2, value: (t) => t.requesterName },
     { header: d.ticket.fields.role, weight: 0.75, value: (t) => t.role },
-    { header: d.ticket.fields.place, weight: 1.1, value: (t) => t.place?.name ?? "—" },
+    { header: d.ticket.fields.unit, weight: 1.1, value: (t) => t.unit?.name ?? "—" },
     { header: d.ticket.fields.equipment, weight: 1.3, value: equipmentText },
     { header: d.report.subject, weight: 1.6, value: (t) => t.subject },
     { header: d.ticket.fields.notes, weight: 1.6, value: (t) => t.notes },
@@ -1203,9 +1202,9 @@ function OsPage({
       </View>
 
       <View style={{ marginBottom: 8 }}>
-        {field(o.client, `${ticket.place?.name ?? o.empty}${ticket.place?.cnpj ? `   ${o.cnpj}: ${formatCnpj(ticket.place.cnpj)}` : ""}`)}
+        {field(o.client, `${ticket.unit?.name ?? o.empty}${ticket.unit?.cnpj ? `   ${o.cnpj}: ${formatCnpj(ticket.unit.cnpj)}` : ""}`)}
         {field(o.area, ticket.area?.name ?? o.empty)}
-        {field(o.requester, ticket.requesterName || formatCpf(ticket.cpf))}
+        {field(o.requester, ticket.requesterName || `#${ticket.matriculaHash.slice(0, 8)}`)}
         {field(o.phone, ticket.requesterPhone ? formatPhone(ticket.requesterPhone) : o.empty)}
         {field(o.role, ticket.role)}
         {field(o.equipment, equipmentText(ticket))}
@@ -1314,31 +1313,52 @@ async function preloadOsImages(
 
 export async function buildTicketOsReport(
   ticket: Ticket,
-  company: Company,
+  fallbackCompany: Company,
   lang: "pt" | "en" = "pt"
 ): Promise<Buffer> {
-  return buildTicketsOsReport([ticket], company, lang);
+  return buildTicketsOsReport([ticket], fallbackCompany, lang);
 }
 
+// `fallbackCompany` is used for any ticket whose unit has no company of its
+// own (or has no unit at all) — most reports mix tickets across units, so the
+// header is resolved per ticket instead of once for the whole batch.
 export async function buildTicketsOsReport(
   tickets: Ticket[],
-  company: Company,
+  fallbackCompany: Company,
   lang: "pt" | "en" = "pt"
 ): Promise<Buffer> {
   const d = dict(lang);
   const images = await preloadOsImages(tickets);
-  const logo = await loadImage(company.logoPath ?? undefined);
+  const logoCache = new Map<string, Buffer | null>();
+  const logoFor = async (company: Company): Promise<Buffer | null> => {
+    const key = company.logoPath ?? "";
+    if (!logoCache.has(key)) {
+      logoCache.set(key, await loadImage(company.logoPath ?? undefined));
+    }
+    return logoCache.get(key) ?? null;
+  };
+
+  const pages = await Promise.all(
+    tickets.map(async (ticket) => {
+      const company = ticket.unit?.company ?? fallbackCompany;
+      return {
+        ticket,
+        company,
+        logo: await logoFor(company),
+      };
+    })
+  );
 
   return renderToBuffer(
     <Document>
-      {tickets.length === 0 ? (
+      {pages.length === 0 ? (
         <Page size="A4" style={styles.page}>
           <Text style={{ fontSize: 10, color: COLOR.zinc500 }}>
             {d.report.noRecords}
           </Text>
         </Page>
       ) : (
-        tickets.map((ticket) => (
+        pages.map(({ ticket, company, logo }) => (
           <OsPage
             key={ticket.id}
             d={d}
@@ -1407,7 +1427,7 @@ export async function buildComplaintsReport(
           const fields: [string, string][] = [
             [d.report.subject, complaint.subject],
             [d.report.content, complaint.content],
-            [d.report.placeLabel, complaint.place?.name ?? "—"],
+            [d.report.unitLabel, complaint.unit?.name ?? "—"],
             [
               d.report.statusLabel,
               complaint.status === "open" ? d.common.open : d.complaint.closed,

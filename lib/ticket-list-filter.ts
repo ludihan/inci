@@ -30,7 +30,7 @@ export interface TicketListParams {
   type?: string;
   status?: string;
   criticality?: string;
-  place?: string;
+  unit?: string;
   assignee?: string;
   from?: string;
   to?: string;
@@ -60,7 +60,7 @@ export const SORT_KEYS: Record<string, (t: Ticket) => string | number> = {
   createdAt: (t) => t.createdAt,
   requesterName: (t) => t.requesterName,
   role: (t) => t.role,
-  place: (t) => t.place?.name ?? "",
+  unit: (t) => t.unit?.name ?? "",
   area: (t) => t.area?.name ?? "",
   equipment: equipmentLabel,
   subject: (t) => t.subject,
@@ -186,15 +186,15 @@ export function filterTicketList(
 
   const { from, to } = resolvePeriod(params);
 
-  const allPlaceIds = Array.from(
+  const allUnitIds = Array.from(
     visible.reduce((map, t) => {
-      if (t.place && !map.has(t.place.id)) map.set(t.place.id, t.place.name);
+      if (t.unit && !map.has(t.unit.id)) map.set(t.unit.id, t.unit.name);
       return map;
     }, new Map<string, string>())
   )
     .sort((a, b) => a[1].localeCompare(b[1], "pt-BR"))
     .map(([id]) => id);
-  const placeList = parseFilterList(params.place, allPlaceIds, allPlaceIds);
+  const unitList = parseFilterList(params.unit, allUnitIds, allUnitIds);
 
   const assignedIds = new Set(
     visible
@@ -212,8 +212,8 @@ export function filterTicketList(
     if (!statusList.includes(t.status)) return false;
     if (!criticalityList.includes(t.criticality)) return false;
     if (
-      !sameSet(placeList, allPlaceIds) &&
-      (!t.place || !placeList.includes(t.place.id))
+      !sameSet(unitList, allUnitIds) &&
+      (!t.unit || !unitList.includes(t.unit.id))
     )
       return false;
     if (from && t.createdAt.slice(0, 10) < from) return false;

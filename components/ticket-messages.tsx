@@ -64,7 +64,7 @@ export function TicketMessages({
                   : (msg.senderName ?? dict.common.admin)}
               </p>
               <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                {formatDate(msg.createdAt, locale)}
+                {formatDate(msg.createdAt, locale, ticket.clientTimezone)}
               </span>
             </div>
             {actionLabel && (

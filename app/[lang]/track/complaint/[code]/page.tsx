@@ -47,7 +47,7 @@ export default async function TrackComplaintDetailPage({
         </div>
 
         {complaint.status === "open" && (
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
             <div>
               <p className="font-semibold text-zinc-900 dark:text-zinc-50">
                 {dict.complaint.replyPrompt}
@@ -77,7 +77,7 @@ function ComplaintContent({
   dict: Dict;
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
           {dict.common.anonymous}
@@ -87,13 +87,13 @@ function ComplaintContent({
       <h2 className="mt-4 text-lg font-bold text-zinc-900 dark:text-zinc-50">
         {complaint.subject}
       </h2>
-      {complaint.place && (
+      {complaint.unit && (
         <p className="mt-1 flex items-center gap-1 text-sm text-zinc-500 dark:text-zinc-400">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
           </svg>
-          {dict.complaint.fields.place}: {complaint.place.name}
+          {dict.complaint.fields.unit}: {complaint.unit.name}
         </p>
       )}
       {complaint.attachments.length > 0 && (

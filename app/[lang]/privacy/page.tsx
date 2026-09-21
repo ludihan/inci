@@ -62,8 +62,8 @@ export default async function PrivacyPage() {
 
       <Section title={pt ? "2. Dados coletados" : "2. Data collected"}>
         {pt
-          ? "Nome, CPF, telefone, cargo/função, descrição do problema, fotos anexadas, mensagens trocadas e, no encerramento, a assinatura de conclusão."
-          : "Name, taxpayer ID (CPF), phone, role, a description of the problem, attached photos, messages exchanged, and, at closing, the completion signature."}
+          ? "Nome, matrícula, telefone, cargo/função, descrição do problema, fotos anexadas, mensagens trocadas e, no encerramento, a assinatura de conclusão."
+          : "Name, registration number, phone, role, a description of the problem, attached photos, messages exchanged, and, at closing, the completion signature."}
       </Section>
 
       <Section title={pt ? "3. Finalidade e base legal" : "3. Purpose and legal basis"}>

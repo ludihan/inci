@@ -60,8 +60,8 @@ const SIG_DATA_URL =
 
 import {
   createTicket,
-  createPlace,
-  renamePlace,
+  createUnit,
+  renameUnit,
   createArea,
   createServiceType,
   createItem,
@@ -72,8 +72,8 @@ import {
   addTicketItem,
   addTicketService,
   updateTicketCriticality,
-  updateCompanySettings,
-  listPlaces,
+  saveCompany,
+  listUnits,
   listAreas,
   listServiceTypes,
   listItems,
@@ -102,9 +102,9 @@ async function ensureTech(name, username, permissions) {
 }
 
 // --- catalog -----------------------------------------------------------
-let place = await ensureNamed(listPlaces, "Matriz");
-if (!place) place = await createPlace("Matriz", "07147665000171");
-else await renamePlace(place.id, place.name, "07147665000171");
+let unit = await ensureNamed(listUnits, "Matriz");
+if (!unit) unit = await createUnit("Matriz", "07147665000171");
+else await renameUnit(unit.id, unit.name, "07147665000171");
 
 let area = await ensureNamed(listAreas, "TI");
 if (!area) area = await createArea("TI");
@@ -152,7 +152,7 @@ async function image(name) {
 const logo = await saveImage(
   new File([solidPng(120, 120, [30, 30, 40])], "logo.png", { type: "image/png" })
 );
-await updateCompanySettings({
+await saveCompany({
   name: "M F Refeições e Eventos LTDA",
   cnpj: "07147665000171",
   addressStreet: "Rua Candelária",
@@ -166,9 +166,9 @@ await updateCompanySettings({
 // --- the ticket ------------------------------------------------------
 const ticket = await createTicket({
   type: "maintenance",
-  cpf: "39053344705",
+  matricula: "4705",
   subject: "Computador desliga sozinho — Guichê 03",
-  placeId: place.id,
+  unitId: unit.id,
   areaId: area.id,
   requesterName: "Mariana Teixeira de Oliveira",
   requesterPhone: "85991234567",
@@ -238,7 +238,7 @@ console.log(
       status: final.status,
       criticality: final.criticality,
       assignedTo: final.assignedToName,
-      place: final.place?.name,
+      unit: final.unit?.name,
       area: final.area?.name,
       messages: final.messages.map((m) => ({
         action: m.action,
