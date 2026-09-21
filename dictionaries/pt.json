@@ -579,6 +579,15 @@
       "jumpPlaceholder": "Ir para o chamado, ex.: TCK-A1B2C3D4",
       "jumpButton": "Ir",
       "jumpError": "Informe o número do chamado."
+    },
+    "sidebar": {
+      "overview": "Visão geral",
+      "support": "Atendimento",
+      "management": "Cadastros",
+      "system": "Sistema",
+      "openMenu": "Abrir menu",
+      "closeMenu": "Fechar menu",
+      "backToSite": "Voltar ao site"
     }
   },
   "report": {

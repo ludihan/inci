@@ -579,6 +579,15 @@
       "jumpPlaceholder": "Jump to a ticket, e.g. TCK-A1B2C3D4",
       "jumpButton": "Go",
       "jumpError": "Enter the ticket number."
+    },
+    "sidebar": {
+      "overview": "Overview",
+      "support": "Support",
+      "management": "Management",
+      "system": "System",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu",
+      "backToSite": "Back to site"
     }
   },
   "report": {
