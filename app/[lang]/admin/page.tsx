@@ -27,30 +27,19 @@ const STATUS_COLOR: Record<TicketStatus, string> = {
 function StatCard({
   label,
   value,
-  accent = false,
+  dot,
 }: {
   label: string;
   value: number;
-  accent?: boolean;
+  dot?: string;
 }) {
   return (
-    <div
-      className={`rounded-lg border p-6 ${
-        accent
-          ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-50 dark:text-zinc-900"
-          : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
-      }`}
-    >
-      <p
-        className={`text-xs font-medium tracking-wide uppercase ${
-          accent
-            ? "text-zinc-300 dark:text-zinc-600"
-            : "text-zinc-500 dark:text-zinc-400"
-        }`}
-      >
+    <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
+      <p className="flex items-center gap-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+        {dot && <span className={`h-2 w-2 rounded-full ${dot}`} aria-hidden />}
         {label}
       </p>
-      <p className="mt-2 font-mono text-3xl font-semibold tabular-nums">
+      <p className="mt-3 font-mono text-3xl font-semibold tracking-tight tabular-nums text-zinc-900 dark:text-zinc-50">
         {value}
       </p>
     </div>
@@ -263,9 +252,9 @@ export default async function AdminDashboardPage({
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">
-          {dict.admin.dashboard.welcome}, {admin.name} 👋
+      <div className="mb-8 border-b border-zinc-200 pb-6 dark:border-zinc-800">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">
+          {dict.admin.dashboard.welcome}, {admin.name}
         </h1>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           {dict.admin.dashboard.subtitle}
@@ -278,29 +267,34 @@ export default async function AdminDashboardPage({
         </p>
       ) : (
         <div className="space-y-8">
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950">
-            <span className="mr-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              {dict.admin.dashboard.periodLabel}
-            </span>
-            {PERIOD_KEYS.map((key) => (
-              <FilterLink
-                key={key}
-                href={qs({ period: key })}
-                active={!customRange && periodKey === key}
-              >
-                {
-                  dict.admin.dashboard[
-                    `period${key === "all" ? "All" : key}` as keyof typeof dict.admin.dashboard
-                  ] as string
-                }
-              </FilterLink>
-            ))}
+          <div className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white shadow-xs dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-950">
+            <FilterRow label={dict.admin.dashboard.periodLabel}>
+              {PERIOD_KEYS.map((key) => (
+                <FilterLink
+                  key={key}
+                  href={qs({ period: key })}
+                  active={!customRange && periodKey === key}
+                >
+                  {
+                    dict.admin.dashboard[
+                      `period${key === "all" ? "All" : key}` as keyof typeof dict.admin.dashboard
+                    ] as string
+                  }
+                </FilterLink>
+              ))}
+            </FilterRow>
+
+            <FilterRow label={dict.admin.dashboard.customRange}>
+              <PeriodRangeFilter
+                dict={dict}
+                locale={locale}
+                from={fromStr}
+                to={toStr}
+              />
+            </FilterRow>
 
             {showType && (
-              <>
-                <span className="ml-3 mr-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                  {dict.admin.dashboard.typeLabel}
-                </span>
+              <FilterRow label={dict.admin.dashboard.typeLabel}>
                 <FilterLink href={qs({ type: undefined })} active={!typeFilter}>
                   {dict.admin.dashboard.allTypes}
                 </FilterLink>
@@ -313,24 +307,11 @@ export default async function AdminDashboardPage({
                 >
                   {dict.ticket.fields.maintenance}
                 </FilterLink>
-              </>
+              </FilterRow>
             )}
 
-            <span className="ml-3 mr-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              {dict.admin.dashboard.customRange}
-            </span>
-            <PeriodRangeFilter
-              dict={dict}
-              locale={locale}
-              from={fromStr}
-              to={toStr}
-            />
-
             {units.length > 0 && (
-              <>
-                <span className="ml-3 mr-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                  {dict.admin.dashboard.unitLabel}
-                </span>
+              <FilterRow label={dict.admin.dashboard.unitLabel}>
                 <FilterLink href={qs({ unitId: undefined })} active={!unitId}>
                   {dict.admin.dashboard.allUnits}
                 </FilterLink>
@@ -343,39 +324,40 @@ export default async function AdminDashboardPage({
                     {p.name}
                   </FilterLink>
                 ))}
-              </>
+              </FilterRow>
             )}
           </div>
 
-          <div
-            className={`grid grid-cols-2 gap-4 ${
-              canComplaints ? "lg:grid-cols-6" : "lg:grid-cols-5"
-            }`}
-          >
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             <StatCard
               label={dict.admin.dashboard.totalTickets}
               value={tickets.length}
-              accent
+              dot="bg-zinc-900 dark:bg-zinc-100"
             />
             <StatCard
               label={dict.admin.dashboard.openTickets}
+              dot="bg-emerald-500"
               value={openTickets.length}
             />
             <StatCard
               label={dict.admin.dashboard.inProgressTickets}
+              dot="bg-amber-500"
               value={inProgressTickets.length}
             />
             <StatCard
               label={dict.admin.dashboard.closedTickets}
+              dot="bg-zinc-400"
               value={closedTickets.length}
             />
             <StatCard
               label={dict.admin.dashboard.unassignedTickets}
+              dot="bg-rose-500"
               value={unassignedTickets.length}
             />
             {canComplaints && (
               <StatCard
                 label={dict.admin.dashboard.totalComplaints}
+                dot="bg-sky-500"
                 value={complaints.length}
               />
             )}
@@ -429,6 +411,23 @@ export default async function AdminDashboardPage({
   );
 }
 
+function FilterRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
+      <span className="w-28 shrink-0 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+        {label}
+      </span>
+      <div className="flex flex-wrap items-center gap-1.5">{children}</div>
+    </div>
+  );
+}
+
 function FilterLink({
   href,
   active,
@@ -441,7 +440,7 @@ function FilterLink({
   return (
     <a
       href={href}
-      className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+      className={`rounded-md px-2.5 py-1 text-sm font-medium transition-colors ${
         active
           ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
           : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
@@ -464,14 +463,14 @@ function RecentTickets({
   href: string;
 }) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           {dict.admin.dashboard.recentTickets}
         </h2>
         <Link
           href={href}
-          className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50"
+          className="text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
         >
           {dict.admin.dashboard.viewAll}
         </Link>
@@ -522,14 +521,14 @@ function RecentComplaints({
   href: string;
 }) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           {dict.admin.dashboard.recentComplaints}
         </h2>
         <Link
           href={href}
-          className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50"
+          className="text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
         >
           {dict.admin.dashboard.viewAll}
         </Link>

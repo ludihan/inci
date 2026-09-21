@@ -10,7 +10,7 @@ export function BarList({
   const max = Math.max(1, ...data.map((d) => d.value));
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
       <h2 className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
         {title}
       </h2>
@@ -87,7 +87,7 @@ export function TrendChart({
   const labelEvery = Math.max(1, Math.ceil(points.length / 7));
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
       <h2 className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
         {title}
       </h2>
