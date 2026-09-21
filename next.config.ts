@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // Lets phones on the local network load dev assets and HMR (192.168.x.x).
+  allowedDevOrigins: ["192.168.*.*"],
   serverExternalPackages: ["@react-pdf/renderer"],
   experimental: {
     globalNotFound: true,

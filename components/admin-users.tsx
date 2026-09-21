@@ -203,7 +203,7 @@ function AdminCard({
           <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
             {dict.admin.users.role}
           </p>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
             <RoleRadio
               name="role"
               role="admin"
@@ -306,7 +306,7 @@ function NewAdminForm({ dict, lang }: { dict: Dict; lang: Locale }) {
           <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
             {dict.admin.users.role}
           </p>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
             <RoleRadio name="role" role="admin" defaultValue="admin" dict={dict} />
             <RoleRadio
               name="role"

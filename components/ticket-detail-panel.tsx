@@ -93,7 +93,7 @@ export function TicketDetailPanel({
             <StatusBadge status={ticket.status} dict={dict} />
             <CriticalityBadge criticality={ticket.criticality} dict={dict} />
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
               {dict.common.createdAt}: {formatDateTime(ticket.createdAt, locale, ticket.clientTimezone)}
             </span>
