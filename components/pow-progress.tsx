@@ -21,7 +21,7 @@ export function PowProgress({
     <div
       role="status"
       aria-live="polite"
-      className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
+      className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950"
     >
       <div className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
         <svg className="h-4 w-4 animate-spin text-zinc-900 dark:text-zinc-50" viewBox="0 0 24 24" fill="none">

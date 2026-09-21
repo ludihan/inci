@@ -13,7 +13,7 @@ import { formatCurrency } from "@/lib/utils";
 import { SubmitButton } from "./submit-button";
 
 const inputClass =
-  "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400";
+  "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-accent";
 
 function errorText(state: ActionState, dict: Dict): string | null {
   if (!state?.error) return null;
@@ -43,7 +43,7 @@ function UsageRow({
   const [editing, setEditing] = useState(false);
 
   return (
-    <li className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <li className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
       {editing ? (
         <form action={action} className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="lang" value={lang} />
@@ -176,7 +176,7 @@ function AddServiceForm({
   return (
     <form
       action={action}
-      className="space-y-3 rounded-xl border border-dashed border-zinc-300 p-4 dark:border-zinc-700"
+      className="space-y-3 rounded-lg border border-dashed border-zinc-300 p-4 dark:border-zinc-700"
     >
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="ticketId" value={ticketId} />
@@ -286,7 +286,7 @@ export function TicketServicesForm({
   const total = services.reduce((sum, s) => sum + s.total, 0);
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
       <div className="mb-2 flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
           {dict.ticket.services.title}

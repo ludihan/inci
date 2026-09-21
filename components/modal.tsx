@@ -34,8 +34,8 @@ export function Modal({
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-zinc-900/40 p-4 py-8 backdrop-blur-sm sm:items-center dark:bg-black/60">
       <div className="absolute inset-0" onClick={close} aria-hidden="true" />
-      <div className="relative w-full max-w-2xl rounded-2xl bg-zinc-50 shadow-2xl dark:bg-zinc-900">
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 rounded-t-2xl border-b border-zinc-200 bg-white px-5 py-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="relative w-full max-w-2xl rounded-lg bg-zinc-50 shadow-2xl dark:bg-zinc-950">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 rounded-t-lg border-b border-zinc-200 bg-white px-5 py-3 dark:border-zinc-800 dark:bg-zinc-950">
           <h2 className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-50">
             {title}
           </h2>

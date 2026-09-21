@@ -100,10 +100,10 @@ export default async function HomePage() {
             <Link
               key={card.href}
               href={card.href}
-              className="group flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-6 transition-all hover:border-zinc-900 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600"
+              className="group flex flex-col justify-between rounded-lg border border-zinc-200 bg-white p-6 transition-all hover:border-zinc-900 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-600"
             >
               <div>
-                <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-100 text-zinc-900 group-hover:bg-zinc-900 group-hover:text-white dark:bg-zinc-800 dark:text-zinc-100 dark:group-hover:bg-zinc-50 dark:group-hover:text-zinc-900">
+                <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-zinc-100 text-zinc-900 group-hover:bg-zinc-900 group-hover:text-white dark:bg-zinc-800 dark:text-zinc-100 dark:group-hover:bg-zinc-50 dark:group-hover:text-zinc-900">
                   {card.icon}
                 </div>
                 <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">

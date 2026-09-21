@@ -36,7 +36,7 @@ export function TicketCodeJump({
         <input
           name="code"
           placeholder={dict.admin.table.jumpPlaceholder}
-          className="block w-full min-w-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 sm:w-56 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400"
+          className="block w-full min-w-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 sm:w-56 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-accent"
         />
         {error && (
           <p role="alert" className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">

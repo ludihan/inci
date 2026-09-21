@@ -42,7 +42,7 @@ function UsageRow({
   const [editing, setEditing] = useState(false);
 
   return (
-    <li className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <li className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
       {editing ? (
         <form action={action} className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="lang" value={lang} />
@@ -136,7 +136,7 @@ function AddItemForm({
   const [itemId, setItemId] = useState("");
 
   return (
-    <form action={action} className="space-y-3 rounded-xl border border-dashed border-zinc-300 p-4 dark:border-zinc-700">
+    <form action={action} className="space-y-3 rounded-lg border border-dashed border-zinc-300 p-4 dark:border-zinc-700">
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="ticketId" value={ticketId} />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -127,11 +127,11 @@ export function AdminSqlConsole({ dict, lang }: { dict: Dict; lang: Locale }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+      <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
         {dict.admin.sql.warning}
       </div>
 
-      <div className="flex h-[70vh] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex h-[70vh] flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
         <div
           ref={outputRef}
           className="flex-1 space-y-4 overflow-y-auto px-4 py-4 font-mono text-sm"

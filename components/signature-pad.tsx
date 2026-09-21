@@ -251,7 +251,7 @@ export function SignaturePad({
 
       {fullscreen && (
         <div className="fixed inset-0 z-50 flex bg-white sm:items-center sm:justify-center sm:bg-zinc-900/50 sm:p-6 dark:bg-zinc-950 dark:sm:bg-black/60">
-          <div className="fixed left-1/2 top-1/2 flex h-[100vw] w-[100vh] -translate-x-1/2 -translate-y-1/2 rotate-90 flex-col sm:static sm:h-[500px] sm:w-full sm:max-w-3xl sm:translate-x-0 sm:translate-y-0 sm:rotate-0 sm:rounded-2xl sm:bg-white sm:shadow-2xl dark:sm:bg-zinc-900">
+          <div className="fixed left-1/2 top-1/2 flex h-[100vw] w-[100vh] -translate-x-1/2 -translate-y-1/2 rotate-90 flex-col sm:static sm:h-[500px] sm:w-full sm:max-w-3xl sm:translate-x-0 sm:translate-y-0 sm:rotate-0 sm:rounded-lg sm:bg-white sm:shadow-2xl dark:sm:bg-zinc-900">
             <div className="flex items-center justify-between px-4 py-2 sm:px-5 sm:py-3">
               <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 {label}

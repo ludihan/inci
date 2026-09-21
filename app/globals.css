@@ -13,11 +13,16 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Vercel-style single accent, used sparingly for primary interactive/focus states. */
+  --accent: #0070f3;
+  --accent-foreground: #ffffff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -25,10 +30,17 @@
 .dark {
   --background: #0a0a0a;
   --foreground: #ededed;
+  --accent: #3291ff;
+  --accent-foreground: #0a0a0a;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
 }

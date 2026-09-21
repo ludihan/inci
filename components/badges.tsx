@@ -13,11 +13,18 @@ export const CRITICALITY_ORDER: TicketCriticality[] = [
   "baixo",
 ];
 
+// Subtle background + hairline border + matching text, not heavy saturated
+// fills — keeps semantic color legible without fighting the flat, bordered
+// look used for cards/tables elsewhere.
 const CRITICALITY_CLASS: Record<TicketCriticality, string> = {
-  critica: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
-  urgente: "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
-  medio: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-  baixo: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+  critica:
+    "bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900",
+  urgente:
+    "bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-900",
+  medio:
+    "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900",
+  baixo:
+    "bg-zinc-100 text-zinc-600 border border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800",
 };
 
 export function CriticalityBadge({
@@ -29,7 +36,7 @@ export function CriticalityBadge({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${CRITICALITY_CLASS[criticality]}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${CRITICALITY_CLASS[criticality]}`}
     >
       {dict.ticket.criticality[criticality]}
     </span>
@@ -46,10 +53,10 @@ export function TicketTypeBadge({
   const isIt = type === "it";
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
         isIt
-          ? "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300"
-          : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+          ? "bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900"
+          : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900"
       }`}
     >
       {isIt ? dict.ticket.fields.it : dict.ticket.fields.maintenance}
@@ -66,7 +73,7 @@ export function StatusBadge({
 }) {
   if (status === "in_progress") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
         <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
         {dict.common.inProgress}
       </span>
@@ -75,10 +82,10 @@ export function StatusBadge({
   const isOpen = status === "open";
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
         isOpen
-          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
-          : "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
+          : "border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
       }`}
     >
       <span

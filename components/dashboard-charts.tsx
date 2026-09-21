@@ -10,8 +10,8 @@ export function BarList({
   const max = Math.max(1, ...data.map((d) => d.value));
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+      <h2 className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
         {title}
       </h2>
       {data.length === 0 ? (
@@ -28,12 +28,12 @@ export function BarList({
                   <span className="min-w-0 truncate text-zinc-700 dark:text-zinc-300">
                     {d.label}
                   </span>
-                  <span className="shrink-0 font-semibold text-zinc-900 dark:text-zinc-50">
+                  <span className="shrink-0 font-mono text-xs font-medium text-zinc-900 tabular-nums dark:text-zinc-50">
                     {d.value}
                   </span>
                 </div>
                 <div
-                  className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800"
+                  className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900"
                   role="img"
                   aria-label={`${d.label}: ${d.value}`}
                 >
@@ -56,7 +56,7 @@ export function TrendChart({
   title,
   points,
   emptyLabel,
-  colorClass = "text-sky-600 dark:text-sky-400",
+  colorClass = "text-accent",
 }: {
   title: string;
   points: { label: string; value: number }[];
@@ -87,8 +87,8 @@ export function TrendChart({
   const labelEvery = Math.max(1, Math.ceil(points.length / 7));
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+      <h2 className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
         {title}
       </h2>
       {points.length === 0 ? (
@@ -162,7 +162,7 @@ export function TrendChart({
                 x={coords[coords.length - 1].x}
                 y={coords[coords.length - 1].y - 8}
                 textAnchor="end"
-                className="fill-zinc-700 text-[10px] font-semibold dark:fill-zinc-300"
+                className="fill-zinc-700 font-mono text-[9px] font-medium tabular-nums dark:fill-zinc-300"
               >
                 {coords[coords.length - 1].value}
               </text>

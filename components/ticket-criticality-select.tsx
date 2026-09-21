@@ -35,7 +35,7 @@ export function TicketCriticalitySelect({
           name="criticality"
           defaultValue={criticality}
           onChange={() => formRef.current?.requestSubmit()}
-          className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+          className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-900 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
         >
           {CRITICALITY_ORDER.map((option) => (
             <option key={option} value={option}>

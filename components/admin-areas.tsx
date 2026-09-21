@@ -12,7 +12,7 @@ import type { Dict, Locale } from "@/lib/i18n";
 import { SubmitButton } from "./submit-button";
 
 const inputClass =
-  "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-400";
+  "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-accent";
 
 function errorText(state: ActionState, dict: Dict): string | null {
   if (!state?.error) return null;
@@ -29,7 +29,7 @@ function AreaForm({ dict, lang }: { dict: Dict; lang: Locale }) {
   );
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
       <h2 className="mb-5 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
         {dict.admin.areas.newTitle}
       </h2>
@@ -123,7 +123,7 @@ function AreaRow({
   const [editing, setEditing] = useState(false);
 
   return (
-    <li className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+    <li className="flex items-center justify-between gap-4 rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
       {editing ? (
         <div className="min-w-0 flex-1">
           <RenameForm area={area} dict={dict} lang={lang} />
@@ -177,7 +177,7 @@ export function AdminAreasManager({
       <AreaForm dict={dict} lang={lang} />
 
       {areas.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-zinc-300 p-10 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+        <p className="rounded-lg border border-dashed border-zinc-300 p-10 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
           {dict.admin.areas.empty}
         </p>
       ) : (

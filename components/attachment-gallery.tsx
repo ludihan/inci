@@ -52,7 +52,7 @@ export function AttachmentGallery({
             onClick={() => setPreviewIndex(i)}
             className="block"
           >
-            <span className="relative block h-40 w-40 overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-800">
+            <span className="relative block h-40 w-40 overflow-hidden rounded-lg bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-800">
               <Image src={att.path} alt={alt} fill sizes="160px" className="object-cover" />
             </span>
           </button>
@@ -65,7 +65,7 @@ export function AttachmentGallery({
           >
             <video
               src={att.path}
-              className="h-40 w-64 rounded-xl bg-black object-contain ring-1 ring-zinc-200 dark:ring-zinc-800"
+              className="h-40 w-64 rounded-lg bg-black object-contain ring-1 ring-zinc-200 dark:ring-zinc-800"
             />
           </button>
         )

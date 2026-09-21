@@ -74,7 +74,7 @@ export default async function AdminComplaintsPage({
       </div>
 
       {complaints.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-zinc-300 p-10 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+        <p className="rounded-lg border border-dashed border-zinc-300 p-10 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
           {dict.complaint.empty}
         </p>
       ) : (
