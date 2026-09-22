@@ -446,7 +446,9 @@
       "byUnitTitle": "Por unidade",
       "byUnitEmpty": "Nenhum chamado com unidade definida.",
       "noDataInPeriod": "Sem dados no período selecionado.",
-      "emptyInPeriod": "Nenhum registro no período selecionado."
+      "emptyInPeriod": "Nenhum registro no período selecionado.",
+      "chartPeak": "pico de {value} em {label}",
+      "chartTotal": "total"
     },
     "tickets": {
       "title": "Chamados",

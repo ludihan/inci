@@ -16,6 +16,13 @@
   /* Vercel-style single accent, used sparingly for primary interactive/focus states. */
   --accent: #0070f3;
   --accent-foreground: #ffffff;
+  /* Chart text/surface tokens — marks carry the data colour, these never do. */
+  --chart-ink: #18181b;
+  --chart-ink-soft: #52525b;
+  --chart-muted: #a1a1aa;
+  --chart-grid: #e4e4e7;
+  --chart-surface: #ffffff;
+  --chart-cursor: #f4f4f5;
 }
 
 @theme inline {
@@ -32,6 +39,12 @@
   --foreground: #ededed;
   --accent: #3291ff;
   --accent-foreground: #0a0a0a;
+  --chart-ink: #f4f4f5;
+  --chart-ink-soft: #d4d4d8;
+  --chart-muted: #71717a;
+  --chart-grid: #27272a;
+  --chart-surface: #09090b;
+  --chart-cursor: #27272a;
 }
 
 body {

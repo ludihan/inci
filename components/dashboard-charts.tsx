@@ -1,53 +1,83 @@
-export function BarList({
+"use client";
+
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  Cell,
+  LabelList,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+// Theme-aware text/surface tokens (see globals.css) — marks carry the data
+// colour, text never does.
+const INK = "var(--chart-ink)";
+const INK_SOFT = "var(--chart-ink-soft)";
+const MUTED = "var(--chart-muted)";
+const GRID = "var(--chart-grid)";
+const SURFACE = "var(--chart-surface)";
+const CURSOR = "var(--chart-cursor)";
+const ACCENT = "var(--accent)";
+
+type NamedValue = { label: string; value: number; color?: string };
+
+function Card({
   title,
-  data,
-  emptyLabel,
+  action,
+  children,
 }: {
   title: string;
-  data: { label: string; value: number; colorClass: string }[];
-  emptyLabel: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
 }) {
-  const max = Math.max(1, ...data.map((d) => d.value));
-
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
-      <h2 className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
-        {title}
-      </h2>
-      {data.length === 0 ? (
-        <p className="py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-          {emptyLabel}
-        </p>
-      ) : (
-        <ul className="mt-4 space-y-3">
-          {data.map((d) => {
-            const pct = Math.max(2, Math.round((d.value / max) * 100));
-            return (
-              <li key={d.label}>
-                <div className="mb-1 flex items-center justify-between gap-2 text-sm">
-                  <span className="min-w-0 truncate text-zinc-700 dark:text-zinc-300">
-                    {d.label}
-                  </span>
-                  <span className="shrink-0 font-mono text-xs font-medium text-zinc-900 tabular-nums dark:text-zinc-50">
-                    {d.value}
-                  </span>
-                </div>
-                <div
-                  className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900"
-                  role="img"
-                  aria-label={`${d.label}: ${d.value}`}
-                >
-                  <div
-                    className={`h-full rounded-full ${d.colorClass}`}
-                    style={{ width: `${pct}%` }}
-                    title={`${d.label}: ${d.value}`}
-                  />
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+    <div className="flex flex-col rounded-xl border border-zinc-200 bg-white p-4 shadow-xs sm:p-5 dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+          {title}
+        </h2>
+        {action}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function EmptyState({ label }: { label: string }) {
+  return (
+    <p className="flex flex-1 items-center justify-center py-10 text-center text-sm text-zinc-500 dark:text-zinc-400">
+      {label}
+    </p>
+  );
+}
+
+function TooltipCard({
+  rows,
+}: {
+  rows: { label: string; value: number | string; color?: string }[];
+}) {
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs shadow-md dark:border-zinc-800 dark:bg-zinc-900">
+      {rows.map((r, i) => (
+        <div key={i} className="flex items-center gap-2 whitespace-nowrap">
+          {r.color && (
+            <span
+              className="inline-block h-2.5 w-2.5 shrink-0 rounded-[3px]"
+              style={{ backgroundColor: r.color }}
+            />
+          )}
+          <span className="font-semibold text-zinc-900 dark:text-zinc-50">
+            {r.value}
+          </span>
+          <span className="text-zinc-500 dark:text-zinc-400">{r.label}</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -56,120 +86,261 @@ export function TrendChart({
   title,
   points,
   emptyLabel,
-  colorClass = "text-accent",
+  seriesLabel,
+  peakLabel,
+  action,
 }: {
   title: string;
   points: { label: string; value: number }[];
   emptyLabel: string;
-  colorClass?: string;
+  /** Series name shown in the tooltip, e.g. "tickets". */
+  seriesLabel?: string;
+  /** Template with `{value}` and `{label}` placeholders, e.g. "peak of {value} on {label}". */
+  peakLabel?: string;
+  action?: React.ReactNode;
 }) {
-  const width = 600;
-  const height = 180;
-  const padX = 8;
-  const padTop = 16;
-  const padBottom = 24;
-  const max = Math.max(1, ...points.map((p) => p.value));
-  const innerWidth = width - padX * 2;
-  const innerHeight = height - padTop - padBottom;
-  const stepX = points.length > 1 ? innerWidth / (points.length - 1) : 0;
-
-  const coords = points.map((p, i) => ({
-    x: padX + (points.length > 1 ? i * stepX : innerWidth / 2),
-    y: padTop + innerHeight - (p.value / max) * innerHeight,
-    ...p,
-  }));
-
-  const linePath = coords
-    .map((c, i) => `${i === 0 ? "M" : "L"}${c.x.toFixed(1)},${c.y.toFixed(1)}`)
-    .join(" ");
-  const areaPath = `${linePath} L${coords[coords.length - 1]?.x.toFixed(1)},${padTop + innerHeight} L${coords[0]?.x.toFixed(1)},${padTop + innerHeight} Z`;
-
-  const labelEvery = Math.max(1, Math.ceil(points.length / 7));
+  const total = points.reduce((sum, p) => sum + p.value, 0);
+  const peak = points.reduce(
+    (best, p) => (p.value > best.value ? p : best),
+    points[0] ?? { label: "", value: 0 }
+  );
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
-      <h2 className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
-        {title}
-      </h2>
+    <Card title={title} action={action}>
       {points.length === 0 ? (
-        <p className="py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-          {emptyLabel}
-        </p>
+        <EmptyState label={emptyLabel} />
       ) : (
-        <div className="mt-4 overflow-x-auto">
-          <svg
-            viewBox={`0 0 ${width} ${height}`}
-            className="w-full min-w-[480px]"
-            role="img"
-            aria-label={`${title}: ${max} - ${
-              coords.reduce((best, c) => (c.value > best.value ? c : best), coords[0])
-                .label
-            }`}
-          >
-            <line
-              x1={padX}
-              y1={padTop + innerHeight}
-              x2={width - padX}
-              y2={padTop + innerHeight}
-              className="stroke-zinc-200 dark:stroke-zinc-800"
-              strokeWidth={1}
-            />
-            {areaPath && (
-              <path
-                d={areaPath}
-                className={colorClass}
-                fill="currentColor"
-                fillOpacity={0.1}
-                stroke="none"
-              />
+        <>
+          <div className="mb-1 flex flex-wrap items-baseline gap-x-4 gap-y-0.5">
+            <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+              {total}
+            </span>
+            {peakLabel && (
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                {peakLabel
+                  .replace("{value}", String(peak.value))
+                  .replace("{label}", peak.label)}
+              </span>
             )}
-            {linePath && (
-              <path
-                d={linePath}
-                className={colorClass}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-              />
-            )}
-            {coords.map((c, i) => (
-              <g key={i}>
-                <circle
-                  cx={c.x}
-                  cy={c.y}
-                  r={i === coords.length - 1 ? 4 : 2.5}
-                  className={colorClass}
-                  fill="currentColor"
-                  stroke="var(--color-white, #fff)"
-                  strokeWidth={2}
-                >
-                  <title>{`${c.label}: ${c.value}`}</title>
-                </circle>
-                {i % labelEvery === 0 && (
-                  <text
-                    x={c.x}
-                    y={height - 4}
-                    textAnchor="middle"
-                    className="fill-zinc-400 text-[9px] dark:fill-zinc-500"
-                  >
-                    {c.label}
-                  </text>
-                )}
-              </g>
-            ))}
-            {coords.length > 0 && (
-              <text
-                x={coords[coords.length - 1].x}
-                y={coords[coords.length - 1].y - 8}
-                textAnchor="end"
-                className="fill-zinc-700 font-mono text-[9px] font-medium tabular-nums dark:fill-zinc-300"
+          </div>
+          <div className="h-[200px] w-full sm:h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={points}
+                margin={{ top: 8, right: 8, bottom: 0, left: -16 }}
               >
-                {coords[coords.length - 1].value}
-              </text>
-            )}
-          </svg>
+                <defs>
+                  <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={ACCENT} stopOpacity={0.18} />
+                    <stop offset="100%" stopColor={ACCENT} stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="label"
+                  tickLine={false}
+                  axisLine={{ stroke: GRID }}
+                  tick={{ fontSize: 11, fill: MUTED }}
+                  interval="preserveStartEnd"
+                  minTickGap={28}
+                />
+                <YAxis
+                  width={36}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 11, fill: MUTED }}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  cursor={{ stroke: MUTED, strokeWidth: 1 }}
+                  content={({ active, payload }) =>
+                    active && payload && payload.length ? (
+                      <TooltipCard
+                        rows={[
+                          {
+                            label: seriesLabel
+                              ? `${seriesLabel} · ${payload[0].payload.label}`
+                              : payload[0].payload.label,
+                            value: payload[0].value as number,
+                            color: "var(--accent)",
+                          },
+                        ]}
+                      />
+                    ) : null
+                  }
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke={ACCENT}
+                  strokeWidth={2}
+                  fill="url(#trendFill)"
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: SURFACE }}
+                  isAnimationActive
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
+
+export function CategoryBars({
+  title,
+  data,
+  emptyLabel,
+}: {
+  title: string;
+  data: NamedValue[];
+  emptyLabel: string;
+}) {
+  return (
+    <Card title={title}>
+      {data.length === 0 ? (
+        <EmptyState label={emptyLabel} />
+      ) : (
+        <div
+          className="w-full"
+          style={{ height: Math.max(120, data.length * 40 + 16) }}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              layout="vertical"
+              data={data}
+              margin={{ top: 4, right: 32, bottom: 4, left: 0 }}
+              barCategoryGap={10}
+            >
+              <XAxis type="number" hide allowDecimals={false} />
+              <YAxis
+                type="category"
+                dataKey="label"
+                width={104}
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 12, fill: INK_SOFT }}
+                tickFormatter={(v: string) =>
+                  v.length > 16 ? `${v.slice(0, 15)}…` : v
+                }
+              />
+              <Tooltip
+                cursor={{ fill: CURSOR }}
+                content={({ active, payload }) =>
+                  active && payload && payload.length ? (
+                    <TooltipCard
+                      rows={[
+                        {
+                          label: payload[0].payload.label,
+                          value: payload[0].value as number,
+                          color: payload[0].payload.color ?? ACCENT,
+                        },
+                      ]}
+                    />
+                  ) : null
+                }
+              />
+              <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={18} isAnimationActive>
+                {data.map((d, i) => (
+                  <Cell key={i} fill={d.color ?? ACCENT} />
+                ))}
+                <LabelList
+                  dataKey="value"
+                  position="right"
+                  style={{ fill: INK, fontSize: 12, fontWeight: 600 }}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       )}
-    </div>
+    </Card>
+  );
+}
+
+export function StatusDonut({
+  title,
+  data,
+  emptyLabel,
+  totalLabel,
+}: {
+  title: string;
+  data: NamedValue[];
+  emptyLabel: string;
+  totalLabel: string;
+}) {
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+
+  return (
+    <Card title={title}>
+      {total === 0 ? (
+        <EmptyState label={emptyLabel} />
+      ) : (
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
+          <div className="relative h-[150px] w-[150px] shrink-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  dataKey="value"
+                  nameKey="label"
+                  innerRadius="60%"
+                  outerRadius="92%"
+                  paddingAngle={data.length > 1 ? 2 : 0}
+                  stroke={SURFACE}
+                  strokeWidth={2}
+                  isAnimationActive
+                >
+                  {data.map((d, i) => (
+                    <Cell key={i} fill={d.color ?? ACCENT} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  content={({ active, payload }) =>
+                    active && payload && payload.length ? (
+                      <TooltipCard
+                        rows={[
+                          {
+                            label: `${payload[0].name} · ${Math.round(
+                              ((payload[0].value as number) / total) * 100
+                            )}%`,
+                            value: payload[0].value as number,
+                            color: payload[0].payload.color,
+                          },
+                        ]}
+                      />
+                    ) : null
+                  }
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+                {total}
+              </span>
+              <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                {totalLabel}
+              </span>
+            </div>
+          </div>
+          <ul className="grid w-full grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-1">
+            {data.map((d) => (
+              <li key={d.label} className="flex items-center gap-2 text-sm">
+                <span
+                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-[3px]"
+                  style={{ backgroundColor: d.color ?? ACCENT }}
+                />
+                <span className="min-w-0 flex-1 truncate text-zinc-600 dark:text-zinc-300">
+                  {d.label}
+                </span>
+                <span className="shrink-0 font-semibold text-zinc-900 dark:text-zinc-50">
+                  {d.value}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Card>
   );
 }

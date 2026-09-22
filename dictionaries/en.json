@@ -446,7 +446,9 @@
       "byUnitTitle": "By unit",
       "byUnitEmpty": "No tickets with a unit set.",
       "noDataInPeriod": "No data in the selected period.",
-      "emptyInPeriod": "No records in the selected period."
+      "emptyInPeriod": "No records in the selected period.",
+      "chartPeak": "peak of {value} on {label}",
+      "chartTotal": "total"
     },
     "tickets": {
       "title": "Tickets",

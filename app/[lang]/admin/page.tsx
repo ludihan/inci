@@ -6,7 +6,7 @@ import { getDB, listUnits } from "@/lib/store";
 import { features } from "@/lib/features";
 import type { Admin, Complaint, Ticket, TicketStatus } from "@/lib/types";
 import { StatusBadge, TicketTypeBadge } from "@/components/badges";
-import { BarList, TrendChart } from "@/components/dashboard-charts";
+import { CategoryBars, StatusDonut, TrendChart } from "@/components/dashboard-charts";
 import { PeriodRangeFilter } from "@/components/period-range-filter";
 
 const PERIOD_KEYS = ["7", "30", "90", "all"] as const;
@@ -18,11 +18,14 @@ const PERIOD_DAYS: Record<PeriodKey, number | null> = {
   all: null,
 };
 
-const STATUS_COLOR: Record<TicketStatus, string> = {
-  open: "bg-emerald-500",
-  in_progress: "bg-amber-500",
-  closed: "bg-zinc-400",
+// Same palette as the StatCard dots below, as hex for the chart marks (SVG
+// fills can't take Tailwind classes).
+const STATUS_CHART_COLOR: Record<TicketStatus, string> = {
+  open: "#10b981",
+  in_progress: "#f59e0b",
+  closed: "#a1a1aa",
 };
+const UNIT_CHART_COLOR = "#0ea5e9";
 
 function StatCard({
   label,
@@ -202,7 +205,7 @@ export default async function AdminDashboardPage({
     (status) => ({
       label: dict.common[status === "in_progress" ? "inProgress" : status],
       value: tickets.filter((t) => t.status === status).length,
-      colorClass: STATUS_COLOR[status],
+      color: STATUS_CHART_COLOR[status],
     })
   );
 
@@ -214,7 +217,7 @@ export default async function AdminDashboardPage({
   const unitData = Array.from(unitCounts.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6)
-    .map(([label, value]) => ({ label, value, colorClass: "bg-sky-500" }));
+    .map(([label, value]) => ({ label, value, color: UNIT_CHART_COLOR }));
 
   const trend = buildTrend(tickets, customRange ? "all" : periodKey);
 
@@ -374,15 +377,18 @@ export default async function AdminDashboardPage({
             title={`${dict.admin.dashboard.trendTitle} (${periodLabel.toLowerCase()})`}
             points={trend}
             emptyLabel={dict.admin.dashboard.noDataInPeriod}
+            seriesLabel={dict.admin.dashboard.totalTickets}
+            peakLabel={dict.admin.dashboard.chartPeak}
           />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <BarList
+            <StatusDonut
               title={dict.admin.dashboard.byStatusTitle}
               data={statusData}
               emptyLabel={dict.admin.dashboard.noDataInPeriod}
+              totalLabel={dict.admin.dashboard.chartTotal}
             />
-            <BarList
+            <CategoryBars
               title={dict.admin.dashboard.byUnitTitle}
               data={unitData}
               emptyLabel={dict.admin.dashboard.byUnitEmpty}
