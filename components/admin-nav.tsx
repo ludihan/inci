@@ -124,7 +124,7 @@ export function AdminNav({
   const brand = (
     <Link
       href={dashboardHref}
-      className="flex items-center gap-2.5 text-[15px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-50"
+      className="flex min-w-0 items-center gap-2.5 text-[15px] font-semibold leading-none tracking-tight text-zinc-900 dark:text-zinc-50"
     >
       {logo ? (
         <span className="relative block h-7 w-7 shrink-0 overflow-hidden rounded-md bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
@@ -137,17 +137,17 @@ export function AdminNav({
           />
         </span>
       ) : (
-        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-900 text-xs font-bold text-white dark:bg-zinc-50 dark:text-zinc-900">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-zinc-900 text-xs font-bold text-white dark:bg-zinc-50 dark:text-zinc-900">
           {labels.appName.charAt(0)}
         </span>
       )}
-      {labels.appName}
+      <span className="truncate">{labels.appName}</span>
     </Link>
   );
 
   const sidebar = (
     <div className="flex h-full flex-col">
-      <div className="flex h-14 shrink-0 items-center px-4">{brand}</div>
+      <div className="flex h-14 shrink-0 items-center overflow-hidden px-4">{brand}</div>
 
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-2">
         {groups.map((group) => (
@@ -234,7 +234,7 @@ export function AdminNav({
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-zinc-200 bg-white/90 px-4 backdrop-blur lg:hidden dark:border-zinc-800 dark:bg-zinc-950/90">
+      <header className="sticky top-0 z-40 flex h-14 items-center justify-between overflow-hidden border-b border-zinc-200 bg-white/90 px-4 backdrop-blur lg:hidden dark:border-zinc-800 dark:bg-zinc-950/90">
         {brand}
         <button
           type="button"
