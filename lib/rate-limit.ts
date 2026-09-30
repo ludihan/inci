@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+
 // Tiny in-memory fixed-window rate limiter. Good enough for a single-process
 // cPanel deploy; not shared across instances.
 
@@ -31,4 +33,19 @@ export function clientIp(request: Request): string {
   const fwd = request.headers.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0].trim();
   return request.headers.get("x-real-ip") ?? "unknown";
+}
+
+// Server-action counterpart of clientIp. `X-Forwarded-For` is "client, proxy1,
+// ...": each hop appends the address it saw, so behind this app's single
+// reverse proxy only the LAST entry is trustworthy; the rest is client-claimed
+// and can be spoofed.
+export async function requestIp(): Promise<string> {
+  const headerList = await headers();
+  const forwardedFor = headerList.get("x-forwarded-for");
+  if (forwardedFor) {
+    const parts = forwardedFor.split(",").map((p) => p.trim());
+    const last = parts[parts.length - 1];
+    if (last) return last;
+  }
+  return headerList.get("x-real-ip") || "unknown";
 }

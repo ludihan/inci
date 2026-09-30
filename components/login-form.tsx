@@ -1,9 +1,19 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { login, type ActionState } from "@/lib/actions";
 import type { Dict, Locale } from "@/lib/i18n";
 import { SubmitButton } from "./submit-button";
+
+function formatWait(seconds: number, dict: Dict): string {
+  if (seconds < 60) {
+    return seconds === 1
+      ? dict.admin.waitSecond
+      : dict.admin.waitSeconds.replace("{n}", String(seconds));
+  }
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
+}
 
 export function LoginForm({ dict, lang }: { dict: Dict; lang: Locale }) {
   const [state, action] = useActionState<ActionState, FormData>(
@@ -11,8 +21,29 @@ export function LoginForm({ dict, lang }: { dict: Dict; lang: Locale }) {
     undefined
   );
 
+  // Seconds left in a lockout, counting down from what the server said.
+  const [lockedFor, setLockedFor] = useState(0);
+  useEffect(() => {
+    const retryAfter = state?.retryAfter ?? 0;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLockedFor(retryAfter);
+    if (retryAfter <= 0) return;
+    const until = Date.now() + retryAfter * 1000;
+    const timer = setInterval(() => {
+      const left = Math.max(0, Math.ceil((until - Date.now()) / 1000));
+      setLockedFor(left);
+      if (left === 0) clearInterval(timer);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [state]);
+
   const errorText = (() => {
     if (!state?.error) return null;
+    if (state.error === "tooManyAttempts" && state.retryAfter) {
+      return lockedFor > 0
+        ? dict.admin.tooManyAttempts.replace("{wait}", formatWait(lockedFor, dict))
+        : null;
+    }
     const key = state.error as keyof typeof dict.admin;
     if (key in dict.admin) return String(dict.admin[key]);
     return dict.common.generic;
@@ -64,7 +95,7 @@ export function LoginForm({ dict, lang }: { dict: Dict; lang: Locale }) {
         </p>
       )}
 
-      <SubmitButton pendingLabel={dict.common.loading}>
+      <SubmitButton pendingLabel={dict.common.loading} disabled={lockedFor > 0}>
         {dict.admin.loginButton}
       </SubmitButton>
     </form>

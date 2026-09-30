@@ -72,6 +72,8 @@ import {
 import { matriculaMatches } from "./matricula";
 import { createPowChallenge, verifyPowSolution, type PowChallenge } from "./pow";
 import { verifyPassword } from "./password";
+import { requestIp } from "./rate-limit";
+import { claimLoginAttempt, clearLoginFailures } from "./login-throttle";
 import { features, ticketsEnabled } from "./features";
 import { getDb } from "./db";
 import {
@@ -89,7 +91,7 @@ import {
 } from "./auth";
 import type { Admin, ComplaintStatus, Module, TicketType } from "./types";
 
-export type ActionState = { error?: string } | undefined;
+export type ActionState = { error?: string; retryAfter?: number } | undefined;
 
 function str(formData: FormData, key: string): string {
   const value = formData.get(key);
@@ -927,11 +929,16 @@ export async function login(
   if (!username) return { error: "usernameRequired" };
   if (!password) return { error: "passwordRequired" };
 
+  const ip = await requestIp();
+  const retryAfter = claimLoginAttempt(ip, username);
+  if (retryAfter > 0) return { error: "tooManyAttempts", retryAfter };
+
   const admin = await getAdminByUsername(username);
   if (!admin || !verifyPassword(password, admin.passwordHash)) {
     return { error: "invalidCredentials" };
   }
 
+  clearLoginFailures(ip, username);
   await createSession(admin.id);
   redirect(`/${l}/admin`);
 }

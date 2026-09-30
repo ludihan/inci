@@ -590,7 +590,10 @@
       "openMenu": "Abrir menu",
       "closeMenu": "Fechar menu",
       "backToSite": "Voltar ao site"
-    }
+    },
+    "tooManyAttempts": "Muitas tentativas de login. Tente novamente em {wait}.",
+    "waitSecond": "1 segundo",
+    "waitSeconds": "{n} segundos"
   },
   "report": {
     "title": "Relatórios",

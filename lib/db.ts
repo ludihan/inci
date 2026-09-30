@@ -224,6 +224,14 @@ function initSchema(db: DatabaseSync): void {
       UNIQUE(ticket_id, service_type_id)
     );
 
+    -- Failed admin logins per IP and per username (see lib/login-throttle.ts).
+    CREATE TABLE IF NOT EXISTS login_attempts (
+      key TEXT PRIMARY KEY,
+      failures INTEGER NOT NULL,
+      window_start INTEGER NOT NULL,
+      locked_until INTEGER NOT NULL DEFAULT 0
+    );
+
     CREATE INDEX IF NOT EXISTS idx_units_company ON units(company_id);
     CREATE INDEX IF NOT EXISTS idx_ticket_services_ticket ON ticket_services(ticket_id);
     CREATE INDEX IF NOT EXISTS idx_ticket_services_service ON ticket_services(service_type_id);
