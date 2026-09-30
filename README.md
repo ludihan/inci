@@ -160,10 +160,14 @@ node --experimental-strip-types --loader ./scripts/ts-resolve-hook.mjs scripts/s
 |---|---|
 | **Open ticket** — matrícula, type, unit, area, and attachments | **Admin dashboard** — sidebar navigation and an overview filterable by period, type, and unit |
 | ![Open ticket](docs/screenshots/new-ticket.png) | ![Admin dashboard](docs/screenshots/admin-dashboard.png) |
-| **Ticket list** — dense table with status, type, unit, and matrícula | **Ticket detail** — type reassignment, deletion, message history |
+| **Ticket list** — dense table with status, type, unit, and matrícula | **Ticket detail** — opens as a side panel over the list; type reassignment, deletion, message history |
 | ![Ticket list](docs/screenshots/admin-tickets.png) | ![Ticket detail](docs/screenshots/admin-ticket-detail.png) |
 | **Units** — each can be linked to a service-provider company | **Service-provider companies** — multiple companies, shown on the PDF O.S. |
 | ![Units](docs/screenshots/admin-units.png) | ![Service-provider companies](docs/screenshots/admin-company.png) |
+
+Browser notifications — admins are asked to enable them and are then told about new tickets and requester replies, in their own language:
+
+![Notifications prompt](docs/screenshots/admin-notifications.png)
 
 Dark mode:
 
