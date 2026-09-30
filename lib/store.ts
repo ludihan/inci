@@ -2,7 +2,8 @@ import { randomUUID } from "crypto";
 import { getDb, inTransaction } from "./db";
 import { hashPassword } from "./password";
 import { hashMatricula } from "./matricula";
-import { publishAdminEvent } from "./events";
+import { ticketsUrlOpening } from "./utils";
+import { publishAdminEvent, publishAdminNotification } from "./events";
 import type {
   Admin,
   Area,
@@ -392,6 +393,63 @@ export async function getDB(): Promise<DB> {
 
 // ---- Tickets ----
 
+function excerpt(text: string, max = 120): string {
+  // Cut by code point, not UTF-16 unit, so an emoji at the boundary isn't
+  // split into a lone surrogate (rendered as "�").
+  const chars = Array.from(text.replace(/\s+/g, " ").trim());
+  return chars.length > max ? `${chars.slice(0, max - 1).join("")}…` : chars.join("");
+}
+
+// The ticket's assignee, if they can still act on it. `assigned_to` has no
+// foreign key, so it can outlive the admin (deleted) or their access to the
+// module (permissions edited).
+function activeAssigneeId(row: Row): string | undefined {
+  if (!row.assigned_to) return undefined;
+  const admin = getDb()
+    .prepare("SELECT * FROM admins WHERE id = ?")
+    .get(String(row.assigned_to)) as Row | undefined;
+  if (!admin) return undefined;
+  const { id, role, permissions } = rowToAdmin(admin);
+  return role === "superadmin" || permissions.includes(row.type as TicketType)
+    ? id
+    : undefined;
+}
+
+// Pushes a browser notification to the admins who should act on something a
+// requester did. Once the ticket has an assignee only that admin is told —
+// everyone else with the module would just be noise — unless that assignee
+// can no longer act on it, in which case nobody would hear about it at all.
+//
+// `eventId` goes into the tag: a notification whose tag is already showing
+// silently replaces it, so a per-ticket tag would let a reply swallow the
+// still-unread "new ticket" alert. A per-event tag still dedupes the copy
+// each open admin tab shows of the same event.
+//
+// Only what happened is sent; the admin's browser words it in their language,
+// and swaps the URL's language for the open tab's (see AdminLiveUpdates).
+function notifyAdminsOfRequesterActivity(
+  row: Row,
+  eventId: string,
+  kind: "new" | "message" | "closed" | "reopened",
+  content: string
+): void {
+  const id = String(row.id);
+  publishAdminNotification({
+    module: row.type as TicketType,
+    adminId: activeAssigneeId(row),
+    kind,
+    ticketId: id,
+    ticketType: row.type as TicketType,
+    criticality: toCriticality(row.criticality),
+    requesterName: String(row.requester_name ?? ""),
+    excerpt: excerpt(content),
+    // Straight to the list with `?abrir=` (see AdminLiveUpdates), skipping
+    // the detail page's redirect to the same place.
+    url: ticketsUrlOpening(`/pt/admin/tickets/${id}`),
+    tag: `ticket:${id}:${eventId}`,
+  });
+}
+
 export async function createTicket(input: {
   type: TicketType;
   matricula: string;
@@ -449,6 +507,12 @@ export async function createTicket(input: {
   });
   const row = db.prepare("SELECT * FROM tickets WHERE id = ?").get(ticketId) as Row;
   publishAdminEvent(ticketId);
+  notifyAdminsOfRequesterActivity(
+    row,
+    messageId,
+    "new",
+    input.message
+  );
   return rowToTicket(row);
 }
 
@@ -520,6 +584,18 @@ export async function addTicketMessage(
   });
   const updated = db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as Row;
   publishAdminEvent(id);
+  if (input.sender === "user") {
+    notifyAdminsOfRequesterActivity(
+      updated,
+      messageId,
+      input.action === "close"
+        ? "closed"
+        : input.action === "open"
+          ? "reopened"
+          : "message",
+      input.content
+    );
+  }
   return rowToTicket(updated);
 }
 

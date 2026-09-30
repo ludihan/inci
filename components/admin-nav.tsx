@@ -5,8 +5,38 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { logout } from "@/lib/actions";
-import type { Locale } from "@/lib/i18n";
+import type { Dict, Locale } from "@/lib/i18n";
+import { announceAdminLogout } from "@/components/admin-live-updates";
+import {
+  AdminNotificationBanner,
+  AdminNotificationStatus,
+} from "@/components/admin-notification-prompt";
+import {
+  useNotificationPermission,
+  type NotificationPermissionState,
+} from "@/components/use-admin-notifications";
 import { ThemeToggle } from "@/components/theme-toggle";
+
+const DISMISSED_KEY = "admin-notification-banner-dismissed";
+
+// The banner is hidden per permission state, so dismissing "not enabled yet"
+// doesn't also hide it if the admin later ends up blocking notifications.
+function readDismissed(): NotificationPermissionState | null {
+  try {
+    return sessionStorage.getItem(DISMISSED_KEY) as NotificationPermissionState | null;
+  } catch {
+    return null;
+  }
+}
+
+function writeDismissed(value: NotificationPermissionState | null): void {
+  try {
+    if (value) sessionStorage.setItem(DISMISSED_KEY, value);
+    else sessionStorage.removeItem(DISMISSED_KEY);
+  } catch {
+    // Storage blocked: the dismissal just won't survive a reload.
+  }
+}
 
 export type AdminNavIcon =
   | "dashboard"
@@ -35,6 +65,7 @@ export type AdminNavLabels = {
   openMenu: string;
   closeMenu: string;
   backToSite: string;
+  notifications: Dict["admin"]["notifications"];
 };
 
 const ICON_PATHS: Record<AdminNavIcon, string> = {
@@ -102,6 +133,24 @@ export function AdminNav({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const otherLocale: Locale = lang === "pt" ? "en" : "pt";
+  const permission = useNotificationPermission();
+  // Only read on the client; during hydration the permission is still
+  // "unknown", so the banner renders nothing either way.
+  const [dismissed, setDismissed] = useState<NotificationPermissionState | null>(
+    () => (typeof window === "undefined" ? null : readDismissed())
+  );
+
+  const dismissBanner = () => {
+    setDismissed(permission);
+    writeDismissed(permission);
+  };
+
+  const showBanner = () => {
+    setDismissed(null);
+    writeDismissed(null);
+    setOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // Close the mobile drawer whenever navigation happens.
   useEffect(() => {
@@ -203,6 +252,12 @@ export function AdminNav({
             {labels.backToSite} ↗
           </Link>
         </div>
+        <AdminNotificationStatus
+          permission={permission}
+          labels={labels.notifications}
+          lang={lang}
+          onClick={showBanner}
+        />
         <div className="flex items-center gap-2.5 rounded-md px-1 py-1">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-violet-500 text-xs font-semibold text-white">
             {adminName.charAt(0).toUpperCase()}
@@ -210,7 +265,7 @@ export function AdminNav({
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-700 dark:text-zinc-200">
             {adminName}
           </span>
-          <form action={logout}>
+          <form action={logout} onSubmit={announceAdminLogout}>
             <input type="hidden" name="lang" value={lang} />
             <button
               type="submit"
@@ -227,7 +282,7 @@ export function AdminNav({
   );
 
   return (
-    <div className="min-h-screen bg-zinc-50/60 dark:bg-black">
+    <div className="min-h-dvh bg-zinc-50/60 dark:bg-black">
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 border-r border-zinc-200 bg-white lg:block dark:border-zinc-800 dark:bg-zinc-950">
         {sidebar}
@@ -263,6 +318,14 @@ export function AdminNav({
 
       <div className="lg:pl-60">
         <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-10">
+          {dismissed !== permission && (
+            <AdminNotificationBanner
+              permission={permission}
+              labels={labels.notifications}
+              lang={lang}
+              onDismiss={dismissBanner}
+            />
+          )}
           {children}
         </main>
       </div>

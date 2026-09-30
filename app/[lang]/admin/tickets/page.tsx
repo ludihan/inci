@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getDict, getLocale } from "@/lib/i18n";
 import { getCurrentAdmin, hasPermission } from "@/lib/auth";
 import { features } from "@/lib/features";
+import { isAdminOpenTarget } from "@/lib/utils";
 import { getDB } from "@/lib/store";
 import {
   filterTicketList,
@@ -36,7 +37,13 @@ export default async function AdminTicketsPage({
   const admin = await getCurrentAdmin();
 
   if (!admin) {
-    redirect(`/${locale}/admin/login`);
+    // Keep a notification's target across the login (see AdminLiveUpdates).
+    const { abrir } = await searchParams;
+    redirect(
+      typeof abrir === "string" && isAdminOpenTarget(abrir)
+        ? `/${locale}/admin/login?abrir=${encodeURIComponent(abrir)}`
+        : `/${locale}/admin/login`
+    );
   }
 
   const canIT = hasPermission(admin, "it") && features.itTicketsEnabled;

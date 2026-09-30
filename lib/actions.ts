@@ -63,11 +63,13 @@ import {
   MAX_IMAGES_PER_MESSAGE,
 } from "./uploads";
 import {
+  isAdminOpenTarget,
   isValidCnpj,
   isValidPhone,
   isValidMatricula,
   onlyDigits,
   generateComplaintCode,
+  ticketsUrlOpening,
 } from "./utils";
 import { matriculaMatches } from "./matricula";
 import { createPowChallenge, verifyPowSolution, type PowChallenge } from "./pow";
@@ -940,7 +942,8 @@ export async function login(
 
   clearLoginFailures(ip, username);
   await createSession(admin.id);
-  redirect(`/${l}/admin`);
+  const openTarget = str(formData, "abrir");
+  redirect(isAdminOpenTarget(openTarget) ? ticketsUrlOpening(openTarget) : `/${l}/admin`);
 }
 
 export async function logout(formData: FormData): Promise<void> {

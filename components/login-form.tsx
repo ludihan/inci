@@ -15,7 +15,15 @@ function formatWait(seconds: number, dict: Dict): string {
   return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-export function LoginForm({ dict, lang }: { dict: Dict; lang: Locale }) {
+export function LoginForm({
+  dict,
+  lang,
+  openTarget,
+}: {
+  dict: Dict;
+  lang: Locale;
+  openTarget?: string;
+}) {
   const [state, action] = useActionState<ActionState, FormData>(
     login,
     undefined
@@ -52,6 +60,7 @@ export function LoginForm({ dict, lang }: { dict: Dict; lang: Locale }) {
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="lang" value={lang} />
+      {openTarget && <input type="hidden" name="abrir" value={openTarget} />}
 
       <div>
         <label

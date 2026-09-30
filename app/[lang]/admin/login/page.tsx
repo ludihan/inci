@@ -3,14 +3,21 @@ import Link from "next/link";
 import { getDict, getLocale } from "@/lib/i18n";
 import { getCurrentAdmin } from "@/lib/auth";
 import { LoginForm } from "@/components/login-form";
+import { isAdminOpenTarget, ticketsUrlOpening } from "@/lib/utils";
 
-export default async function AdminLoginPage() {
+export default async function AdminLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ abrir?: string }>;
+}) {
   const dict = await getDict();
   const locale = await getLocale();
   const admin = await getCurrentAdmin();
+  const { abrir } = await searchParams;
+  const openTarget = isAdminOpenTarget(abrir) ? abrir : undefined;
 
   if (admin) {
-    redirect(`/${locale}/admin`);
+    redirect(openTarget ? ticketsUrlOpening(openTarget) : `/${locale}/admin`);
   }
 
   return (
@@ -35,7 +42,7 @@ export default async function AdminLoginPage() {
       </div>
 
       <div className="rounded-lg border border-zinc-200 bg-white p-6 sm:p-8 dark:border-zinc-800 dark:bg-zinc-950">
-        <LoginForm dict={dict} lang={locale} />
+        <LoginForm dict={dict} lang={locale} openTarget={openTarget} />
       </div>
     </div>
   );

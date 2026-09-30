@@ -103,9 +103,17 @@ export default async function AdminLayout({
         openMenu: dict.admin.sidebar.openMenu,
         closeMenu: dict.admin.sidebar.closeMenu,
         backToSite: dict.admin.sidebar.backToSite,
+        notifications: dict.admin.notifications,
       }}
     >
-      <AdminLiveUpdates />
+      <AdminLiveUpdates
+        lang={locale}
+        labels={{
+          notifications: dict.admin.notifications,
+          ticketTypes: { it: dict.ticket.fields.it, maintenance: dict.ticket.fields.maintenance },
+          criticality: dict.ticket.criticality,
+        }}
+      />
       {children}
     </AdminNav>
   );

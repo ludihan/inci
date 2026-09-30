@@ -1,5 +1,19 @@
 import { randomBytes } from "crypto";
 
+// `?abrir=` carries the ticket a notification or an outside link points at
+// (see AdminLiveUpdates). It ends up in router.push/redirect, so only
+// same-origin admin paths are accepted — never "//host" or a full URL.
+export function isAdminOpenTarget(value: string | undefined): value is string {
+  return typeof value === "string" && /^\/(pt|en)\/admin\//.test(value);
+}
+
+// The list URL that opens `target` (an admin path such as
+// "/pt/admin/tickets/TCK-1") as a panel, in the target's own language.
+export function ticketsUrlOpening(target: string): string {
+  const locale = target.split("/")[1];
+  return `/${locale}/admin/tickets?abrir=${encodeURIComponent(target)}`;
+}
+
 export function onlyDigits(value: string): string {
   return value.replace(/\D/g, "");
 }
