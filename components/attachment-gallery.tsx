@@ -37,7 +37,7 @@ export function AttachmentGallery({
       if (e.key === "ArrowRight") setPreviewIndex((i) => (i === null ? null : (i + 1) % count));
     };
     // Capture phase so Escape closes just this lightbox, not an ancestor
-    // modal (e.g. the ticket popup) whose own Escape handler is on bubble.
+    // modal (e.g. the ticket panel) whose own Escape handler is on bubble.
     document.addEventListener("keydown", onKeyDown, true);
     return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [previewIndex, attachments.length]);

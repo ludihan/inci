@@ -46,7 +46,7 @@ function MultiFilePicker({
     if (previewIndex === null) return;
     const count = files.length;
     // Capture phase + stopPropagation so Escape closes only this lightbox,
-    // not an ancestor modal (e.g. the ticket popup) it happens to be nested
+    // not an ancestor modal (e.g. the ticket panel) it happens to be nested
     // inside.
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
