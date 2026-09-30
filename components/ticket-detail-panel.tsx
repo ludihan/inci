@@ -176,7 +176,7 @@ export function TicketDetailPanel({
               {ticket.assignedToName ?? dict.admin.unassigned}
             </span>
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {assignButton}
             {isAssignee && !isClosed && (
               <AddItemToggleButton
