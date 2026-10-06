@@ -1,0 +1,26 @@
+# Keep the build context small and never ship secrets or local data.
+.git
+.github
+.next
+node_modules
+npm-debug.log*
+
+.env*
+!.env.example
+*.pem
+
+data
+inci-db
+deploy-*.zip
+inci.zip
+
+docs
+deploy
+Dockerfile
+docker-compose*.yml
+Jenkinsfile
+.dockerignore
+.editorconfig
+*.md
+LICENSE
+.docker
