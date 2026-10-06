@@ -1,0 +1,26 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Matches serverActions.bodySizeLimit (40mb) in next.config.ts plus slack.
+	request_body {
+		max_size 45MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+		-X-Powered-By
+	}
+
+	# Without trusted_proxies, Caddy discards any client-supplied
+	# X-Forwarded-For and sends only the real peer address, which is what
+	# lib/rate-limit.ts relies on.
+	reverse_proxy app:3000
+}
