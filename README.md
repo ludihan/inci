@@ -85,6 +85,43 @@ npm run start
 
 The production server runs at [http://localhost:3000](http://localhost:3000).
 
+## Docker and Jenkins deploy
+
+The `Dockerfile` builds a hardened production image: a multi-stage build on
+`node:24-alpine`, dependencies installed with `--ignore-scripts`, no
+npm/yarn in the runtime image, app files owned by root, and the process
+running as the unprivileged `node` user. `GET /api/health` (which also checks
+the database) backs the container healthcheck.
+
+`deploy/` holds what runs on the server:
+
+- `docker-compose.yml` — the app behind [Caddy](https://caddyserver.com)
+  (automatic HTTPS). The app container has a read-only filesystem, no Linux
+  capabilities, `no-new-privileges`, resource limits, no published port, and
+  no internet access. Data lives in the `inci-data` volume (`/inci-db`).
+- `Caddyfile` — TLS, security headers, upload size limit, and an
+  `X-Forwarded-For` that cannot be spoofed (the rate limiter relies on it).
+- `deploy.sh` — pulls a tag, waits for the healthcheck, and rolls back to the
+  previous tag if it fails.
+
+The `Jenkinsfile` (Multibranch Pipeline) lints, builds, and scans the image
+with Trivy on every branch; on `main` it pushes the image to the registry and
+runs `deploy.sh` on the server over SSH. Its header lists the job properties
+and credentials it expects.
+
+One-time server setup:
+
+```bash
+mkdir -p /opt/inci && cd /opt/inci             # = DEPLOY_PATH
+# copy deploy/.env.example here as .env, fill it in, chmod 600 .env
+docker login registry.example.com              # read-only (pull) token
+```
+
+The first Jenkins run on `main` copies the remaining files and starts the
+stack. To move an existing cPanel install, copy its `inci-db/` contents into
+the `inci-data` volume (owned by uid 1000) and reuse the same
+`SESSION_SECRET`.
+
 ## Environment variables
 
 Copy `.env.example` to `.env` and adjust as needed. All variables are optional
