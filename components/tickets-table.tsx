@@ -18,12 +18,13 @@ const features = tableFeatures({});
 // Column ids that the shared ticket-list-filter knows how to sort by.
 const SORTABLE = new Set(["assignee", "id", "createdAt", "unit", "subject"]);
 
-// A thin left-edge rail communicates status per-row without washing the whole
-// row in a saturated color — the StatusBadge cell already carries the label.
+// A thin left-edge rail on the first cell communicates status per-row without
+// washing the whole row in a saturated color (putting ::before on <tr> itself
+// creates an anonymous table-cell in Chromium and shifts every column right).
 const ROW_RAIL_CLASS: Record<TicketStatus, string> = {
-  open: "before:bg-red-500",
-  in_progress: "before:bg-amber-500",
-  closed: "before:bg-zinc-300 dark:before:bg-zinc-700",
+  open: "border-l-[3px] border-l-red-500",
+  in_progress: "border-l-[3px] border-l-amber-500",
+  closed: "border-l-[3px] border-l-zinc-300 dark:border-l-zinc-700",
 };
 
 const helper = createColumnHelper<typeof features, Ticket>();
@@ -210,12 +211,15 @@ export function TicketsTable({
                 onClick={() =>
                   router.push(`/${locale}/admin/tickets/${row.original.id}`)
                 }
-                className={`relative cursor-pointer border-b border-zinc-100 last:border-b-0 before:absolute before:inset-y-0 before:left-0 before:w-0.5 hover:bg-zinc-50 dark:border-zinc-900 dark:hover:bg-zinc-900/60 ${
-                  ROW_RAIL_CLASS[row.original.status]
-                }`}
+                className="cursor-pointer border-b border-zinc-100 last:border-b-0 hover:bg-zinc-50 dark:border-zinc-900 dark:hover:bg-zinc-900/60"
               >
-                {row.getAllCells().map((cell) => (
-                  <td key={cell.id} className="px-3 py-2.5 align-middle">
+                {row.getAllCells().map((cell, i) => (
+                  <td
+                    key={cell.id}
+                    className={`px-3 py-2.5 align-middle ${
+                      i === 0 ? ROW_RAIL_CLASS[row.original.status] : ""
+                    }`}
+                  >
                     <table.FlexRender cell={cell} />
                   </td>
                 ))}
