@@ -7,7 +7,7 @@ bilingual interface (Portuguese/English).
 Built with [Next.js 16](https://nextjs.org) (App Router) + React 19 + TypeScript
 + Tailwind CSS 4.
 
-![Home page](docs/screenshots/home.png)
+![Ticket list](docs/screenshots/admin-tickets.png)
 
 ## Features
 
@@ -26,8 +26,9 @@ Built with [Next.js 16](https://nextjs.org) (App Router) + React 19 + TypeScript
 - Login with an HMAC-signed session (`httpOnly` cookie).
 - Vercel-style dashboard shell: fixed sidebar navigation grouped by section
   (collapses into a drawer on mobile), with theme and language switches.
-- Dashboard with ticket and complaint statistics, filterable by period, type,
-  and unit.
+- Dashboard with SLA indicators (overdue and closed on time), area and unit
+  charts, breakdown tables by area/criticality/unit, and an overdue tickets
+  list, filterable by period, type, and unit.
 - Tickets: filtered listing, detail view, replies, type reassignment
   (IT/maintenance), open/close, and deletion (superadmin only).
 - Complaints: listing, replies, and close/reopen (restricted to superadmins and
@@ -195,10 +196,10 @@ node --experimental-strip-types --loader ./scripts/ts-resolve-hook.mjs scripts/s
 
 |  |  |
 |---|---|
-| **Open ticket** — matrícula, type, unit, area, and attachments | **Admin dashboard** — sidebar navigation and an overview filterable by period, type, and unit |
+| **Open ticket** — matrícula, type, unit, area, and attachments | **Admin dashboard** — SLA indicators, area and unit charts, breakdown tables, and overdue tickets |
 | ![Open ticket](docs/screenshots/new-ticket.png) | ![Admin dashboard](docs/screenshots/admin-dashboard.png) |
-| **Ticket list** — dense table with status, type, unit, and matrícula | **Ticket detail** — opens as a side panel over the list; type reassignment, deletion, message history |
-| ![Ticket list](docs/screenshots/admin-tickets.png) | ![Ticket detail](docs/screenshots/admin-ticket-detail.png) |
+| **Home page** — public entry point for tickets, complaints, and tracking | **Ticket detail** — opens as a side panel over the list; type reassignment, deletion, message history |
+| ![Home page](docs/screenshots/home.png) | ![Ticket detail](docs/screenshots/admin-ticket-detail.png) |
 | **Units** — each can be linked to a service-provider company | **Service-provider companies** — multiple companies, shown on the PDF O.S. |
 | ![Units](docs/screenshots/admin-units.png) | ![Service-provider companies](docs/screenshots/admin-company.png) |
 
