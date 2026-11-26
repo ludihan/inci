@@ -660,6 +660,45 @@
       "closedTitle": "Ticket {id} closed by the requester",
       "reopenedTitle": "Ticket {id} reopened by the requester",
       "activityBody": "{name}: {excerpt}"
+    },
+    "filterPanel": {
+      "title": "Filters",
+      "hint": "Applies to both the dashboard and the tickets list. Leave empty to show all.",
+      "open": "Open filters",
+      "collapse": "Collapse filters",
+      "close": "Close filters",
+      "collapseMenu": "Collapse menu",
+      "clear": "Clear",
+      "clearAll": "Clear filters",
+      "clearOne": "Clear filter",
+      "clearMany": "Clear {count} filters",
+      "noneActive": "No active filters",
+      "inUse": "active",
+      "period": "Period",
+      "from": "From",
+      "to": "To",
+      "presets": {
+        "today": "Today",
+        "days7": "7 days",
+        "days30": "30 days",
+        "thisMonth": "This month",
+        "lastMonth": "Last month",
+        "thisYear": "This year"
+      },
+      "status": "Status",
+      "deadline": "Deadline",
+      "deadlines": {
+        "late": "Overdue",
+        "due_soon": "Due soon",
+        "on_time": "On time"
+      },
+      "criticality": "Criticality",
+      "type": "Type",
+      "unit": "Unit",
+      "area": "Area / sector",
+      "assignee": "Assignee",
+      "all": "All",
+      "unassigned": "Unassigned"
     }
   },
   "report": {

@@ -1,26 +1,23 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getDict, getLocale } from "@/lib/i18n";
 import { getCurrentAdmin, hasPermission } from "@/lib/auth";
 import { features } from "@/lib/features";
+import { applyFilters } from "@/lib/admin-filters";
+import { loadAdminFilters } from "@/lib/admin-filters-server";
+import { PER_PAGE_COOKIE, parsePerPage } from "@/lib/admin-panels";
+import { requestTime } from "@/lib/sla";
 import { isAdminOpenTarget } from "@/lib/utils";
 import { getDB } from "@/lib/store";
-import {
-  filterTicketList,
-  resolvePeriod,
-  SORT_KEYS,
-  CRITICALITY_ORDER,
-  type TicketListParams,
-} from "@/lib/ticket-list-filter";
+import { SORT_KEYS, sortTicketList } from "@/lib/ticket-list-filter";
+import { PageHeader } from "@/components/page-header";
+import { Pagination } from "@/components/pagination";
 import { TicketCard } from "@/components/ticket-card";
 import { TicketsTable } from "@/components/tickets-table";
+import { TicketsLegend } from "@/components/tickets-legend";
 import { TicketCodeJump } from "@/components/ticket-code-jump";
 import { TicketsReportButton } from "@/components/tickets-report-button";
 import { TicketsOsReportButton } from "@/components/tickets-os-report-button";
-
-const selectClass =
-  "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
-const labelClass =
-  "text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400";
 
 function one(v: string | string[] | undefined): string | undefined {
   if (Array.isArray(v)) return v.join(",");
@@ -37,7 +34,6 @@ export default async function AdminTicketsPage({
   const admin = await getCurrentAdmin();
 
   if (!admin) {
-    // Keep a notification's target across the login (see AdminLiveUpdates).
     const { abrir } = await searchParams;
     redirect(
       typeof abrir === "string" && isAdminOpenTarget(abrir)
@@ -53,221 +49,84 @@ export default async function AdminTicketsPage({
     redirect(`/${locale}/admin`);
   }
 
-  const sp = await searchParams;
-  const params: TicketListParams = {
-    type: one(sp.type),
-    status: one(sp.status),
-    criticality: one(sp.criticality),
-    unit: one(sp.unit),
-    assignee: one(sp.assignee),
-    from: one(sp.from),
-    to: one(sp.to),
-    sort: one(sp.sort) && SORT_KEYS[one(sp.sort)!] ? one(sp.sort) : undefined,
-    dir: one(sp.dir) === "asc" ? "asc" : one(sp.dir) === "desc" ? "desc" : undefined,
-  };
+  const [sp, db, { filters }, cookieStore] = await Promise.all([
+    searchParams,
+    getDB(),
+    loadAdminFilters(admin),
+    cookies(),
+  ]);
 
-  const db = await getDB();
-  const tickets = filterTicketList(db.tickets, params, {
-    canIT,
-    canMaintenance,
-  });
+  const rawSort = one(sp.sort);
+  const sort = rawSort && SORT_KEYS[rawSort] ? rawSort : undefined;
+  const rawDir = one(sp.dir);
+  const dir = rawDir === "asc" ? "asc" : rawDir === "desc" ? "desc" : undefined;
+  const pageRaw = one(sp.page);
 
-  const period = resolvePeriod(params);
-  const t = dict.admin.tickets.filters;
+  const visible = db.tickets.filter((t) =>
+    t.type === "it" ? canIT : canMaintenance
+  );
+  const tickets = sortTicketList(applyFilters(visible, filters), sort, dir);
+  const serverNow = requestTime();
 
-  const units = [...db.units].sort((a, b) => a.name.localeCompare(b.name));
-  const assignableAdmins = db.admins
-    .filter((a) =>
-      db.tickets.some((tk) => tk.assignedToId === a.id)
-    )
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const perPage = parsePerPage(cookieStore.get(PER_PAGE_COOKIE)?.value);
+  const totalPages = Math.max(1, Math.ceil(tickets.length / perPage));
+  const page = Math.min(totalPages, Math.max(1, Math.floor(Number(pageRaw)) || 1));
+  const pageTickets = tickets.slice((page - 1) * perPage, page * perPage);
 
-  const activeFilterCount = [
-    params.type,
-    params.status,
-    params.criticality,
-    params.unit,
-    params.assignee,
-    sp.from !== undefined ? params.from : undefined,
-    sp.to !== undefined ? params.to : undefined,
-  ].filter((v) => v !== undefined && v !== "").length;
+  const detail =
+    locale === "pt"
+      ? `${tickets.length} ${tickets.length === 1 ? "chamado" : "chamados"}`
+      : `${tickets.length} ${tickets.length === 1 ? "ticket" : "tickets"}`;
 
   return (
-    <div>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">
-            {dict.admin.tickets.title}
-          </h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            {t.showing.replace("{count}", String(tickets.length))}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <TicketsOsReportButton dict={dict} locale={locale} />
-          <TicketsReportButton dict={dict} locale={locale} />
-          <TicketCodeJump dict={dict} locale={locale} />
-        </div>
-      </div>
+    <div className="flex flex-1 flex-col">
+      <PageHeader
+        detail={detail}
+        actions={
+          <>
+            <TicketCodeJump dict={dict} locale={locale} />
+            <TicketsOsReportButton dict={dict} locale={locale} />
+            <TicketsReportButton dict={dict} locale={locale} />
+            <TicketsLegend dict={dict} locale={locale} />
+          </>
+        }
+      />
 
-      <details
-        open={activeFilterCount > 0}
-        className="mb-6 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
-      >
-        <summary className="cursor-pointer text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-          {t.title}
-          {activeFilterCount > 0 && (
-            <span className="ml-2 rounded-full bg-zinc-900 px-2 py-0.5 text-xs font-medium text-white dark:bg-zinc-50 dark:text-zinc-900">
-              {activeFilterCount} {t.active}
-            </span>
-          )}
-        </summary>
-        <form
-          method="get"
-          className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          {params.sort && <input type="hidden" name="sort" value={params.sort} />}
-          {params.dir && <input type="hidden" name="dir" value={params.dir} />}
+      <div id="tickets-list" className="scroll-mt-20" />
 
-          <label className="block">
-            <span className={labelClass}>{t.type}</span>
-            <select name="type" defaultValue={params.type ?? ""} className={selectClass}>
-              <option value="">{t.all}</option>
-              {canIT && <option value="it">{dict.ticket.fields.it}</option>}
-              {canMaintenance && (
-                <option value="maintenance">{dict.ticket.fields.maintenance}</option>
-              )}
-            </select>
-          </label>
-
-          <label className="block">
-            <span className={labelClass}>{t.status}</span>
-            <select
-              name="status"
-              defaultValue={params.status ?? ""}
-              className={selectClass}
-            >
-              <option value="">{t.allStatuses}</option>
-              <option value="all">{t.all}</option>
-              <option value="open">{dict.common.open}</option>
-              <option value="in_progress">{dict.common.inProgress}</option>
-              <option value="closed">{dict.common.closed}</option>
-            </select>
-          </label>
-
-          <label className="block">
-            <span className={labelClass}>{t.criticality}</span>
-            <select
-              name="criticality"
-              defaultValue={params.criticality ?? ""}
-              className={selectClass}
-            >
-              <option value="">{t.all}</option>
-              {CRITICALITY_ORDER.map((c) => (
-                <option key={c} value={c}>
-                  {dict.ticket.criticality[c]}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block">
-            <span className={labelClass}>{t.unit}</span>
-            <select
-              name="unit"
-              defaultValue={params.unit ?? ""}
-              className={selectClass}
-            >
-              <option value="">{t.all}</option>
-              {units.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block">
-            <span className={labelClass}>{t.assignee}</span>
-            <select
-              name="assignee"
-              defaultValue={params.assignee ?? ""}
-              className={selectClass}
-            >
-              <option value="">{t.all}</option>
-              <option value="unassigned">{t.unassigned}</option>
-              {assignableAdmins.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="grid grid-cols-2 gap-2">
-            <label className="block">
-              <span className={labelClass}>{t.from}</span>
-              <input
-                type="date"
-                name="from"
-                defaultValue={period.from ?? ""}
-                className={selectClass}
-              />
-            </label>
-            <label className="block">
-              <span className={labelClass}>{t.to}</span>
-              <input
-                type="date"
-                name="to"
-                defaultValue={period.to ?? ""}
-                className={selectClass}
-              />
-            </label>
-          </div>
-
-          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
-            <button
-              type="submit"
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-            >
-              {t.apply}
-            </button>
-            <a
-              href={`/${locale}/admin/tickets`}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-            >
-              {t.clear}
-            </a>
-          </div>
-        </form>
-      </details>
+      <TicketsTable
+        tickets={pageTickets}
+        dict={dict}
+        locale={locale}
+        sort={sort}
+        dir={dir}
+        serverNow={serverNow}
+      />
 
       {tickets.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-zinc-300 p-10 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-          {dict.ticket.empty}
+        <p className="rounded-lg border border-dashed border-zinc-300 p-10 text-center text-sm text-zinc-500 lg:hidden dark:border-zinc-700 dark:text-zinc-400">
+          {dict.admin.table.empty}
         </p>
       ) : (
-        <>
-          <TicketsTable
-            tickets={tickets}
-            dict={dict}
-            locale={locale}
-            sort={params.sort}
-            dir={params.dir}
-          />
-          <div className="space-y-3 lg:hidden">
-            {tickets.map((tk) => (
-              <TicketCard
-                key={tk.id}
-                ticket={tk}
-                dict={dict}
-                locale={locale}
-                href={`/${locale}/admin/tickets/${tk.id}`}
-              />
-            ))}
-          </div>
-        </>
+        <div className="space-y-3 lg:hidden">
+          {pageTickets.map((tk) => (
+            <TicketCard
+              key={tk.id}
+              ticket={tk}
+              dict={dict}
+              locale={locale}
+              href={`/${locale}/admin/tickets/${tk.id}`}
+            />
+          ))}
+        </div>
       )}
+
+      <Pagination
+        page={page}
+        perPage={perPage}
+        total={tickets.length}
+        locale={locale}
+      />
     </div>
   );
 }

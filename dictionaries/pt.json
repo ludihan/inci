@@ -660,6 +660,45 @@
       "closedTitle": "Chamado {id} encerrado pelo solicitante",
       "reopenedTitle": "Chamado {id} reaberto pelo solicitante",
       "activityBody": "{name}: {excerpt}"
+    },
+    "filterPanel": {
+      "title": "Filtros",
+      "hint": "Valem para o painel e para a lista de chamados. Sem nada marcado, mostra tudo.",
+      "open": "Abrir filtros",
+      "collapse": "Recolher filtros",
+      "close": "Fechar filtros",
+      "collapseMenu": "Recolher menu",
+      "clear": "Limpar",
+      "clearAll": "Limpar filtros",
+      "clearOne": "Limpar filtro",
+      "clearMany": "Limpar {count} filtros",
+      "noneActive": "Nenhum filtro ativo",
+      "inUse": "em uso",
+      "period": "Período",
+      "from": "De",
+      "to": "Até",
+      "presets": {
+        "today": "Hoje",
+        "days7": "7 dias",
+        "days30": "30 dias",
+        "thisMonth": "Este mês",
+        "lastMonth": "Mês passado",
+        "thisYear": "Este ano"
+      },
+      "status": "Situação",
+      "deadline": "Prazo",
+      "deadlines": {
+        "late": "Atrasado",
+        "due_soon": "Vence em breve",
+        "on_time": "No prazo"
+      },
+      "criticality": "Criticidade",
+      "type": "Tipo",
+      "unit": "Unidade",
+      "area": "Área / setor",
+      "assignee": "Responsável",
+      "all": "Todos",
+      "unassigned": "Não assumido"
     }
   },
   "report": {

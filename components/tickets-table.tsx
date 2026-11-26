@@ -11,6 +11,7 @@ import type { Dict, Locale } from "@/lib/i18n";
 import { formatDateTime } from "@/lib/utils";
 import { StatusBadge, TicketTypeBadge } from "./badges";
 import { CopyButton } from "./copy-button";
+import { SlaBadge, useNow } from "./sla-badge";
 
 const features = tableFeatures({});
 
@@ -23,12 +24,6 @@ const ROW_RAIL_CLASS: Record<TicketStatus, string> = {
   open: "before:bg-red-500",
   in_progress: "before:bg-amber-500",
   closed: "before:bg-zinc-300 dark:before:bg-zinc-700",
-};
-
-const LEGEND_SWATCH: Record<TicketStatus, string> = {
-  open: "bg-red-500",
-  in_progress: "bg-amber-500",
-  closed: "bg-zinc-300 dark:bg-zinc-700",
 };
 
 const helper = createColumnHelper<typeof features, Ticket>();
@@ -57,15 +52,18 @@ export function TicketsTable({
   locale,
   sort,
   dir,
+  serverNow,
 }: {
   tickets: Ticket[];
   dict: Dict;
   locale: Locale;
   sort?: string;
   dir?: string;
+  serverNow: number;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const now = useNow(serverNow);
 
   const activeColumn = sort ?? "createdAt";
   const activeDir = dir ?? "desc";
@@ -94,6 +92,18 @@ export function TicketsTable({
     helper.accessor("type", {
       header: dict.admin.table.type,
       cell: (ctx) => <TicketTypeBadge type={ctx.getValue()} dict={dict} />,
+    }),
+    helper.accessor("createdAt", {
+      id: "deadline",
+      header: dict.admin.filterPanel.deadline,
+      cell: (ctx) => (
+        <SlaBadge
+          ticket={ctx.row.original}
+          serverNow={serverNow}
+          now={now}
+          locale={locale}
+        />
+      ),
     }),
     helper.accessor("id", {
       header: dict.admin.table.code,
@@ -155,24 +165,7 @@ export function TicketsTable({
   const table = useTable({ features, columns, data: tickets });
 
   return (
-    <div className="hidden lg:block">
-      <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-zinc-500 dark:text-zinc-400">
-        <span className="font-medium tracking-wide text-zinc-400 uppercase dark:text-zinc-500">
-          {dict.admin.table.legendLabel}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className={`h-1.5 w-1.5 rounded-full ${LEGEND_SWATCH.open}`} />
-          {dict.common.open}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className={`h-1.5 w-1.5 rounded-full ${LEGEND_SWATCH.in_progress}`} />
-          {dict.common.inProgress}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className={`h-1.5 w-1.5 rounded-full ${LEGEND_SWATCH.closed}`} />
-          {dict.common.closed}
-        </span>
-      </div>
+    <div className="mb-4 hidden lg:block">
       <div className="overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
         <table className="w-full min-w-[1000px] border-collapse bg-white text-sm dark:bg-zinc-950">
           <thead>

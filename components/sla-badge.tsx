@@ -72,6 +72,25 @@ function CheckIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
   );
 }
 
+/** The bare pill, for samples (see TicketsLegend). */
+export function SlaPill({
+  state,
+  children,
+}: {
+  state: SlaState;
+  children: React.ReactNode;
+}) {
+  const done = state === "done_on_time" || state === "done_late";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${PILL[state]}`}
+    >
+      {done ? <CheckIcon /> : <ClockIcon />}
+      {children}
+    </span>
+  );
+}
+
 /** Pill with the time left (or how late), and optionally the deadline below it. */
 export function SlaBadge({
   ticket,

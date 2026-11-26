@@ -1,8 +1,17 @@
+import { cookies } from "next/headers";
 import { getDict, getLocale } from "@/lib/i18n";
 import { getCurrentAdmin, hasPermission, isSuperAdmin } from "@/lib/auth";
 import { features } from "@/lib/features";
+import { FILTERS_PANEL_COOKIE, NAV_COOKIE } from "@/lib/admin-panels";
+import { loadAdminFilters } from "@/lib/admin-filters-server";
 import { getSettings, hasAssignedComplaints } from "@/lib/store";
 import { AdminNav, type AdminNavGroup } from "@/components/admin-nav";
+import {
+  AdminFiltersProvider,
+  FilterPanel,
+  FilterPanelHeader,
+  FilterPanelToggle,
+} from "@/components/admin-filters";
 import { AdminLiveUpdates } from "@/components/admin-live-updates";
 
 export default async function AdminLayout({
@@ -17,9 +26,15 @@ export default async function AdminLayout({
   // Logged-out visitors only ever see the login page, which has no shell.
   if (!admin) return <div className="mx-auto max-w-5xl py-8">{children}</div>;
 
-  const settings = await getSettings();
-  const canViewComplaints =
-    isSuperAdmin(admin) || (await hasAssignedComplaints(admin.id));
+  const [settings, assignedComplaints, cookieStore, { filters, options }] =
+    await Promise.all([
+      getSettings(),
+      hasAssignedComplaints(admin.id),
+      cookies(),
+      loadAdminFilters(admin),
+    ]);
+
+  const canViewComplaints = isSuperAdmin(admin) || assignedComplaints;
   const canTickets =
     (hasPermission(admin, "it") && features.itTicketsEnabled) ||
     (hasPermission(admin, "maintenance") &&
@@ -73,7 +88,11 @@ export default async function AdminLayout({
               { href: `${base}/units`, label: dict.admin.units.title, icon: "units" as const },
               { href: `${base}/areas`, label: dict.admin.areas.title, icon: "areas" as const },
               { href: `${base}/items`, label: dict.admin.items.title, icon: "items" as const },
-              { href: `${base}/service-types`, label: dict.admin.serviceTypes.title, icon: "serviceTypes" as const },
+              {
+                href: `${base}/service-types`,
+                label: dict.admin.serviceTypes.title,
+                icon: "serviceTypes" as const,
+              },
               { href: `${base}/company`, label: dict.admin.company.title, icon: "company" as const },
             ],
           },
@@ -89,32 +108,89 @@ export default async function AdminLayout({
       : []),
   ].filter((g) => g.links.length > 0);
 
+  const initialNavOpen = cookieStore.get(NAV_COOKIE)?.value !== "closed";
+  const initialFiltersOpen =
+    cookieStore.get(FILTERS_PANEL_COOKIE)?.value !== "closed";
+
+  const fp = dict.admin.filterPanel;
+
   return (
-    <AdminNav
-      lang={locale}
-      adminName={admin.name}
-      logo={settings.logoPath}
-      groups={groups}
+    <AdminFiltersProvider
+      initialFilters={filters}
+      options={options}
+      initialOpen={initialFiltersOpen}
       labels={{
-        appName: dict.appName,
-        logout: dict.nav.logout,
-        language: dict.nav.language,
-        theme: dict.nav.theme,
-        openMenu: dict.admin.sidebar.openMenu,
-        closeMenu: dict.admin.sidebar.closeMenu,
-        backToSite: dict.admin.sidebar.backToSite,
-        notifications: dict.admin.notifications,
+        title: fp.title,
+        hint: fp.hint,
+        open: fp.open,
+        collapse: fp.collapse,
+        close: fp.close,
+        clear: fp.clear,
+        clearAll: fp.clearAll,
+        clearOne: fp.clearOne,
+        clearMany: fp.clearMany,
+        noneActive: fp.noneActive,
+        inUse: fp.inUse,
+        period: fp.period,
+        from: fp.from,
+        to: fp.to,
+        presets: fp.presets,
+        status: fp.status,
+        statuses: {
+          open: dict.common.open,
+          in_progress: dict.common.inProgress,
+          closed: dict.common.closed,
+        },
+        deadline: fp.deadline,
+        deadlines: fp.deadlines,
+        criticality: fp.criticality,
+        criticalities: dict.ticket.criticality,
+        type: fp.type,
+        types: {
+          it: dict.ticket.fields.it,
+          maintenance: dict.ticket.fields.maintenance,
+        },
+        unit: fp.unit,
+        area: fp.area,
+        assignee: fp.assignee,
+        all: fp.all,
+        unassigned: fp.unassigned,
       }}
     >
-      <AdminLiveUpdates
+      <AdminNav
         lang={locale}
+        adminName={admin.name}
+        logo={settings.logoPath}
+        groups={groups}
+        initialNavOpen={initialNavOpen}
+        topBarActions={<FilterPanelToggle />}
+        topBarRight={<FilterPanelHeader />}
+        rightPanel={<FilterPanel />}
         labels={{
+          appName: dict.appName,
+          logout: dict.nav.logout,
+          language: dict.nav.language,
+          theme: dict.nav.theme,
+          openMenu: dict.admin.sidebar.openMenu,
+          closeMenu: dict.admin.sidebar.closeMenu,
+          collapseMenu: fp.collapseMenu,
+          backToSite: dict.admin.sidebar.backToSite,
           notifications: dict.admin.notifications,
-          ticketTypes: { it: dict.ticket.fields.it, maintenance: dict.ticket.fields.maintenance },
-          criticality: dict.ticket.criticality,
         }}
-      />
-      {children}
-    </AdminNav>
+      >
+        <AdminLiveUpdates
+          lang={locale}
+          labels={{
+            notifications: dict.admin.notifications,
+            ticketTypes: {
+              it: dict.ticket.fields.it,
+              maintenance: dict.ticket.fields.maintenance,
+            },
+            criticality: dict.ticket.criticality,
+          }}
+        />
+        {children}
+      </AdminNav>
+    </AdminFiltersProvider>
   );
 }

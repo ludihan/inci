@@ -142,3 +142,13 @@ export function formatDeadline(ms: number, locale: Locale, timeZone?: string): s
 export function requestTime(): number {
   return Date.now();
 }
+
+export type SlaFilter = "late" | "due_soon" | "on_time";
+export const SLA_FILTERS: readonly SlaFilter[] = ["late", "due_soon", "on_time"];
+
+/** Which filter chip a ticket falls under (closed ones by how they ended). */
+export function slaFilterOf(state: SlaState): SlaFilter {
+  if (state === "late" || state === "done_late") return "late";
+  if (state === "due_soon") return "due_soon";
+  return "on_time";
+}
